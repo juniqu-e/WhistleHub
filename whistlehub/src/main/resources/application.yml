@@ -1,0 +1,80 @@
+spring:
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 200MB
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${SPRING_DB_URL}
+    username: ${SPRING_DB_USERNAME}
+    password: ${SPRING_DB_PASSWORD}
+
+  jpa:
+    database: mysql
+    database-platform: org.hibernate.dialect.MySQLDialect
+    show-sql: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      expire-time: ${REDIS_EXPIRE_TIME}
+  neo4j:
+    uri: ${NEO4J_URI}
+    authentication:
+      username: ${NEO4J_USERNAME}
+      password: ${NEO4J_PASSWORD}
+
+
+#  mail:
+#    host: ${SPRING_MAIL_HOST}
+#    username: ${SPRING_MAIL_USERNAME}
+#    password: ${SPRING_MAIL_PASSWORD}
+#    properties:
+#      mail.smtp.auth: true
+#      mail.smtp.starttls.enable: true
+#    port: ${SPRING_MAIL_PORT}
+
+#  security:
+#    oauth2:
+#      client:
+#        registration:
+#          kakao:
+#            client-id: ${oauth_kakao_client_id}
+#            client-secret: ${oauth_kakao_secert}
+#            redirect-uri: ${oauth_kakao_redirect_uri}
+#            authorization-grant-type: authorization_code
+#            scope: profile_nickname, account_email
+#        provider:
+#          kakao:
+#            authorization-uri: https://kauth.kakao.com/oauth/authorize
+#            token-uri: https://kauth.kakao.com/oauth/token
+#            user-info-uri: https://kapi.kakao.com/v2/user/me
+#            user-name-attribute: id
+
+#jwt:
+#  secret: ${JWT_SECRET}
+#  accessExpiration: 10000000
+#  refreshExpiration: 604800000
+
+aws:
+  s3:
+    bucket: ${AWS_S3_BUCKET}
+  stack:
+    auto: false
+  credentials:
+    access-key: ${AWS_S3_ACCESS}
+    secret-key: ${AWS_S3_SECRET}
+    region: ${AWS_S3_REGION}
+
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: health,info
