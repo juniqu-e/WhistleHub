@@ -12,8 +12,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.whistlehub.common.ui.theme.WhistleHubTheme
-import com.whistlehub.common.ui.typography.Pretendard
+import com.whistlehub.common.view.theme.WhistleHubTheme
+import com.whistlehub.common.view.typography.Pretendard
+
 
 class MainActivity : ComponentActivity() {
     private external fun startAudioEngine(): Int
