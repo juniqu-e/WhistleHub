@@ -75,6 +75,9 @@ dependencies {
     implementation(libs.oboe)     // Oboe (NDK/CMake 설정 필요)
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.session)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.lifecycle.viewmodel.compose)
+
 
     // Superpowered: 직접 SDK 다운로드 및 통합 (Gradle 의존성으로 추가되지 않음)
     testImplementation(libs.junit)
