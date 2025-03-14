@@ -12,6 +12,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.whistlehub.common.view.copmonent.Navigation
 import com.whistlehub.common.view.theme.WhistleHubTheme
 import com.whistlehub.common.view.typography.Pretendard
 
@@ -35,10 +36,13 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     modifier = Modifier
                         .fillMaxSize()
-                        .systemBarsPadding()
+                        .systemBarsPadding(),
+                    bottomBar = {
+                        Navigation()
+                    }
                 ) { innerPadding ->
                     Greeting(
-                        name = "Android",
+                        name = "WhistleHub 휘슬허브",
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -63,7 +67,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     val pretendard = Pretendard()
 
     pretendard.TitleLarge(
-        text = "휘슬허브",
+        text = name,
         modifier = Modifier
     )
 
