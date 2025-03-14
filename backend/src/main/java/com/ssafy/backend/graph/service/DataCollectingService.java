@@ -55,15 +55,22 @@ public class DataCollectingService {
      * @param weightType 가중치 타입 EX)<code>WeightType.VIEW</code>
      */
     @Transactional
-    public void viewTrack(int memberId, int trackId, WeightType weightType, List<Integer> tagsId) {
+    public void viewTrack(int memberId, int trackId, WeightType weightType) {
+        // 회원과 트랙 조회
         MemberNode member = memberNodeRepository.findByMemberId(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member not found"));
         TrackNode track = trackNodeRepository.findByTrackId(trackId)
                 .orElseThrow(() -> new EntityNotFoundException("Track not found"));
-        member.viewTrack(track, weightType, tagsId);
+
+        // 트랙에 연결된 모든 태그 노드 조회
+        List<TagNode> connectedTags = tagNodeRepository.findTagsByTrackId(trackId);
+
+        // viewTrack 메소드 호출 (수정된 버전)
+        member.viewTrack(track, weightType, connectedTags);
 
         memberNodeRepository.save(member);
     }
+
 
     /**
      * <pre>트랙 생성을 위한 메서드</pre>
