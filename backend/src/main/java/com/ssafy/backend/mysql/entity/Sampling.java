@@ -1,25 +1,26 @@
 package com.ssafy.backend.mysql.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.time.Instant;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "sampling")
-public class Sampling {
+public class Sampling extends Common{
     @Id
     @Column(name = "sampling_id", nullable = false)
     private Integer id;
 
-    @Column(name = "origin_track_id", nullable = false)
-    private Integer originTrackId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "origin_track_id", nullable = false)
+    private com.ssafy.backend.mysql.entity.Track originTrack;
 
-    @Column(name = "track_id", nullable = false)
-    private Integer trackId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "track_id", nullable = false)
+    private com.ssafy.backend.mysql.entity.Track track;
 
 }

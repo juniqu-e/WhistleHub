@@ -1,27 +1,26 @@
 package com.ssafy.backend.mysql.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.time.Instant;
 import java.util.Map;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "layer")
-public class Layer {
+public class Layer extends Common{
     @Id
     @Column(name = "layer_id", nullable = false)
     private Integer id;
 
-    @Column(name = "track_id", nullable = false)
-    private Integer trackId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "track_id", nullable = false)
+    private com.ssafy.backend.mysql.entity.Track track;
 
     @Column(name = "name", nullable = false, length = 30)
     private String name;
@@ -33,10 +32,12 @@ public class Layer {
     @JdbcTypeCode(SqlTypes.JSON)
     private Map<String, Object> modification;
 
-    @Column(name = "layer_file_id")
-    private Integer layerFileId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "layer_file_id")
+    private com.ssafy.backend.mysql.entity.LayerFile layerFile;
 
     @Column(name = "blocked", nullable = false)
     private Boolean blocked = false;
+
 
 }

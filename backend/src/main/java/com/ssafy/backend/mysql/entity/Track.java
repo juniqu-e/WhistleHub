@@ -4,11 +4,13 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
+
 @Getter
 @Setter
 @Entity
 @Table(name = "track")
-public class Track {
+public class Track extends Common{
     @Id
     @Column(name = "track_id", nullable = false)
     private Integer id;
@@ -23,8 +25,9 @@ public class Track {
     @Column(name = "duration", nullable = false)
     private Integer duration;
 
-    @Column(name = "member_id", nullable = false)
-    private Integer memberId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "member_id", nullable = false)
+    private Member member;
 
     @Column(name = "sound_url", nullable = false)
     private String soundUrl;
