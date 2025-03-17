@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.whistlehub.common.view.home.HomeScreen
 import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.playlist.view.PlayListScreen
@@ -31,31 +32,35 @@ fun WhistleHubNavigation(navController: NavHostController) {
     val selectedNavigationIndex = rememberSaveable {
         mutableIntStateOf(0)
     }
+    val navBackStackEntry = navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry.value?.destination?.route
 
-    NavigationBar {
-        navigationList.forEachIndexed { index, screen ->
-            NavigationBarItem(
-                selected = selectedNavigationIndex.intValue == index,
-                onClick = {
-                    selectedNavigationIndex.intValue = index
-                    navController.navigate(screen.route)
-                },
-                icon = {
-                    Icon(imageVector = screen.icon, contentDescription = screen.title)
-                },
-                label = {
-                    Text(
-                        screen.title,
-                        color = if (index == selectedNavigationIndex.intValue)
-                            Color.Black
-                        else Color.Gray
-                    )
-                },
+    if (currentRoute != Screen.DAW.route) {
+        NavigationBar {
+            navigationList.forEachIndexed { index, screen ->
+                NavigationBarItem(
+                    selected = selectedNavigationIndex.intValue == index,
+                    onClick = {
+                        selectedNavigationIndex.intValue = index
+                        navController.navigate(screen.route)
+                    },
+                    icon = {
+                        Icon(imageVector = screen.icon, contentDescription = screen.title)
+                    },
+                    label = {
+                        Text(
+                            screen.title,
+                            color = if (index == selectedNavigationIndex.intValue)
+                                Color.Black
+                            else Color.Gray
+                        )
+                    },
 //                colors = NavigationBarItemDefaults.colors(
 //                    selectedIconColor = MaterialTheme.colorScheme.surface,
 //                    indicatorColor = MaterialTheme.colorScheme.primary
 //                )
-            )
+                )
+            }
         }
     }
 
@@ -74,7 +79,7 @@ fun WhistleHubNavHost(
     ) {
         composable(route = Screen.Home.route) { HomeScreen() }
         composable(route = Screen.Search.route) { SearchScreen() }
-        composable(route = Screen.DAW.route) { WorkStationScreen() }
+        composable(route = Screen.DAW.route) { WorkStationScreen(navController = navController) }
         composable(route = Screen.PlayList.route) { PlayListScreen() }
         composable(route = Screen.Profile.route) { ProfileScreen() }
     }
