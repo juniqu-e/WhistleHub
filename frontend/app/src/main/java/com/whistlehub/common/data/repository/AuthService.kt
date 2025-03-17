@@ -5,7 +5,9 @@ import com.whistlehub.common.data.remote.dto.request.AuthRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
 import com.whistlehub.common.data.remote.dto.response.AuthResponse
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class AuthService @Inject constructor(
     private val authApi: AuthApi
 ) : ApiRepository() {
