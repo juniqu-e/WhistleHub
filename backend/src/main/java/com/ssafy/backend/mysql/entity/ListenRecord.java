@@ -12,6 +12,7 @@ import java.time.Instant;
 @Table(name = "listen_record")
 public class ListenRecord extends Common{
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "listen_record_id", nullable = false)
     private Integer id;
 

@@ -12,6 +12,7 @@ import java.time.Instant;
 @Table(name = "sampling")
 public class Sampling extends Common{
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "sampling_id", nullable = false)
     private Integer id;
 

@@ -15,6 +15,7 @@ import java.util.Map;
 @Table(name = "layer")
 public class Layer extends Common{
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "layer_id", nullable = false)
     private Integer id;
 

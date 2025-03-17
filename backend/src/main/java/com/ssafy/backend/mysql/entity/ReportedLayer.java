@@ -12,6 +12,7 @@ import java.time.Instant;
 @Table(name = "reported_layer")
 public class ReportedLayer extends Common{
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "reported_layer_id", nullable = false)
     private Integer id;
 
