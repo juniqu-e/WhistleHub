@@ -1,5 +1,6 @@
 package com.whistlehub.common.view
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -9,12 +10,14 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.whistlehub.common.view.home.HomeScreen
 import com.whistlehub.common.view.navigation.Screen
+import com.whistlehub.playlist.view.MiniPlayerBar
 import com.whistlehub.playlist.view.PlayListScreen
 import com.whistlehub.profile.view.ProfileScreen
 import com.whistlehub.search.view.SearchScreen
@@ -36,30 +39,33 @@ fun WhistleHubNavigation(navController: NavHostController) {
     val currentRoute = navBackStackEntry.value?.destination?.route
 
     if (currentRoute != Screen.DAW.route) {
-        NavigationBar {
-            navigationList.forEachIndexed { index, screen ->
-                NavigationBarItem(
-                    selected = selectedNavigationIndex.intValue == index,
-                    onClick = {
-                        selectedNavigationIndex.intValue = index
-                        navController.navigate(screen.route)
-                    },
-                    icon = {
-                        Icon(imageVector = screen.icon, contentDescription = screen.title)
-                    },
-                    label = {
-                        Text(
-                            screen.title,
-                            color = if (index == selectedNavigationIndex.intValue)
-                                Color.Black
-                            else Color.Gray
-                        )
-                    },
-//                colors = NavigationBarItemDefaults.colors(
-//                    selectedIconColor = MaterialTheme.colorScheme.surface,
-//                    indicatorColor = MaterialTheme.colorScheme.primary
-//                )
-                )
+        Column {
+            MiniPlayerBar(navController, hiltViewModel())
+            NavigationBar {
+                navigationList.forEachIndexed { index, screen ->
+                    NavigationBarItem(
+                        selected = selectedNavigationIndex.intValue == index,
+                        onClick = {
+                            selectedNavigationIndex.intValue = index
+                            navController.navigate(screen.route)
+                        },
+                        icon = {
+                            Icon(imageVector = screen.icon, contentDescription = screen.title)
+                        },
+                        label = {
+                            Text(
+                                screen.title,
+                                color = if (index == selectedNavigationIndex.intValue)
+                                    Color.Black
+                                else Color.Gray
+                            )
+                        },
+                        //                colors = NavigationBarItemDefaults.colors(
+                        //                    selectedIconColor = MaterialTheme.colorScheme.surface,
+                        //                    indicatorColor = MaterialTheme.colorScheme.primary
+                        //                )
+                    )
+                }
             }
         }
     }

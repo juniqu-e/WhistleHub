@@ -11,11 +11,6 @@ import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 @SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 fun HomeScreen() {
-//    val context = LocalContext.current
-    // TrackRepository와 ExoPlayer 초기화
-//    val trackRepository = TrackRepositoryImpl(context)
-//    val exoPlayer = ExoPlayer.Builder(context).build()
-
     // ViewModel 초기화
     val trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
 
