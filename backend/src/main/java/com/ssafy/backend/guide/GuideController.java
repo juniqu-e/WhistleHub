@@ -4,6 +4,7 @@ import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.common.error.exception.NotFoundPageException;
 import com.ssafy.backend.graph.model.entity.type.WeightType;
 import com.ssafy.backend.graph.service.DataCollectingService;
+import com.ssafy.backend.graph.util.DataGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +20,7 @@ public class GuideController {
 
 //    private final DataGeneratorService dataGeneratorService;
     private final DataCollectingService dataCollectingService;
+    private final DataGenerator generator;
 
     @GetMapping("/success")
     public ApiResponse<?> test() {
@@ -50,13 +52,19 @@ public class GuideController {
 
     @GetMapping("/view/{memberId}/{trackId}")
     public String view(@PathVariable int memberId, @PathVariable int trackId) throws Exception {
-        dataCollectingService.viewTrack(memberId, trackId, WeightType.VIEW, Arrays.asList(2,3));
+        dataCollectingService.viewTrack(memberId, trackId, WeightType.VIEW);
         return "";
     }
 
     @GetMapping("/tagging/{trackId}")
     public String tagging(@PathVariable int trackId) throws Exception {
         dataCollectingService.createTrack(trackId, Arrays.asList(1,2));
+        return "";
+    }
+
+    @GetMapping("/create/dummy")
+    public String createDummy() throws Exception {
+        generator.gerating();
         return "";
     }
 

@@ -4,6 +4,7 @@ import com.ssafy.backend.graph.model.entity.relationship.ViewCount;
 import com.ssafy.backend.graph.model.entity.relationship.WeightCount;
 import com.ssafy.backend.graph.model.entity.type.WeightType;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
@@ -24,6 +25,7 @@ import java.util.Set;
 @Node("Member")
 @Getter
 @Setter
+//@NoArgsConstructor
 public class MemberNode {
     @Id
     private int memberId;
@@ -49,7 +51,7 @@ public class MemberNode {
     /**
      * 멤버가 특정 트랙을 조회할 때 호출되는 메서드
      */
-    public void viewTrack(TrackNode track, WeightType weightType, List<Integer> tagIds) {
+    public void viewTrack(TrackNode track, WeightType weightType, List<TagNode> connectedTags) {
         ViewCount viewCount = preferredTrackNodes.stream()
                 .filter(vc -> vc.getTrack().getTrackId() == track.getTrackId())
                 .findFirst()
@@ -61,7 +63,9 @@ public class MemberNode {
         } else {
             viewCount.incrementCount(weightType);
         }
-        tagIds.forEach(tagId -> viewTag(new TagNode(tagId), weightType));
+
+        // 트랙에 연결된 모든 태그 처리
+        connectedTags.forEach(tag -> viewTag(tag, weightType));
     }
 
     private void viewTag(TagNode tag, WeightType weightType) {

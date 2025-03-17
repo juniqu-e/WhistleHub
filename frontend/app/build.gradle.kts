@@ -78,6 +78,10 @@ dependencies {
     implementation(libs.media3.session)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.lifecycle.viewmodel.compose)
+
+
     // Superpowered: 직접 SDK 다운로드 및 통합 (Gradle 의존성으로 추가되지 않음)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

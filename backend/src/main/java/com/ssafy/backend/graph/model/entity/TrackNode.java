@@ -1,6 +1,7 @@
 package com.ssafy.backend.graph.model.entity;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
@@ -20,6 +21,7 @@ import java.util.Set;
 @Node("Track")
 @Getter
 @Setter
+//@NoArgsConstructor
 public class TrackNode {
     @Id
     private int trackId;
