@@ -1,12 +1,33 @@
 package com.whistlehub.common.data.repository
 
-// 플레이리스트
-interface PlaylistRepository {
-    suspend fun getPlaylist(): Result<Any>
-    suspend fun createPlaylist(requestBody: Any): Result<Any>
-    suspend fun updatePlaylist(requestBody: Any): Result<Any>
-    suspend fun deletePlaylist(playlistId: String): Result<Any>
-    suspend fun getPlaylistTrack(playlistId: String): Result<Any>
-    suspend fun updatePlaylistTrack(requestBody: Any): Result<Any>
-    suspend fun uploadPlaylistImage(playlistId: String): Result<Any>
+import com.whistlehub.common.data.remote.dto.response.ApiResponse
+import retrofit2.Response
+import retrofit2.http.HTTP
+
+abstract class ApiRepository {
+    protected open suspend fun <T> executeApiCall(call: suspend () -> Response<ApiResponse<T>>): ApiResponse<T> {
+        try {
+            val response = call()
+            if (response.isSuccessful) {
+                return response.body() ?: ApiResponse(
+                    code = "SU",
+                    message = "Empty response body",
+                    payload = null
+                )
+            } else {
+                // Handle error response
+                return ApiResponse(
+                    code = "ERR",
+                    message = "API call failed with code: ${response.code()}",
+                    payload = null
+                )
+            }
+        } catch (e: Exception) {
+            return ApiResponse(
+                code = "EXC",
+                message = "Exception occurred: ${e.message}",
+                payload = null
+            )
+        }
+    }
 }
