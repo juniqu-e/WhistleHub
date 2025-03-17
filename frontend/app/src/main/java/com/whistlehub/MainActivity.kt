@@ -12,6 +12,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
+import com.whistlehub.common.view.WhistleHubNavHost
+import com.whistlehub.common.view.WhistleHubNavigation
 import com.whistlehub.common.view.theme.WhistleHubTheme
 import com.whistlehub.common.view.typography.Pretendard
 
@@ -32,16 +35,19 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             WhistleHubTheme {
-                Scaffold(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .systemBarsPadding()
-                ) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                val navController = rememberNavController()
+                Scaffold(modifier = Modifier
+                    .fillMaxSize()
+                    .systemBarsPadding(),
+                    bottomBar = {
+                        WhistleHubNavigation(navController = navController)
+                    },
+                    content = { paddingValues ->
+                        WhistleHubNavHost(
+                            navController = navController,
+                            modifier = Modifier.padding(paddingValues)
+                        )
+                    })
             }
         }
         val result = startAudioEngine()

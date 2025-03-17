@@ -18,6 +18,8 @@ oboe = "1.9.3"
 retrofit = "2.9.0"
 roomCompiler = "2.6.1"
 media3 = "1.5.1"
+hiltAndroid = "2.55"
+hilt = "2.55"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -28,6 +30,8 @@ androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomComp
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomCompiler" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 java-jwt = { module = "com.auth0:java-jwt", version.ref = "javaJwt" }
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
+hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltAndroid" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -47,7 +51,7 @@ oboe = { module = "com.google.oboe:oboe", version.ref = "oboe" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
 media3-session = { module = "androidx.media3:media3-session", version.ref = "media3" }
-lifecycle-viewmodel-compose = {module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx"}
+lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
 androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "media3" }
 
 [plugins]
@@ -55,5 +59,5 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-
+dragger-hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 

@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.ksp)
+    alias(libs.plugins.dragger.hilt)
+
 }
 
 android {
@@ -79,6 +81,8 @@ dependencies {
     implementation(libs.androidx.media3.ui)
     implementation(libs.lifecycle.viewmodel.compose)
 
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
 
     // Superpowered: 직접 SDK 다운로드 및 통합 (Gradle 의존성으로 추가되지 않음)
     testImplementation(libs.junit)
