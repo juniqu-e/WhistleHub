@@ -40,7 +40,7 @@ public class ApiResponse<T> extends ResponseEntity<T> {
             return this;
         }
 
-        public builder<T> object(T payload) {
+        public builder<T> payload(T payload) {
             this.payload = payload;
             return this;
         }

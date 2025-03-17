@@ -60,7 +60,7 @@ public class GuideController {
     @GetMapping("/success")
     public ApiResponse<?> test() {
         return new ApiResponse.builder<Object>()
-                .object("데이터")
+                .payload("데이터")
                 .build();
     }
 
