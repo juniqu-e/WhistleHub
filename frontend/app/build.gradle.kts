@@ -75,6 +75,7 @@ dependencies {
     implementation(libs.oboe)     // Oboe (NDK/CMake 설정 필요)
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.session)
+
     implementation(libs.androidx.media3.ui)
     implementation(libs.lifecycle.viewmodel.compose)
 
