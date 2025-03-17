@@ -41,6 +41,10 @@ dependencies {
     implementation group: 'software.amazon.awssdk', name: 's3', version: '2.29.44'
     implementation group: 'software.amazon.awssdk', name: 'sts', version: '2.29.44'
 
+    // ffmpeg
+    implementation group: 'net.bramp.ffmpeg', name: 'ffmpeg', version: '0.8.0'
+
+
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'com.mysql:mysql-connector-j'
