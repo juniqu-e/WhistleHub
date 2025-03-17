@@ -3,7 +3,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.ksp)
-    alias(libs.plugins.dragger.hilt)
 }
 
 android {
@@ -76,8 +75,7 @@ dependencies {
     implementation(libs.oboe)     // Oboe (NDK/CMake 설정 필요)
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.session)
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
+
     implementation(libs.androidx.media3.ui)
     implementation(libs.lifecycle.viewmodel.compose)
 
