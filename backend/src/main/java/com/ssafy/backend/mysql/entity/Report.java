@@ -4,15 +4,18 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
+
 @Getter
 @Setter
 @Entity
 @Table(name = "report")
-public class Report {
-    @EmbeddedId
-    private ReportId id;
+public class Report extends Common{
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "report_id", nullable = false)
+    private Integer id;
 
-    @MapsId("trackId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "track_id", nullable = false)
     private com.ssafy.backend.mysql.entity.Track track;
@@ -22,5 +25,6 @@ public class Report {
 
     @Column(name = "detail", length = 300)
     private String detail;
+
 
 }

@@ -1,25 +1,28 @@
 package com.ssafy.backend.mysql.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.time.Instant;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "follow")
-public class Follow {
+public class Follow extends Common{
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "follow_id", nullable = false)
     private Integer id;
 
-    @Column(name = "from_member_id", nullable = false)
-    private Integer fromMemberId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "from_member_id", nullable = false)
+    private com.ssafy.backend.mysql.entity.Member fromMember;
 
-    @Column(name = "to_member_id", nullable = false)
-    private Integer toMemberId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "to_member_id", nullable = false)
+    private com.ssafy.backend.mysql.entity.Member toMember;
+
 
 }

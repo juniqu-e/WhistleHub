@@ -43,15 +43,17 @@ public class S3Service {
 
     /**
      * S3 파일 업로드
-     * @param file 업로드 할 파일
+     *
+     * @param file   업로드 할 파일
+     * @param folder 업로드할 폴더
      * @return 업로드 경로 문자열
      */
-    public String uploadFile(MultipartFile file) {
+    public String uploadFile(MultipartFile file, String folder) {
         String filenameExtension = StringUtils.getFilenameExtension(file.getOriginalFilename());
         String uuid = UUID.randomUUID().toString();
 
         // UUID + 시간값 + .확장자
-        String fileName = uuid + System.currentTimeMillis() + "." +filenameExtension;
+        String fileName = folder + "/" + uuid + System.currentTimeMillis() + "." + filenameExtension;
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(fileName)
@@ -64,7 +66,7 @@ public class S3Service {
                     software.amazon.awssdk.core.sync.RequestBody.fromInputStream(inputStream, file.getSize()));
 
             if (response.sdkHttpResponse().isSuccessful()) {
-                return filePrefix+fileName;
+                return filePrefix + fileName;
             } else {
                 throw new RuntimeException("파일 업로드 실패");
             }
@@ -75,6 +77,7 @@ public class S3Service {
 
     /**
      * s3 파일 삭제
+     *
      * @param fileUrl 삭제할 파일 Url
      */
     public void deleteFile(String fileUrl) {
@@ -85,7 +88,7 @@ public class S3Service {
                 .bucket(bucketName)
                 .key(fileKey)
                 .build();
-        try{
+        try {
             s3Client.deleteObject(deleteObjectRequest);
         } catch (AwsServiceException e) {
             System.err.println("파일 삭제 실패");
@@ -96,17 +99,19 @@ public class S3Service {
     /**
      * <pre>S3 업데이트 파일</pre>
      * 기존 파일 삭제와 업로드를 같이
+     *
      * @param existingFileUrl 기존 교체 대상 파일의 Url
-     * @param newFile 업로드할 파일
+     * @param newFile         업로드할 파일
+     * @param folder          업로드할 폴더
      * @return 새로 업로드된 파일의 Url
      */
 
-    public String updateFile(String existingFileUrl, MultipartFile newFile) throws IOException {
+    public String updateFile(String existingFileUrl, MultipartFile newFile, String folder) throws IOException {
         // 기존 파일 삭제
         deleteFile(existingFileUrl);
 
         // 새 파일 업로드
-        return uploadFile(newFile);
+        return uploadFile(newFile, folder);
     }
 
 }
