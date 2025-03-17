@@ -5,9 +5,13 @@ import com.whistlehub.common.data.remote.dto.response.ApiResponse
 import com.whistlehub.common.data.remote.dto.response.ProfileResponse
 import retrofit2.http.*
 
+/**
+-----------------------
+프로필 관련 API 인터페이스
+-----------------------
+ **/
+
 interface ProfileApi {
-
-
 
     @GET("member/following")
     suspend fun getFollowing(

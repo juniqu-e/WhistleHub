@@ -3,21 +3,26 @@ package com.whistlehub.common.data.remote.dto.request
 import okhttp3.MultipartBody
 
 sealed class PlaylistRequest {
-    data class Create(
+    data class CreatePlaylistRequset(
         val name: String,
-        val description: String,
-        val isPublic: Boolean
+        val description: String?,
+//        val image: MultipartBody.Part?,
+        val trackIds: List<Int>?
     )
 
-    data class Update(
-        val playlistId: String,
+    data class UpdatePlaylistRequest(
+        val playlistId: Int,
         val name: String,
         val description: String,
-        val isPublic: Boolean
+//        val imageUrl: String 여기에 Url 들어가는지? 아니면 file 들어가는지?
     )
 
-    data class UpdateTracks(
-        val playlistId: String,
-        val trackIds: List<String>
+    data class UpdatePlaylistTrackRequest(
+        val playlistId: Int,
+        val tracks: List<Int>?
+    )
+
+    data class UploadPlaylistImageRequest(
+        val image: MultipartBody.Part
     )
 }
