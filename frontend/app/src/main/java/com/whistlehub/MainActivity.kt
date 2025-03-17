@@ -12,13 +12,16 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.whistlehub.common.view.WhistleHubNavHost
 import com.whistlehub.common.view.WhistleHubNavigation
+import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.common.view.theme.WhistleHubTheme
 import com.whistlehub.common.view.typography.Pretendard
+import dagger.hilt.android.AndroidEntryPoint
 
-
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private external fun startAudioEngine(): Int
     private external fun stopAudioEngine(): Int
@@ -36,9 +39,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             WhistleHubTheme {
                 val navController = rememberNavController()
+                //현재 Navigation 탐색
+                val navBackStackEntry = navController.currentBackStackEntryAsState()
+                val currentRoute = navBackStackEntry.value?.destination?.route
+
                 Scaffold(modifier = Modifier
                     .fillMaxSize()
-                    .systemBarsPadding(),
+                    .then(if (currentRoute != Screen.DAW.route) Modifier.systemBarsPadding() else Modifier),
                     bottomBar = {
                         WhistleHubNavigation(navController = navController)
                     },
