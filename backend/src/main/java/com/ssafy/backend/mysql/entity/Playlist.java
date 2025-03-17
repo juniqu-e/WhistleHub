@@ -4,17 +4,21 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
+
 @Getter
 @Setter
 @Entity
 @Table(name = "playlist")
-public class Playlist {
+public class Playlist extends Common{
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "playlist_id", nullable = false)
     private Integer id;
 
-    @Column(name = "member_id", nullable = false)
-    private Integer memberId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "member_id", nullable = false)
+    private Member member;
 
     @Column(name = "name", nullable = false)
     private String name;
@@ -25,5 +29,6 @@ public class Playlist {
 
     @Column(name = "image_url")
     private String imageUrl;
+
 
 }

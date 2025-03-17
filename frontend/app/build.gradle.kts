@@ -3,7 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.ksp)
-    alias(libs.plugins.dragger.hilt)
+    alias(libs.plugins.dagger.hilt)
+
 }
 
 android {
@@ -67,6 +68,7 @@ dependencies {
     implementation(libs.retrofit)     // Retrofit
     implementation(libs.java.jwt)
     implementation(libs.converter.gson)     // Retrofit
+    implementation(libs.okhttp.logging.interceptor) // Okhttp
     ksp(libs.androidx.room.compiler)     // Room
     implementation(libs.androidx.room.runtime)     // Room
     implementation(libs.androidx.room.ktx)     // Room

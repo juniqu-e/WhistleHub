@@ -4,11 +4,13 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
+
 @Getter
 @Setter
 @Entity
 @Table(name = "`like`")
-public class Like {
+public class Like extends Common{
     @EmbeddedId
     private LikeId id;
 
@@ -21,5 +23,6 @@ public class Like {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "track_id", nullable = false)
     private com.ssafy.backend.mysql.entity.Track track;
+
 
 }
