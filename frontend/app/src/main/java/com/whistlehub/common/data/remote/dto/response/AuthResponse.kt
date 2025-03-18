@@ -1,6 +1,10 @@
 package com.whistlehub.common.data.remote.dto.response
 
-import com.whistlehub.common.data.remote.dto.request.AuthRequest
+/**
+-----------------------
+인증 관련 API 응답 DTO
+-----------------------
+ **/
 
 sealed class AuthResponse {
     data class ResgisterResponse(
@@ -15,9 +19,8 @@ sealed class AuthResponse {
         val nickname: String
     )
 
-    data class Token(
-        val accessToken: String,
+    data class UpdateTokenResponse(
         val refreshToken: String,
-        val expiresIn: Long
+        val accessToken: String,
     )
 }
