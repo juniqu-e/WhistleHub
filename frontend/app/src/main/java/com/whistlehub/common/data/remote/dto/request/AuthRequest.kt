@@ -1,29 +1,36 @@
 package com.whistlehub.common.data.remote.dto.request
 
+/**
+-----------------------
+인증 관련 API 요청 DTO
+-----------------------
+ **/
+
 sealed class AuthRequest {
-    data class Register(
+    // 회원가입
+    data class RegisterRequest(
         val loginId: String,
         val password: String,
         val email: String,
         val nickname: String
     )
-
-    data class Login(
-        val loginId: String,
-        val password: String
-    )
-
-    data class ValidateEmail(
+    // 이메일 인증 코드 확인
+    data class ValidateEmailRequest(
         val email: String,
         val code: String
     )
-
-    data class ResetPassword(
+    // 비밀번호 초기화
+    data class ResetPasswordRequest(
         val email: String,
         val newPassword: String
     )
-
-    data class RefreshToken(
+    // 로그인
+    data class LoginRequest(
+        val loginId: String,
+        val password: String
+    )
+    // 토큰 갱신
+    data class UpdateTokenRequest(
         val refreshToken: String
     )
 }
