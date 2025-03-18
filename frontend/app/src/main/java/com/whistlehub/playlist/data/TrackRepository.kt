@@ -5,6 +5,7 @@ import androidx.core.net.toUri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import java.util.Date
 import javax.inject.Inject
 
 interface TrackRepository {
@@ -25,19 +26,61 @@ class TrackRepositoryImpl @Inject constructor(
                 "1",
                 "Song 1",
                 "Artist 1",
-                "https://whistlehub.s3.ap-northeast-2.amazonaws.com/%EA%B5%AD%EC%95%85+%ED%9A%A8%EA%B3%BC%EC%9D%8C+%23542.mp3".toUri()
+                artist = Artist(
+                    id = "1",
+                    nickname = "Artist 1",
+                    profileImage = "https://picsum.photos/200/300?random=1".toUri()
+                ),
+                duration = 500,
+                imageUrl = "https://picsum.photos/200/300?random=1",
+                importCount = 2,
+                likeCount = 2,
+                viewCount = 2,
+                createdAt = Date(),
+                sourceTrack = null,
+                importTrack = null,
+                tags = null,
+                uri = "https://whistlehub.s3.ap-northeast-2.amazonaws.com/%EA%B5%AD%EC%95%85+%ED%9A%A8%EA%B3%BC%EC%9D%8C+%23542.mp3".toUri()
             ),
             Track(
                 "2",
                 "Song 2",
                 "Artist 2",
-                "https://whistlehub.s3.ap-northeast-2.amazonaws.com/%EA%B5%AD%EC%95%85+%ED%9A%A8%EA%B3%BC%EC%9D%8C+%23542.mp3".toUri()
+                artist = Artist(
+                    id = "1",
+                    nickname = "Artist 1",
+                    profileImage = "https://picsum.photos/200/300?random=1".toUri()
+                ),
+                duration = 500,
+                imageUrl = "https://picsum.photos/200/300?random=2",
+                importCount = 2,
+                likeCount = 2,
+                viewCount = 2,
+                createdAt = Date(),
+                sourceTrack = null,
+                importTrack = null,
+                tags = null,
+                uri = "https://whistlehub.s3.ap-northeast-2.amazonaws.com/%EA%B5%AD%EC%95%85+%ED%9A%A8%EA%B3%BC%EC%9D%8C+%23542.mp3".toUri()
             ),
             Track(
                 "3",
                 "Song 3",
                 "Artist 3",
-                "https://whistlehub.s3.ap-northeast-2.amazonaws.com/%EA%B5%AD%EC%95%85+%ED%9A%A8%EA%B3%BC%EC%9D%8C+%23542.mp3".toUri()
+                artist = Artist(
+                    id = "1",
+                    nickname = "Artist 1",
+                    profileImage = "https://picsum.photos/200/300?random=1".toUri()
+                ),
+                duration = 500,
+                imageUrl = "https://picsum.photos/200/300?random=3",
+                importCount = 2,
+                likeCount = 2,
+                viewCount = 2,
+                createdAt = Date(),
+                sourceTrack = null,
+                importTrack = null,
+                tags = null,
+                uri = "https://whistlehub.s3.ap-northeast-2.amazonaws.com/%EA%B5%AD%EC%95%85+%ED%9A%A8%EA%B3%BC%EC%9D%8C+%23542.mp3".toUri()
             )
         )
     }
