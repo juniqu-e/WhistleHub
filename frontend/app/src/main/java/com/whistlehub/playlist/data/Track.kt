@@ -4,7 +4,9 @@ import android.net.Uri
 import java.util.Date
 
 data class Artist(
-    val id: String, val nickname: String, val profileImage: Uri
+    val id: String, 
+    val nickname: String, 
+    val profileImage: Uri
 )
 
 data class Track(
