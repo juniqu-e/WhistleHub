@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.media3.exoplayer.ExoPlayer
 import com.whistlehub.playlist.data.TrackRepository
 import com.whistlehub.playlist.data.TrackRepositoryImpl
+import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,5 +25,11 @@ object TrackModule {
     @Singleton
     fun provideTrackRepository(@ApplicationContext context: Context): TrackRepository {
         return TrackRepositoryImpl(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTrackPlayViewModel(exoPlayer: ExoPlayer, trackRepository: TrackRepository): TrackPlayViewModel {
+        return TrackPlayViewModel(exoPlayer, trackRepository)
     }
 }

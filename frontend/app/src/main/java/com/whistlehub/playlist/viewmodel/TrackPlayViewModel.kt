@@ -51,6 +51,7 @@ class TrackPlayViewModel @Inject constructor(
 
     // 트랙 정지
     fun stopTrack() {
+        _currentTrack.value = null
         exoPlayer.stop()
         exoPlayer.clearMediaItems()
         _isPlaying.value = false

@@ -28,5 +28,15 @@ fun HomeScreen() {
                 Text("재생: ${track.title}")
             }
         }
+        Button({
+            trackPlayViewModel.pauseTrack()
+        }) {
+            Text("일시정지")
+        }
+        Button({
+            trackPlayViewModel.stopTrack()
+        }) {
+            Text("정지")
+        }
     }
 }
