@@ -6,6 +6,8 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -17,8 +19,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.whistlehub.common.view.home.HomeScreen
 import com.whistlehub.common.view.navigation.Screen
+import com.whistlehub.playlist.view.FullPlayerScreen
 import com.whistlehub.playlist.view.MiniPlayerBar
 import com.whistlehub.playlist.view.PlayListScreen
+import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import com.whistlehub.profile.view.ProfileScreen
 import com.whistlehub.search.view.SearchScreen
 import com.whistlehub.workstation.view.WorkStationScreen
@@ -37,10 +41,14 @@ fun WhistleHubNavigation(navController: NavHostController) {
     }
     val navBackStackEntry = navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry.value?.destination?.route
+    val trackPlayViewModel = hiltViewModel<TrackPlayViewModel>()
+    val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
 
     if (currentRoute != Screen.DAW.route) {
         Column {
-            MiniPlayerBar(navController, hiltViewModel())
+            if (currentRoute != Screen.Player.route && currentTrack != null) {
+                MiniPlayerBar(navController)
+            }
             NavigationBar {
                 navigationList.forEachIndexed { index, screen ->
                     NavigationBarItem(
@@ -88,5 +96,10 @@ fun WhistleHubNavHost(
         composable(route = Screen.DAW.route) { WorkStationScreen(navController = navController) }
         composable(route = Screen.PlayList.route) { PlayListScreen() }
         composable(route = Screen.Profile.route) { ProfileScreen() }
+
+        // 기타화면
+        composable(route = Screen.Player.route) {
+            FullPlayerScreen(navController = navController)
+        }
     }
 }

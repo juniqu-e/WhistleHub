@@ -31,6 +31,7 @@ class TrackRepositoryImpl @Inject constructor(
                     nickname = "Artist 1",
                     profileImage = "https://picsum.photos/200/300?random=1".toUri()
                 ),
+                isLike = false,
                 duration = 500,
                 imageUrl = "https://picsum.photos/200/300?random=1",
                 importCount = 2,
@@ -51,6 +52,7 @@ class TrackRepositoryImpl @Inject constructor(
                     nickname = "Artist 1",
                     profileImage = "https://picsum.photos/200/300?random=1".toUri()
                 ),
+                isLike = true,
                 duration = 500,
                 imageUrl = "https://picsum.photos/200/300?random=2",
                 importCount = 2,
@@ -71,6 +73,7 @@ class TrackRepositoryImpl @Inject constructor(
                     nickname = "Artist 1",
                     profileImage = "https://picsum.photos/200/300?random=1".toUri()
                 ),
+                isLike = false,
                 duration = 500,
                 imageUrl = "https://picsum.photos/200/300?random=3",
                 importCount = 2,

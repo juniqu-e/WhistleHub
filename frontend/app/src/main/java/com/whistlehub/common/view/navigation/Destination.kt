@@ -14,4 +14,5 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     data object DAW : Screen("daw", "작업실", Icons.Default.MusicNote)
     data object PlayList : Screen("playlist", "내 목록", Icons.AutoMirrored.Filled.List)
     data object Profile : Screen("profile", "프로필", Icons.Default.AccountCircle)
+    data object Player : Screen("player", "플레이어", Icons.Default.MusicNote)
 }
