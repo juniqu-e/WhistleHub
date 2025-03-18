@@ -17,7 +17,7 @@ interface AuthApi {
     @POST("/auth/register")
     suspend fun register(
         @Body request: AuthRequest.RegisterRequest
-    ): Response<ApiResponse<AuthResponse.ResgisterResponse>>
+    ): Response<ApiResponse<AuthResponse.RegisterResponse>>
     // 아이디 중복 검사
     @GET("/auth/duplicated/id")
     suspend fun checkDuplicateId(
