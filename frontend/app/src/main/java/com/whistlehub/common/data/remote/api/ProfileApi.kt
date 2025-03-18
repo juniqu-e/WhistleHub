@@ -43,17 +43,20 @@ interface ProfileApi {
         @Body request: ProfileRequest.ChangePasswordRequest
     ): Response<ApiResponse<Unit>>
 
-//    @GET("member/search")
-//    suspend fun searchProfile(
-//        @Header("Authorization") token: String,
-//        @Query("memberId") memberId: Int
-//    ): Response<ApiResponse<ProfileResponse.GetProfileResponse>>
+    @GET("member/search")
+    suspend fun searchProfile(
+        @Header("Authorization") token: String,
+        @Query("query") query: String,
+        @Query("page") page: Int,
+        @Query("size") size: Int,
+        @Query("orderby") orderby: String,
+    ): Response<ApiResponse<List<ProfileResponse.GetProfileResponse>>>
 
     @GET("member/playlist")
     suspend fun getMemberPlaylists(
         @Header("Authorization") token: String,
         @Query("memberId") memberId: Int? = null
-    ): Response<ApiResponse<ProfileResponse.GetMemberPlaylistsResponse>>
+    ): Response<ApiResponse<List<ProfileResponse.GetMemberPlaylistsResponse>>>
 
     @GET("member/playlist")
     suspend fun getMemberTracks(
@@ -61,7 +64,7 @@ interface ProfileApi {
         @Query("memberId") memberId: Int? = null,
         @Query("page") page: Int,
         @Query("orderby") orderby: String
-    ): Response<ApiResponse<ProfileResponse.GetMemberTracksResponse>>
+    ): Response<ApiResponse<List<ProfileResponse.GetMemberTracksResponse>>>
 
     @POST("member/follow")
     suspend fun follow(
@@ -74,12 +77,12 @@ interface ProfileApi {
         @Header("Authorization") token: String,
         @Query("memberId") memberId: Int? = null,
         @Query("page") page: Int
-    ): Response<ApiResponse<ProfileResponse.GetFollowersResponse>>
+    ): Response<ApiResponse<List<ProfileResponse.GetFollowersResponse>>>
 
     @GET("member/following")
     suspend fun getFollowings(
         @Header("Authorization") token: String,
         @Query("memberId") memberId: Int? = null,
         @Query("page") page: Int
-    ): Response<ApiResponse<ProfileResponse.GetFollowingsResponse>>
+    ): Response<ApiResponse<List<ProfileResponse.GetFollowingsResponse>>>
 }

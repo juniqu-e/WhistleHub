@@ -49,7 +49,7 @@ class ProfileService @Inject constructor(
     suspend fun getMemberPlaylists(
         token: String,
         memberId: Int? = null
-    ): ApiResponse<ProfileResponse.GetMemberPlaylistsResponse> {
+    ): ApiResponse<List<ProfileResponse.GetMemberPlaylistsResponse>> {
         return executeApiCall { profileApi.getMemberPlaylists(token, memberId) }
     }
 
@@ -58,7 +58,7 @@ class ProfileService @Inject constructor(
         memberId: Int? = null,
         page: Int,
         orderby: String
-    ): ApiResponse<ProfileResponse.GetMemberTracksResponse> {
+    ): ApiResponse<List<ProfileResponse.GetMemberTracksResponse>> {
         return executeApiCall { profileApi.getMemberTracks(token, memberId, page, orderby) }
     }
 
@@ -73,7 +73,7 @@ class ProfileService @Inject constructor(
         token: String,
         memberId: Int? = null,
         page: Int
-    ): ApiResponse<ProfileResponse.GetFollowersResponse> {
+    ): ApiResponse<List<ProfileResponse.GetFollowersResponse>> {
         return executeApiCall { profileApi.getFollowers(token, memberId, page) }
     }
 
@@ -81,7 +81,7 @@ class ProfileService @Inject constructor(
         token: String,
         memberId: Int? = null,
         page: Int
-    ): ApiResponse<ProfileResponse.GetFollowingsResponse> {
+    ): ApiResponse<List<ProfileResponse.GetFollowingsResponse>> {
         return executeApiCall { profileApi.getFollowings(token, memberId, page) }
     }
 }

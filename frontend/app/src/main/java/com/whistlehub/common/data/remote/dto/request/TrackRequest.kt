@@ -1,48 +1,60 @@
 package com.whistlehub.common.data.remote.dto.request
 
+import okhttp3.MultipartBody
+
+/**
+-----------------------
+트랙 관련 API 요청 DTO
+-----------------------
+ **/
+
 sealed class TrackRequest {
-    data class UpdateTrack(
+    // 트랙 정보 수정
+    data class UpdateTrackRequest(
         val trackId: String,
         val title: String,
         val description: String,
-        val isPublic: Boolean,
-        val genre: String,
-        val tags: List<String>
+        val imageUrl: String,
+        val visibility: Boolean
     )
 
-    data class SearchTrack(
-        val keyword: String,
-        val page: Int,
-        val size: Int,
-        val orderBy: String // "RECENT", "POPULAR", etc.
+    data class UploadTrackImageRequest(
+        val image: MultipartBody.Part
     )
 
-    data class LikeTrack(
-        val trackId: String
+    data class TrackPlayCountRequest(
+        val trackId: Int
     )
 
-    data class ReportTrack(
-        val trackId: String,
-        val reason: String
+    data class AddTrackToPlaylistRequest(
+        val playlistId: Int,
+        val trackId: Int
     )
 
-    data class AddToPlaylist(
-        val trackId: String,
-        val playlistId: String
+    data class LikeTrackRequest(
+        val trackId: Int,
+        val like: Boolean
     )
 
-    data class CreateComment(
-        val trackId: String,
-        val content: String,
-        val parentCommentId: String?
+    data class CreateCommentRequest(
+        val trackId: Int,
+        val comment: String
     )
 
-    data class UpdateComment(
-        val commentId: String,
-        val content: String
+    data class UpdateCommentRequest(
+        val commentId: Int,
+        val comment: String
     )
 
-    data class IncreasePlayCount(
-        val trackId: String
+    data class SearchTrackRequest(
+        val keyword: String?,
+        val tags: List<String>?
+    )
+
+    data class ReportTrackRequest(
+        val trackId: Int,
+        val reason: String,
+        val detail: String?,
+        val layerId: List<Int>?
     )
 }
