@@ -2,10 +2,15 @@ package com.whistlehub.common.view.home
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.whistlehub.common.view.copmonent.TrackItem
+import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 
 @SuppressLint("StateFlowValueCalledInComposition")
@@ -19,19 +24,9 @@ fun HomeScreen() {
 
     // 트랙 리스트 UI
     Column {
-        Text("트랙 리스트")
+        Text("홈화면", Modifier.fillMaxWidth(), style = Typography.displaySmall, textAlign = TextAlign.Center)
         trackPlayViewModel.trackList.value.forEach { track ->
-            Button(onClick = {
-                // 트랙 재생 버튼 클릭 시 ViewModel을 통해 트랙 재생
-                trackPlayViewModel.playTrack(track)
-            }) {
-                Text("재생: ${track.title}")
-            }
-        }
-        Button({
-            trackPlayViewModel.pauseTrack()
-        }) {
-            Text("일시정지")
+            TrackItem(track)
         }
         Button({
             trackPlayViewModel.stopTrack()
