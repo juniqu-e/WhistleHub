@@ -1,9 +1,9 @@
 package com.whistlehub.common.data.remote.dto.response
 
 /**
------------------------
+---------------------
 인증 관련 API 응답 DTO
------------------------
+---------------------
  **/
 
 sealed class AuthResponse {

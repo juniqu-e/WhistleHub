@@ -3,9 +3,9 @@ package com.whistlehub.common.data.remote.dto.request
 import okhttp3.MultipartBody
 
 /**
------------------------
+---------------------
 트랙 관련 API 요청 DTO
------------------------
+---------------------
  **/
 
 sealed class TrackRequest {
@@ -45,7 +45,7 @@ sealed class TrackRequest {
         val keyword: String?,
         val tags: List<String>?
     )
-    //
+    // 트랙 신고
     data class ReportTrackRequest(
         val trackId: Int,
         val reason: String,

@@ -13,7 +13,7 @@ import javax.inject.Singleton
 
 /**
 ---------------------------------------------
-플레이리스트 관련 API 호출을 담당하는 서비스 클래스.
+플레이리스트 관련 API 호출을 담당하는 서비스 클래스
 ---------------------------------------------
  **/
 
@@ -68,7 +68,7 @@ class PlaylistService @Inject constructor(
         token: String,
         playlistId: Int,
         image: MultipartBody.Part
-    ): ApiResponse<String> {
+    ): ApiResponse<Unit> {
         val playlistIdBody: RequestBody = playlistId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
         return executeApiCall { playlistApi.uploadPlaylistImage(token, playlistIdBody, image) }
     }

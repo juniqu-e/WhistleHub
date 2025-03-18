@@ -7,9 +7,9 @@ import retrofit2.Response
 import retrofit2.http.*
 
 /**
- -----------------------
- 인증 관련 API 인터페이스
- -----------------------
+-----------------------
+인증 관련 API 인터페이스
+-----------------------
  **/
 
 interface AuthApi {
