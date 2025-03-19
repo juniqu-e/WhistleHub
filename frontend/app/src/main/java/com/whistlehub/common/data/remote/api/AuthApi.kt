@@ -7,9 +7,9 @@ import retrofit2.Response
 import retrofit2.http.*
 
 /**
- -----------------------
- 인증 관련 API 인터페이스
- -----------------------
+-----------------------
+인증 관련 API 인터페이스
+-----------------------
  **/
 
 interface AuthApi {
@@ -17,7 +17,7 @@ interface AuthApi {
     @POST("/auth/register")
     suspend fun register(
         @Body request: AuthRequest.RegisterRequest
-    ): Response<ApiResponse<AuthResponse.ResgisterResponse>>
+    ): Response<ApiResponse<AuthResponse.RegisterResponse>>
     // 아이디 중복 검사
     @GET("/auth/duplicated/id")
     suspend fun checkDuplicateId(

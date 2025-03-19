@@ -1,28 +1,39 @@
 package com.whistlehub.common.data.remote.dto.request
 
+import com.google.gson.JsonObject
+
+/**
+---------------------------
+워크스테이션 관련 API 요청 DTO
+---------------------------
+ **/
+
 sealed class WorkstationRequest {
-    data class CreateTrack(
+    // 트랙 업로드
+    data class UploadTrackRequest(
         val title: String,
-        val description: String,
-        val isPublic: Boolean,
-        val genre: String,
-        val tags: List<String>
+        val description: String?,
+        val duration: Int,
+        val visibility: Boolean,
+        val tags: List<String>,
+        val importedLayers: List<ImportedLayer>,
+        val newLayers: List<NewLayer>
     )
-
-    data class SaveTrack(
-        val trackId: String,
-        val layers: List<SaveLayer>
+    // 불러온 레이어
+    data class ImportedLayer(
+        val layerId: Int,
+        val modification: JsonObject
     )
-
-    data class SaveLayer(
-        val layerId: String?,
-        val name: String,
-        val type: String,
-        val audioData: ByteArray,
-        val isBase: Boolean
+    // 생성한 레이어
+    data class NewLayer(
+        val layerName: String,
+        val instrumentType: String,
+        val modification: JsonObject,
+        val layerFileId: Int?
     )
-
-    data class PublishTrack(
-        val trackId: String
+    // 트랙 임포트
+    data class ImportTrackRequest(
+        val trackId: Int,
+        val layerIds: List<Int>
     )
 }

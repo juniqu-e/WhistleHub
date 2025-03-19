@@ -1,10 +1,11 @@
 package com.whistlehub.common.data.remote.dto.request
 
+/**
+---------------------
+랭킹 관련 API 요청 DTO
+---------------------
+ **/
+
 sealed class RankingRequest {
-    data class GetRanking(
-        val category: String, // "POPULAR", "TRENDING", "NEW", etc.
-        val timeRange: String, // "DAILY", "WEEKLY", "MONTHLY", etc.
-        val page: Int,
-        val size: Int
-    )
+    // 추후 추가 예정이 있다면 추가
 }

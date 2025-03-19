@@ -1,58 +1,66 @@
 package com.whistlehub.common.data.remote.dto.response
 
+import com.google.gson.JsonObject
+
 sealed class TrackResponse {
-    data class TrackDetail(
-        val trackId: String,
+    // 트랙 상세 조회
+    data class GetTrackDetailResponse(
+        val trackId: Int,
         val title: String,
         val description: String,
-        val creatorId: String,
-        val creatorNickname: String,
-        val creatorProfileImage: String?,
         val duration: Int,
-        val playCount: Int,
-        val likesCount: Int,
-        val isLiked: Boolean,
-        val isPublic: Boolean,
-        val genre: String,
-        val tags: List<String>,
-        val imageUrl: String?,
+        val imageUrl: String,
+        val artistInfo: ArtistInfo,
+        val isLike: Boolean,
+        val importCount: Int,
+        val likeCount: Int,
+        val viewCount: Int,
         val createdAt: String,
-        val updatedAt: String
+        val sourceTrack: List<TrackSummary>,
+        val importTrack: List<TrackSummary>,
+        val tags: List<String>
     )
-
-    data class Comment(
-        val commentId: String,
-        val memberId: String,
+    // 작곡가 정보
+    data class ArtistInfo(
+        val memberId: Int,
         val nickname: String,
-        val profileImage: String?,
-        val content: String,
-        val createdAt: String,
-        val updatedAt: String,
-        val isMyComment: Boolean,
-        val replies: List<Comment>?
+        val profileImage: String
     )
-
-    data class Layer(
-        val layerId: String,
-        val trackId: String,
-        val name: String,
-        val type: String, // "VOCAL", "DRUM", "BASS", etc.
-        val duration: Int,
-        val isBase: Boolean
-    )
-
-    data class SearchResult(
-        val tracks: List<TrackSummary>,
-        val totalCount: Int,
-        val hasNext: Boolean
-    )
-
+    // 소스 트랙 요약 정보
     data class TrackSummary(
-        val trackId: String,
+        val trackId: Int,
         val title: String,
-        val artistName: String,
-        val playCount: Int,
-        val likesCount: Int,
+        val duration: Int,
+        val imageUrl: String?
+    )
+    // 트랙 레이어 조회
+    data class GetTrackLayer(
+        val layerId: Int,
+        val name: String,
+        val instrumentType: String
+    )
+    // 트랙 레이어 재생
+    data class TrackLayerPlay(
+        val soundUrl: String,
+        val modification: JsonObject
+    )
+    // 트랙 댓글 조회
+    data class GetTrackComment(
+        val commentId: Int,
+        val memberInfo: MemberInfo,
+        val comment: String
+    )
+    // 트랙에 댓글 단 멤버
+    data class MemberInfo(
+        val memberId: Int,
+        val nickname: String,
+        val profileImage: String
+    )
+    // 트랙 검색
+    data class SearchTrack(
+        val trackId: Int,
+        val nickname: String,
+        val title: String,
         val duration: Int,
         val imageUrl: String?
     )
