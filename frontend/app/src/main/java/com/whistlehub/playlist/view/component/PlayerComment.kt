@@ -33,18 +33,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
-import com.whistlehub.common.data.remote.dto.response.TrackResponse.MemberInfo
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.data.Comment
-import com.whistlehub.playlist.data.CommentRepositoryImpl
 import com.whistlehub.playlist.viewmodel.TrackCommentViewModel
 
 @Preview(showBackground = true)
 @Composable
 fun PlayerComment(
-    modifier: Modifier = Modifier, trackCommentViewModel: TrackCommentViewModel = TrackCommentViewModel(commentRepository = CommentRepositoryImpl())
+    modifier: Modifier = Modifier, trackCommentViewModel: TrackCommentViewModel = hiltViewModel()
 ) {
     val commentList = trackCommentViewModel.commentList.collectAsState(initial = emptyList())
     var newComment by remember { mutableStateOf("") }
@@ -115,7 +114,9 @@ fun CommentItem(comment: Comment) {
         Column(Modifier
             .weight(1f)
             .padding(horizontal = 10.dp)) {
-            Row(Modifier.fillMaxWidth().height(30.dp) , verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier
+                .fillMaxWidth()
+                .height(30.dp) , verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = comment.memberInfo.nickname,
                     color = CustomColors().Grey200,
