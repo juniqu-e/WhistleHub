@@ -1,8 +1,7 @@
 package com.ssafy.backend.mysql.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.Instant;
 
@@ -10,6 +9,9 @@ import java.time.Instant;
 @Setter
 @Entity
 @Table(name = "track")
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Track extends Common{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
