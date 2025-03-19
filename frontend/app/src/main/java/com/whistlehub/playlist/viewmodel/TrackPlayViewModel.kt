@@ -28,6 +28,10 @@ class TrackPlayViewModel @Inject constructor(
     private val _isPlaying = MutableStateFlow<Boolean>(false)
     val isPlaying: StateFlow<Boolean> get() = _isPlaying
 
+    // 플레이어 화면 상태
+    private val _playerViewState = MutableStateFlow<PlayerViewState>(PlayerViewState.PLAYING)
+    val playerViewState: StateFlow<PlayerViewState> get() = _playerViewState
+
     // 트랙 목록 로드
     fun loadTracks() {
         _trackList.value = trackRepository.getTracks()
@@ -57,8 +61,19 @@ class TrackPlayViewModel @Inject constructor(
         _isPlaying.value = false
     }
 
+    fun setPlayerViewState(state: PlayerViewState) {
+        _playerViewState.value = state
+    }
+
     override fun onCleared() {
         super.onCleared()
         exoPlayer.release()
     }
+}
+
+enum class PlayerViewState {
+    PLAYING,
+    COMMENT,
+    PLAYLIST,
+    MORE
 }

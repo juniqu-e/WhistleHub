@@ -22,6 +22,7 @@ import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.playlist.view.FullPlayerScreen
 import com.whistlehub.playlist.view.MiniPlayerBar
 import com.whistlehub.playlist.view.PlayListScreen
+import com.whistlehub.playlist.viewmodel.PlayerViewState
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import com.whistlehub.profile.view.ProfileScreen
 import com.whistlehub.search.view.SearchScreen
@@ -54,6 +55,7 @@ fun WhistleHubNavigation(navController: NavHostController) {
                     NavigationBarItem(
                         selected = selectedNavigationIndex.intValue == index,
                         onClick = {
+                            trackPlayViewModel.setPlayerViewState(PlayerViewState.PLAYING)
                             selectedNavigationIndex.intValue = index
                             navController.navigate(screen.route)
                         },
