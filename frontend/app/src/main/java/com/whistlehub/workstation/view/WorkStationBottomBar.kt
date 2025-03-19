@@ -1,5 +1,6 @@
 package com.whistlehub.workstation.view
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,11 +18,12 @@ class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(0.dp)
+                .background(Color.White)
         ) {
             Text(
                 text = "Custom Bottom Bar",
-                color = Color.White
+                color = Color.Black
             )
         }
     }
