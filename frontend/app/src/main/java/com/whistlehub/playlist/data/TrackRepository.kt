@@ -82,7 +82,7 @@ class TrackRepositoryImpl @Inject constructor(
                 createdAt = Date(),
                 sourceTrack = null,
                 importTrack = null,
-                tags = null,
+                tags = listOf("tag1", "tag2"),
                 uri = "https://whistlehub.s3.ap-northeast-2.amazonaws.com/%EA%B5%AD%EC%95%85+%ED%9A%A8%EA%B3%BC%EC%9D%8C+%23542.mp3".toUri()
             )
         )
