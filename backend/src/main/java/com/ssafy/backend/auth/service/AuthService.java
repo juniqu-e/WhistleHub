@@ -23,7 +23,8 @@ public class AuthService {
 
     public Member getMember(Authentication authentication) {
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
-        return customUserDetails.getMember();
+
+        return memberRepository.findById(customUserDetails.getMember().getId()).orElseThrow(NotFoundUser);
     }
 
     @Transactional
