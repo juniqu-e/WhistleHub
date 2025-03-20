@@ -10,9 +10,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.rounded.FastForward
+import androidx.compose.material.icons.rounded.FastRewind
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -51,7 +54,9 @@ fun MiniPlayerBar(
                 navController.navigate("player")
             }
             .fillMaxWidth()
-            .background(CustomColors().Grey700)
+            .background(
+                CustomColors().Grey700, shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)
+            )
             .padding(vertical = 20.dp, horizontal = 10.dp)
     ) {
         Row(
@@ -81,7 +86,7 @@ fun MiniPlayerBar(
                     contentScale = ContentScale.Crop
                 )
             }
-            Column(Modifier.width(200.dp)) {
+            Column(Modifier.weight(1f)) {
                 Text(
                     text = currentTrack?.title ?: "No Track Playing",
                     style = Typography.titleLarge,
@@ -94,20 +99,35 @@ fun MiniPlayerBar(
                     color = CustomColors().Grey400,
                 )
             }
-            IconButton(
-                onClick = {
-                    if (isPlaying) {
-                        trackPlayViewModel.pauseTrack()
-                    } else {
-                        trackPlayViewModel.playTrack(currentTrack!!)
-                    }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                IconButton(onClick = {}) {
+                    Icon(
+                        imageVector = Icons.Rounded.FastRewind,
+                        contentDescription = "Play/Pause",
+                        tint = Color.White
+                    )
                 }
-            ) {
-                Icon(
-                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    contentDescription = "Play/Pause",
-                    tint = Color.White
-                )
+                IconButton(
+                    onClick = {
+                        if (isPlaying) {
+                            trackPlayViewModel.pauseTrack()
+                        } else {
+                            trackPlayViewModel.playTrack(currentTrack!!)
+                        }
+                    }) {
+                    Icon(
+                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = "Play/Pause",
+                        tint = Color.White
+                    )
+                }
+                IconButton(onClick = {}) {
+                    Icon(
+                        imageVector = Icons.Rounded.FastForward,
+                        contentDescription = "Play/Pause",
+                        tint = Color.White
+                    )
+                }
             }
         }
         Row(

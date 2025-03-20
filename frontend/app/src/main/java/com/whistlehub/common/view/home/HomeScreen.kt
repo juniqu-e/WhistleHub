@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.whistlehub.common.view.copmonent.NewTrackCard
 import com.whistlehub.common.view.copmonent.TrackListRow
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
@@ -38,16 +39,32 @@ fun HomeScreen() {
 
     // 추천태그 리스트
     val tags = listOf("Pop", "Rock", "Jazz", "Classical", "Hip-Hop", "Electronic", "Indie", "R&B", "Country", "Reggae") // 예시 태그 리스트
-    LazyColumn {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(30.dp)
+    ) {
         item {
             Text(
-                "WhistleHub Logo",
-                Modifier
-                    .fillMaxWidth()
-                    .height(200.dp),
-                style = Typography.displaySmall,
-                textAlign = TextAlign.Center
+                text = "WhistleHub",
+                style = Typography.titleLarge,
+                modifier = Modifier
+                    .padding(10.dp)
+                    .clickable {
+                        trackPlayViewModel.stopTrack()
+                    }
             )
+        }
+
+        item {
+            LazyRow(
+                Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(trackList.value.size) { index ->
+                    NewTrackCard(trackList.value[index])
+                }
+            }
         }
 
         item {
