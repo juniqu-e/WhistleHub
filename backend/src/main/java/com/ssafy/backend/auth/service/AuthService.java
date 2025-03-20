@@ -1,5 +1,6 @@
 package com.ssafy.backend.auth.service;
 
+import com.ssafy.backend.auth.model.common.CustomUserDetails;
 import com.ssafy.backend.auth.model.request.RegisterRequestDto;
 import com.ssafy.backend.common.error.exception.DuplicateEmailException;
 import com.ssafy.backend.common.error.exception.DuplicateIdException;
@@ -8,6 +9,7 @@ import com.ssafy.backend.mysql.entity.Member;
 import com.ssafy.backend.mysql.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
+
+    public Member getMember(Authentication authentication) {
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        return customUserDetails.getMember();
+    }
 
     @Transactional
     public Integer register(RegisterRequestDto registerRequestDto) {

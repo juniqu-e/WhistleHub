@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 @RestController
 @RequiredArgsConstructor
 @Slf4j
@@ -81,13 +81,4 @@ public class AuthController {
                 .build();
     }
 
-    /**
-     * todo: 로그인
-     * 로그인을 수행합니다.
-     *
-     */
-    @PostMapping("/login")
-    public void login() {
-
-    }
 }
