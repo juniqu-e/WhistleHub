@@ -69,17 +69,9 @@ class MainActivity : ComponentActivity() {
                         WhistleHubNavigation(navController = navController)
                     },
                     content = { paddingValues ->
-                        val cur =
-                            navController.currentBackStackEntryAsState().value?.destination?.route
-                        val appliedModifier =
-                            if (cur == Screen.DAW.route) {
-                                Modifier.padding(0.dp)
-                            } else {
-                                Modifier.padding(paddingValues)
-                            }
                         WhistleHubNavHost(
                             navController = navController,
-                            modifier = appliedModifier
+                            paddingValues = paddingValues,
                         )
                     })
             }

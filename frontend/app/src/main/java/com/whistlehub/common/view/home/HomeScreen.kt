@@ -5,7 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -27,7 +29,7 @@ import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 @OptIn(ExperimentalLayoutApi::class)
 @SuppressLint("StateFlowValueCalledInComposition")
 @Composable
-fun HomeScreen() {
+fun HomeScreen(paddingValues: PaddingValues) {
     // ViewModel 초기화
     val trackPlayViewModel = hiltViewModel<TrackPlayViewModel>()
 
@@ -41,10 +43,10 @@ fun HomeScreen() {
     val tags = listOf("Pop", "Rock", "Jazz", "Classical", "Hip-Hop", "Electronic", "Indie", "R&B", "Country", "Reggae") // 예시 태그 리스트
     LazyColumn(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(10.dp),
+            .fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(30.dp)
     ) {
+        // 로고 영역(로고 누르면 재생 정지/재생바 사라짐)
         item {
             Text(
                 text = "WhistleHub",
@@ -57,6 +59,7 @@ fun HomeScreen() {
             )
         }
 
+        // 최근 올라온 트랙
         item {
             LazyRow(
                 Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -67,6 +70,7 @@ fun HomeScreen() {
             }
         }
 
+        // 추천 태그
         item {
             Column(modifier = Modifier
                 .fillMaxWidth()
@@ -91,12 +95,14 @@ fun HomeScreen() {
                         Button(
                             onClick = { /* TODO: 태그 클릭 시 동작 */ }, modifier = Modifier.padding(4.dp)
                         ) {
-                            Text(tags[index])
+                            Text(tags[index], style = Typography.titleMedium)
                         }
                     }
                 }
             }
         }
+
+        // 최근 들은 느낌의 음악
         item {
             Column {
                 Row(modifier = Modifier
@@ -110,6 +116,8 @@ fun HomeScreen() {
                 TrackListRow(trackList = trackList)
             }
         }
+
+        // 한번도 안 들어본 음악
         item {
             Column {
                 Row(modifier = Modifier
@@ -122,6 +130,13 @@ fun HomeScreen() {
                 }
                 TrackListRow(trackList = trackList)
             }
+        }
+
+        // 최하단 Space
+        item {
+            Spacer(
+                Modifier.height(paddingValues.calculateBottomPadding())
+            )
         }
     }
 }

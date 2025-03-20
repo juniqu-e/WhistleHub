@@ -5,9 +5,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -19,6 +19,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -49,8 +50,8 @@ fun TrackItemRow(track: Track, style: TrackItemStyle = TrackItemStyle.DEFAULT, t
             model = track.imageUrl,
             contentDescription = "Track Image",
             modifier = Modifier
-                .height(50.dp)
-                .width(50.dp),
+                .size(50.dp)
+                .clip(RoundedCornerShape(5.dp)),
             error = null,
             contentScale = ContentScale.Crop
         )
@@ -63,18 +64,36 @@ fun TrackItemRow(track: Track, style: TrackItemStyle = TrackItemStyle.DEFAULT, t
         Column(Modifier
             .weight(1f)
             .padding(horizontal = 10.dp)) {
-            Text(track.title, maxLines = 1, overflow = TextOverflow.Ellipsis, style=Typography.titleLarge, color = CustomColors().Grey50)
-            Text(track.artist.nickname, maxLines = 1, overflow = TextOverflow.Ellipsis, style=Typography.bodyMedium, color = CustomColors().Grey200)
+            Text(
+                track.title,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = Typography.titleLarge,
+                color = CustomColors().Grey50
+            )
+            Text(
+                track.artist.nickname,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = Typography.bodyMedium,
+                color = CustomColors().Grey200
+            )
         }
 
         if (currentTrack?.id == track.id && isPlaying) {
             // Add current track specific UI here
             IconButton({trackPlayViewModel.pauseTrack()}) {
-                Icon(Icons.Filled.Pause, contentDescription = "Pause", tint = CustomColors().Mint500)
+                Icon(
+                    Icons.Filled.Pause, contentDescription = "Pause", tint = CustomColors().Mint500
+                )
             }
         } else {
             IconButton({trackPlayViewModel.playTrack(track)}) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = "Play", tint = CustomColors().Grey50)
+                Icon(
+                    Icons.Filled.PlayArrow,
+                    contentDescription = "Play",
+                    tint = CustomColors().Grey50
+                )
             }
         }
     }

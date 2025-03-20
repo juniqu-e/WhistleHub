@@ -11,11 +11,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.LocalFireDepartment
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -44,14 +39,14 @@ fun NewTrackCard(track: Track) {
                     model = track.artist.profileImage,
                     contentDescription = track.artist.nickname,
                     modifier = Modifier
-                        .size(50.dp)
+                        .size(40.dp)
                         .clip(CircleShape),
                     contentScale = ContentScale.Crop
                 )
                 Text(
                     text = track.artist.nickname,
                     modifier = Modifier
-                        .padding(start = 8.dp)
+                        .padding(start = 12.dp)
                         .weight(1f),
                     style = Typography.titleMedium
                 )
@@ -63,7 +58,9 @@ fun NewTrackCard(track: Track) {
                 AsyncImage(
                     model = track.imageUrl,
                     contentDescription = track.imageUrl,
-                    modifier = Modifier.size(100.dp),
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(RoundedCornerShape(5.dp)),
                     contentScale = ContentScale.Crop,
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -83,7 +80,7 @@ fun NewTrackCard(track: Track) {
             }
         }
         Text(
-            text = "NEW",
+            text = "RELEASED",
             modifier = Modifier
                 .padding(5.dp)
                 .zIndex(1f)

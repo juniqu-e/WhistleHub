@@ -1,6 +1,8 @@
 package com.whistlehub.common.view
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -19,6 +21,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.whistlehub.common.view.home.HomeScreen
 import com.whistlehub.common.view.navigation.Screen
+import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.playlist.view.FullPlayerScreen
 import com.whistlehub.playlist.view.MiniPlayerBar
 import com.whistlehub.playlist.view.PlayListScreen
@@ -46,11 +49,13 @@ fun WhistleHubNavigation(navController: NavHostController) {
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
 
     if (currentRoute != Screen.DAW.route) {
-        Column {
+        Column(Modifier.background(Color.Transparent)) {
             if (currentRoute != Screen.Player.route && currentTrack != null) {
                 MiniPlayerBar(navController)
             }
-            NavigationBar {
+            NavigationBar(
+                containerColor = CustomColors().Grey950.copy(alpha = 0.95f),
+            ) {
                 navigationList.forEachIndexed { index, screen ->
                     NavigationBarItem(
                         selected = selectedNavigationIndex.intValue == index,
@@ -85,15 +90,13 @@ fun WhistleHubNavigation(navController: NavHostController) {
 
 @Composable
 fun WhistleHubNavHost(
-    navController: NavHostController,
-    modifier: Modifier
+    navController: NavHostController, paddingValues: PaddingValues
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route,
-        modifier = modifier
+        startDestination = Screen.Home.route, modifier = Modifier
     ) {
-        composable(route = Screen.Home.route) { HomeScreen() }
+        composable(route = Screen.Home.route) { HomeScreen(paddingValues) }
         composable(route = Screen.Search.route) { SearchScreen() }
         composable(route = Screen.DAW.route) { WorkStationScreen(navController = navController) }
         composable(route = Screen.PlayList.route) { PlayListScreen() }
