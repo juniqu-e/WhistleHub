@@ -24,6 +24,14 @@ import org.springframework.web.bind.annotation.*;
 public class TrackController {
     private final TrackService trackService;
 
+    @GetMapping("/track")
+    public ApiResponse<?> viewTrack(int trackId) {
+        int memberId = 1; // TODO: 인증 기능 구현되면 교체
+        return new ApiResponse.builder<Object>()
+                .payload(trackService.viewTrack(trackId, memberId))
+                .build();
+    }
+
     @GetMapping("/track/play")
     public ResponseEntity<Resource> trackPlay(int trackId) {
         byte[] file = trackService.trackPlay(trackId);
