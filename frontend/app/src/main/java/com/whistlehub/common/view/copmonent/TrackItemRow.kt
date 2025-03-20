@@ -30,7 +30,7 @@ import com.whistlehub.playlist.data.Track
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 
 @Composable
-fun TrackItem(track: Track, style: TrackItemStyle = TrackItemStyle.DEFAULT, trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
+fun TrackItemRow(track: Track, style: TrackItemStyle = TrackItemStyle.DEFAULT, trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
     val isPlaying by trackPlayViewModel.isPlaying.collectAsState(initial = false)
 
@@ -60,7 +60,9 @@ fun TrackItem(track: Track, style: TrackItemStyle = TrackItemStyle.DEFAULT, trac
             TODO()
         }
 
-        Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
+        Column(Modifier
+            .weight(1f)
+            .padding(horizontal = 10.dp)) {
             Text(track.title, maxLines = 1, overflow = TextOverflow.Ellipsis, style=Typography.titleLarge, color = CustomColors().Grey50)
             Text(track.artist.nickname, maxLines = 1, overflow = TextOverflow.Ellipsis, style=Typography.bodyMedium, color = CustomColors().Grey200)
         }
