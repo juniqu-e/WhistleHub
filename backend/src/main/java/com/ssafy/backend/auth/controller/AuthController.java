@@ -26,7 +26,6 @@ public class AuthController {
      */
     @PostMapping("/register")
     public ApiResponse<?> register(RegisterRequestDto registerRequestDto) {
-        log.debug("register request: {}", registerRequestDto);
         Integer result = authService.register(registerRequestDto);
 
         return new ApiResponse.builder<Integer>()
@@ -41,8 +40,13 @@ public class AuthController {
      * @param loginId 중복 체크할 아이디
      */
     @GetMapping("/duplicated/id")
-    public void checkDuplicatedId(@PathParam("loginId") String loginId) {
+    public ApiResponse<?> checkDuplicatedId(@PathParam("loginId") String loginId) {
+        log.debug("check duplicated id request: {}", loginId);
+        boolean result = authService.checkDuplicatedId(loginId);
 
+        return new ApiResponse.builder<Boolean>()
+                .payload(result)
+                .build();
     }
 
     /**
@@ -52,8 +56,13 @@ public class AuthController {
      * @param nickname 중복 체크할 닉네임
      */
     @GetMapping("/duplicated/nickname")
-    public void checkDuplicatedNickname(@PathParam("nickname") String nickname) {
+    public ApiResponse<?> checkDuplicatedNickname(@PathParam("nickname") String nickname) {
+        log.debug("check duplicated nickname request: {}", nickname);
+        boolean result = authService.checkDuplicatedNickname(nickname);
 
+        return new ApiResponse.builder<Boolean>()
+                .payload(result)
+                .build();
     }
 
     /**
@@ -63,8 +72,13 @@ public class AuthController {
      * @param email 중복 체크할 이메일
      */
     @GetMapping("/duplicated/email")
-    public void checkDuplicatedEmail(@PathParam("email") String email) {
+    public ApiResponse<?> checkDuplicatedEmail(@PathParam("email") String email) {
+        log.debug("check duplicated email request: {}", email);
+        boolean result = authService.checkDuplicatedEmail(email);
 
+        return new ApiResponse.builder<Boolean>()
+                .payload(result)
+                .build();
     }
 
     /**

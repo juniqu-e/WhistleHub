@@ -1,7 +1,9 @@
 package com.ssafy.backend.auth.service;
 
 import com.ssafy.backend.auth.model.request.RegisterRequestDto;
+import com.ssafy.backend.common.error.exception.DuplicateEmailException;
 import com.ssafy.backend.common.error.exception.DuplicateIdException;
+import com.ssafy.backend.common.error.exception.DuplicateNicknameException;
 import com.ssafy.backend.mysql.entity.Member;
 import com.ssafy.backend.mysql.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,9 +25,15 @@ public class AuthService {
         String nickname = registerRequestDto.getNickname();
         String email = registerRequestDto.getEmail();
         String password = registerRequestDto.getPassword();
-        checkDuplicatedId(loginId);
-        checkDuplicatedNickname(nickname);
-        checkDuplicatedEmail(email);
+
+        // 중복 체크
+        if(checkDuplicatedId(loginId))
+            throw new DuplicateIdException();
+        if(checkDuplicatedNickname(nickname))
+            throw new DuplicateNicknameException();
+        if(checkDuplicatedEmail(email))
+            throw new DuplicateEmailException();
+
 
 
         // 새 회원 등록
@@ -44,27 +52,27 @@ public class AuthService {
     }
 
     public boolean checkDuplicatedId(String loginId) {
-        if(memberRepository.existsByLoginId(loginId)) {
+        boolean result = memberRepository.existsByLoginId(loginId);
+        if(result)
             log.warn("{} : 이미 존재하는 아이디입니다.", loginId);
-            throw new DuplicateIdException();
-        }
-        return false;
+
+        return result;
     }
 
     public boolean checkDuplicatedNickname(String nickname) {
-        if(memberRepository.existsByNickname(nickname)) {
+        boolean result = memberRepository.existsByNickname(nickname);
+        if(result)
             log.warn("{} : 이미 존재하는 닉네임입니다.", nickname);
-            throw new DuplicateIdException();
-        }
-        return false;
+
+        return result;
     }
 
     public boolean checkDuplicatedEmail(String email) {
-        if(memberRepository.existsByEmail(email)) {
+        boolean result = memberRepository.existsByEmail(email);
+        if(result)
             log.warn("{} : 이미 존재하는 이메일입니다.", email);
-            throw new DuplicateIdException();
-        }
-        return false;
+
+        return result;
     }
 
 
