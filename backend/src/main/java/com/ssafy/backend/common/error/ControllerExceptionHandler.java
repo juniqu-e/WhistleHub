@@ -2,6 +2,7 @@ package com.ssafy.backend.common.error;
 
 import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.common.error.exception.NotFoundPageException;
+import com.ssafy.backend.common.error.exception.NotFoundPlaylistException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -29,6 +30,13 @@ public class ControllerExceptionHandler {
     public ApiResponse<?> entityNotFoundHandler(EntityNotFoundException e) {
         return new ApiResponse.builder<Object>()
                 .errorStatus(ResponseType.SERVER_ERROR)
+                .build();
+    }
+
+    @ExceptionHandler(NotFoundPlaylistException.class)
+    public ApiResponse<?> illegalArgumentHandler(NotFoundPlaylistException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.PLAYLIST_NOT_FOUND)
                 .build();
     }
 
