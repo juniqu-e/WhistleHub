@@ -1,6 +1,7 @@
 package com.ssafy.backend.track.controller;
 
 import com.ssafy.backend.common.ApiResponse;
+import com.ssafy.backend.track.dto.request.TrackUpdateRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
 import com.ssafy.backend.track.service.TrackService;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,14 @@ public class TrackController {
         int memberId = 1; // TODO: 인증 기능 구현되면 교체
         return new ApiResponse.builder<Object>()
                 .payload(trackService.viewTrack(trackId, memberId))
+                .build();
+    }
+    @PutMapping("/track")
+    public ApiResponse<?> updateTrack(TrackUpdateRequestDto trackUpdateRequestDto) {
+        int memberId = 1; // TODO: 인증 기능 구현되면 교체
+        trackService.updateTrack(trackUpdateRequestDto, memberId);
+        return new ApiResponse.builder<Object>()
+                .payload(null)
                 .build();
     }
 
