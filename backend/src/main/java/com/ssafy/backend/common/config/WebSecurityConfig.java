@@ -53,6 +53,12 @@ public class WebSecurityConfig {
     @Bean
     @Order(1)
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        //form 로그인 방식 사용하지 않음
+        http
+                .formLogin((auth) -> auth.disable());
+
+
+
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Bean 참조
