@@ -32,6 +32,13 @@ public class ControllerExceptionHandler {
                 .build();
     }
 
+    @ExceptionHandler(NotFoundMemberException.class)
+    public ApiResponse<?> notFoundMemberHandler(NotFoundMemberException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.NOT_FOUND_MEMBER)
+                .build();
+    }
+
     @ExceptionHandler(NotFoundPlaylistException.class)
     public ApiResponse<?> illegalArgumentHandler(NotFoundPlaylistException e) {
         return new ApiResponse.builder<Object>()

@@ -31,7 +31,7 @@ public enum ResponseType {
     // HTTP Status 403
 
     // HTTP Status 404
-    USER_NOT_FOUND("UNF", HttpStatus.NOT_FOUND, "찾는 회원이 없습니다."),
+    NOT_FOUND_MEMBER("NFM", HttpStatus.NOT_FOUND, "찾는 회원이 없습니다."),
     FOLLOWER_NOT_FOUND("FNF", HttpStatus.NOT_FOUND, "찾는 팔로워가 없습니다."),
     TRACK_NOT_FOUND("TNF", HttpStatus.NOT_FOUND, "요청한 트랙이 없습니다."),
     PLAYLIST_NOT_FOUND("PNF", HttpStatus.NOT_FOUND, "요청한 플레이리스트가 없습니다."),
