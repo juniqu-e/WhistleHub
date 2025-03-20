@@ -22,6 +22,7 @@ public class TrackUploadRequestDto {
     List<LayerUploadRequestDto> layers;
     String[] layerName;
     String[] instrumentType;
-    MultipartFile[] files; // 0번은 track 음원 1번부터 차례로 layer 음원
+    MultipartFile trackSoundFile;
+    MultipartFile[] layerSoundFiles; //
     MultipartFile trackImg;
 }

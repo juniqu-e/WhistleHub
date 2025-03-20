@@ -10,8 +10,14 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
+/**
+ * <pre>Track 컨트롤러</pre>
+ *
+ * @author 박병주
+ * @version 1.0
+ * @since 2025-03-18
+ */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
@@ -28,14 +34,11 @@ public class TrackController {
                 .body(resource);
     }
 
-    @PostMapping("/track")
+    @PostMapping("/workstation")
     public ApiResponse<?> createTrack(TrackUploadRequestDto trackUploadRequestDto) {
-        System.out.println(trackUploadRequestDto);
-        int memberId = 1;
-        trackService.createTrack(trackUploadRequestDto, memberId);
-
+        int memberId = 1; // TODO: 인증 기능 구현되면 교체
         return new ApiResponse.builder<Object>()
-                .payload("생성 성공")
+                .payload(trackService.createTrack(trackUploadRequestDto, memberId))
                 .build();
     }
 }
