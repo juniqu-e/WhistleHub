@@ -5,6 +5,7 @@ import com.ssafy.backend.common.util.S3FileKeyExtractor;
 import com.ssafy.backend.graph.service.DataCollectingService;
 import com.ssafy.backend.mysql.entity.*;
 import com.ssafy.backend.mysql.repository.*;
+import com.ssafy.backend.track.dto.request.TrackUpdateRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
 import com.ssafy.backend.track.dto.response.ArtistInfoDto;
 import com.ssafy.backend.track.dto.response.TagInfo;
@@ -103,7 +104,7 @@ public class TrackService {
         // 1-3-2. 원천 트랙 insert
         List<Sampling> samplings = Arrays.stream(trackUploadRequestDto.getSourceTracks())
                 .map(originTrackId -> Sampling.builder()
-                        .originTrack(trackRepository.findById(originTrackId).get())
+                        .originTrack(trackRepository.findById(originTrackId).get()) //TODO: 반복문 내에서 repo 조회 개선 필요.
                         .track(t).build()).toList();
         samplingRepository.saveAll(samplings);
 
@@ -206,5 +207,23 @@ public class TrackService {
                 .importTracks(importedTrackList)
                 .tags(tagInfoList)
                 .build();
+    }
+
+    @Transactional
+    public void updateTrack(TrackUpdateRequestDto trackUpdateRequestDto, int memberId) {
+        Track track = trackRepository.findById(trackUpdateRequestDto.getTrackId()).orElseThrow(
+                () -> {
+                    log.warn("{} 트랙은 없는 트랙", trackUpdateRequestDto.getTrackId());
+                    return new RuntimeException();
+                }
+        );
+        if(track.getMember().getId() != memberId) {
+            log.info("본인({})의 트랙({})이 아닐 때 조회 요청", memberId, track.getId());
+            throw new RuntimeException("");
+        }
+        track.setTitle(trackUpdateRequestDto.getTitle());
+        track.setDescription(trackUpdateRequestDto.getDescription());
+        track.setVisibility(trackUpdateRequestDto.isVisibility());
+        trackRepository.save(track);
     }
 }
