@@ -25,7 +25,7 @@ public class PlaylistTrack extends Common{
     private Playlist playlist;
 
     @Column(name = "play_order")
-    private Double playOrder;
+    private Integer playOrder;
 
 
 }
