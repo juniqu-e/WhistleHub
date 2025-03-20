@@ -4,16 +4,18 @@ import com.ssafy.backend.common.service.S3Service;
 import com.ssafy.backend.common.util.S3FileKeyExtractor;
 import com.ssafy.backend.graph.service.DataCollectingService;
 import com.ssafy.backend.mysql.entity.*;
-import com.ssafy.backend.mysql.repository.LayerFileRepository;
-import com.ssafy.backend.mysql.repository.LayerRepository;
-import com.ssafy.backend.mysql.repository.TrackRepository;
-import com.ssafy.backend.mysql.repository.TrackTagRepository;
+import com.ssafy.backend.mysql.repository.*;
 import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
+import com.ssafy.backend.track.dto.response.ArtistInfoDto;
+import com.ssafy.backend.track.dto.response.TagInfo;
+import com.ssafy.backend.track.dto.response.TrackInfoDto;
+import com.ssafy.backend.track.dto.response.TrackResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,12 +37,15 @@ public class TrackService {
     private final TrackTagRepository trackTagRepository;
     private final LayerRepository layerRepository;
     private final LayerFileRepository layerFileRepository;
+    private final LikeRepository likeRepository;
+    private final SamplingRepository samplingRepository;
 
     private final DataCollectingService dataCollectingService;
     private final S3Service s3Service;
 
     /**
      * 트랙 음원 데이터를 반환
+     *
      * @param trackId 반환할 음원의 트랙 id
      * @return byte[] 형식의 음원 데이터
      */
@@ -74,6 +79,8 @@ public class TrackService {
                 .duration(trackUploadRequestDto.getDuration())
                 .visibility(trackUploadRequestDto.isVisibility())
                 .enabled(true)
+                .importCount(0)
+                .viewCount(0)
                 // 1-1. 트랙 이미지 업로드
                 .imageUrl(s3Service.uploadFile(trackUploadRequestDto.getTrackImg(), S3Service.IMAGE))
                 // 1-2. 트랙 음성 업로드
@@ -92,8 +99,14 @@ public class TrackService {
                             .build();
                 })
                 .collect(Collectors.toList());
-
         trackTagRepository.saveAll(trackTags);
+        // 1-3-2. 원천 트랙 insert
+        List<Sampling> samplings = Arrays.stream(trackUploadRequestDto.getSourceTracks())
+                .map(originTrackId -> Sampling.builder()
+                        .originTrack(trackRepository.findById(originTrackId).get())
+                        .track(t).build()).toList();
+        samplingRepository.saveAll(samplings);
+
         // 1-4. 그래프 추가
         // 1-4-1. Track 노드 생성 및 태그 연결
         dataCollectingService.createTrack(t.getId(), Arrays.stream(trackUploadRequestDto.getTags()).toList());
@@ -116,5 +129,82 @@ public class TrackService {
 
         }
         return t.getId();
+    }
+
+    @Transactional
+    public TrackResponseDto viewTrack(int trackId, int memberId) {
+        Track track = trackRepository.findById(trackId).orElseThrow(
+                () -> {
+                    log.warn("{}번 트랙은 존재하지 않음", trackId);
+                    return new RuntimeException("Track not found"); // TODO: 커스텀 예외로 교체
+                });
+        // visibility - public 여부 true -> 본인만 볼 수 있음
+        // block - 정지 여부 true -> 본인만 볼 수 있음
+        // enabled - 소프트 삭제 여부 true -> 조회 불가
+        if (track.getBlocked() || track.getVisibility()) {
+            if (track.getMember().getId() != memberId) {
+                log.info("{}번 트랙은 회원이 조회할 수 없는 데이터", memberId);
+                throw new RuntimeException(); // TODO: 커스텀으로 교체
+            }
+        }
+
+        if (track.getEnabled()) {
+            log.info("{}번 회원이 삭제된 트랙({})을 조회", memberId, track.getId());
+            throw new RuntimeException(); // TODO: 커스텀으로 교체
+        }
+
+        // 조회수 증가
+        int viewCount = track.getViewCount();
+        track.setViewCount(viewCount + 1);
+
+        // 가져와야 하는 데이터
+        // isLike 좋아요 누른 여부
+        boolean isLike = likeRepository.findByTrackIdAndMemberId(track.getId(), memberId).isPresent();
+
+        // 출처 트랙들
+        List<TrackInfoDto> sourceTrackList = new ArrayList<>();
+        samplingRepository.findAllByTrack(track).forEach(sampling -> {
+            sourceTrackList.add(TrackInfoDto.builder()
+                    .trackId(sampling.getOriginTrack().getId())
+                    .title(sampling.getOriginTrack().getTitle())
+                    .duration(sampling.getOriginTrack().getDuration())
+                    .imageUrl(sampling.getOriginTrack().getImageUrl())
+                    .build());
+        });
+        // 임포트해간 트랙들
+        List<TrackInfoDto> importedTrackList = new ArrayList<>();
+        samplingRepository.findAllByOriginTrack(track).forEach(sampling -> {
+            importedTrackList.add(TrackInfoDto.builder()
+                    .trackId(sampling.getTrack().getId())
+                    .title(sampling.getTrack().getTitle())
+                    .duration(sampling.getTrack().getDuration())
+                    .imageUrl(sampling.getTrack().getImageUrl())
+                    .build());
+        });
+
+        // 태그 정보
+        List<TrackTag> tags = trackTagRepository.findAllByTrack(track);
+        List<TagInfo> tagInfoList = new ArrayList<>();
+        if (!tags.isEmpty()) {
+            tags.forEach(tag -> {
+                tagInfoList.add(TagInfo.builder()
+                        .tagId(tag.getTag().getId())
+                        .name(tag.getTag().getName()).build());
+            });
+        }
+        return TrackResponseDto.builder()
+                .trackId(track.getId())
+                .title(track.getTitle())
+                .description(track.getDescription())
+                .imageUrl(track.getImageUrl())
+                .artist(ArtistInfoDto.builder().memberId(track.getMember().getId()).nickname(track.getMember().getNickname()).profileImage(track.getMember().getProfileImage()).build())
+                .isLiked(isLike)
+                .importCount(track.getImportCount())
+                .likeCount(track.getLikeCount())
+                .viewCount(track.getViewCount())
+                .sourceTracks(sourceTrackList)
+                .importTracks(importedTrackList)
+                .tags(tagInfoList)
+                .build();
     }
 }

@@ -18,7 +18,7 @@ public class TrackUploadRequestDto {
     int duration;
     boolean visibility;
     Integer[] tags;
-    Integer[] importedLayers;
+    Integer[] sourceTracks;
     List<LayerUploadRequestDto> layers;
     String[] layerName;
     String[] instrumentType;
