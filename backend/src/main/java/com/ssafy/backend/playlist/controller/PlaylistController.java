@@ -25,9 +25,9 @@ public class PlaylistController {
 
     // 플레이리스트 설명 조회
     @GetMapping()
-    public ApiResponse<?> getPlaylist(@RequestParam int playlistid) {
+    public ApiResponse<?> getPlaylist(@RequestParam int playlistId) {
          return new ApiResponse.builder<Object>()
-                 .payload(playlistService.getPlaylist(playlistid))
+                 .payload(playlistService.getPlaylist(playlistId))
                  .build();
     }
 
@@ -37,7 +37,7 @@ public class PlaylistController {
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "description", required = false) String description,
             @RequestParam(value = "image", required = false) MultipartFile image,
-            @RequestParam(value = "track_ids", required = false) List<Integer> trackIds) {
+            @RequestParam(value = "trackIds", required = false) List<Integer> trackIds) {
 
         log.debug("name: {}, description: {}, image: {}, trackIds: {}", name, description, image, trackIds);
 
