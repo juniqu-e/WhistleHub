@@ -1,5 +1,6 @@
 package com.whistlehub.playlist.view
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -7,33 +8,35 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.List
-import androidx.compose.material.icons.filled.FastForward
-import androidx.compose.material.icons.filled.FastRewind
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.rounded.ChatBubbleOutline
+import androidx.compose.material.icons.rounded.FastForward
+import androidx.compose.material.icons.rounded.FastRewind
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -50,17 +53,21 @@ import com.whistlehub.playlist.view.component.PlayerComment
 import com.whistlehub.playlist.view.component.PlayerPlaylist
 import com.whistlehub.playlist.viewmodel.PlayerViewState
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
+import java.util.concurrent.TimeUnit
 
 @Composable
 fun FullPlayerScreen(
     navController: NavController,
+    paddingValues: PaddingValues,
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = { PlayerHeader(navController) },
         bottomBar = {
-            PlayerController(trackPlayViewModel)
+            Column(Modifier.padding(bottom = paddingValues.calculateBottomPadding())) {
+                PlayerController(trackPlayViewModel)
+            }
         },
     ) { innerPadding ->
         // 배경 이미지
@@ -231,19 +238,26 @@ fun PlayerController(
     // 트랙 재생/일시정지/정지 버튼 클릭 시 ViewModel을 통해 트랙 제어
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
     val isPlaying by trackPlayViewModel.isPlaying.collectAsState(initial = false)
+    val playerPosition by trackPlayViewModel.playerPosition.collectAsState()
+    val trackDuration by trackPlayViewModel.trackDuration.collectAsState()
 
     Column(Modifier
         .fillMaxWidth()
         .padding(16.dp)) {
+        Slider(
+            value = playerPosition.toFloat(),
+            onValueChange = { newPosition ->
+                trackPlayViewModel.seekTo(newPosition.toLong())
+            },
+            valueRange = 0f..trackDuration.toFloat(),
+            modifier = Modifier.fillMaxWidth()
+        )
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(8.dp)
-                .background(CustomColors().Grey500)
-                .padding(bottom = 16.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // 현재 재생 중인 트랙의 진행 상태를 나타내는 UI
-            // 예: 진행 바, 시간 표시 등
+            Text(text = formatDuration(playerPosition), color = Color.White)
+            Text(text = formatDuration(trackDuration), color = Color.White)
         }
         Row(
             modifier = Modifier
@@ -251,26 +265,50 @@ fun PlayerController(
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween)
         {
-            IconButton({}) {
-                Icon(Icons.Filled.FastRewind, contentDescription = "이전", tint = CustomColors().Grey200)
-            }
-            if (isPlaying && currentTrack != null) {
-                IconButton({
-                    trackPlayViewModel.pauseTrack()
+            IconButton(onClick = {
+                    trackPlayViewModel.previousTrack()
                 }) {
-                    Icon(Icons.Filled.Pause, contentDescription = "일시정지", tint = CustomColors().Mint500)
+                    Icon(
+                        imageVector = Icons.Rounded.FastRewind,
+                        contentDescription = "PlayBack",
+                        tint = Color.White
+                    )
                 }
-            } else {
-                IconButton({
-                    trackPlayViewModel.playTrack(currentTrack!!)
+                IconButton(
+                    onClick = {
+                        if (isPlaying) {
+                            trackPlayViewModel.pauseTrack()
+                        } else {
+                            if (currentTrack == null && trackPlayViewModel.playerTrackList.value.isNotEmpty()) {
+                                // 트랙이 없을 경우 첫 번째 트랙 재생
+                                trackPlayViewModel.playTrack(trackPlayViewModel.playerTrackList.value[0])
+                            } else if (currentTrack != null) {
+                                trackPlayViewModel.resumeTrack()
+                            }
+                        }
+                    }) {
+                    Icon(
+                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = "Play/Pause",
+                        tint = CustomColors().Mint500
+                    )
+                }
+                IconButton(onClick = {
+                    trackPlayViewModel.nextTrack()
                 }) {
-                    Icon(Icons.Filled.PlayArrow, contentDescription = "재생/일시정지", tint = CustomColors().Mint500)
+                    Icon(
+                        imageVector = Icons.Rounded.FastForward,
+                        contentDescription = "PlayForward",
+                        tint = Color.White
+                    )
                 }
-            }
-            IconButton({}) {
-                Icon(Icons.Filled.FastForward, contentDescription = "다음", tint = CustomColors().Grey200)
-            }
         }
     }
+}
 
+@SuppressLint("DefaultLocale")
+fun formatDuration(durationMs: Long): String {
+    val minutes = TimeUnit.MILLISECONDS.toMinutes(durationMs)
+    val seconds = TimeUnit.MILLISECONDS.toSeconds(durationMs) % 60
+    return String.format("%02d:%02d", minutes, seconds)
 }
