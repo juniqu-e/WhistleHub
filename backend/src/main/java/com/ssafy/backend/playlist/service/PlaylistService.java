@@ -1,13 +1,22 @@
 package com.ssafy.backend.playlist.service;
 
 import com.ssafy.backend.common.error.exception.NotFoundPlaylistException;
+import com.ssafy.backend.common.service.S3Service;
 import com.ssafy.backend.mysql.entity.Playlist;
+import com.ssafy.backend.mysql.entity.PlaylistTrack;
 import com.ssafy.backend.mysql.repository.PlaylistRepository;
-import com.ssafy.backend.playlist.dto.GetPlaylistResponseDto;
+import com.ssafy.backend.mysql.repository.PlaylistTrackRepository;
+import com.ssafy.backend.mysql.repository.TrackRepository;
+import com.ssafy.backend.playlist.dto.*;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -15,13 +24,16 @@ import org.springframework.stereotype.Service;
 public class PlaylistService {
 
     private final PlaylistRepository playlistRepository;
+    private final PlaylistTrackRepository playlistTrackRepository;
+    private final TrackRepository trackRepository;
+    private final S3Service s3Service;
 
     public GetPlaylistResponseDto getPlaylist(int playlistid) {
         Playlist playlist = playlistRepository.findById(playlistid).orElseThrow(
-            () -> {
-                log.error("{} playlist not found", playlistid);
-                return new NotFoundPlaylistException();
-            }
+                () -> {
+                    log.warn("{} playlist not found", playlistid);
+                    return new NotFoundPlaylistException();
+                }
         );
 
         return GetPlaylistResponseDto
@@ -31,5 +43,121 @@ public class PlaylistService {
                 .description(playlist.getDescription())
                 .imageUrl(playlist.getImageUrl())
                 .build();
+    }
+
+    @Transactional
+    public int createPlaylist(String name, String description, MultipartFile image, List<Integer> trackIds) {
+        Playlist playlist = new Playlist();
+        playlist.setName(name);
+        playlist.setDescription(description);
+
+        //멤버 정보 추가
+        //playlist.setMember(memberRepository.findById(member
+
+        // 이미지 저장 -> S3
+        String imageUrl = s3Service.uploadFile(image, S3Service.IMAGE);
+        playlist.setImageUrl(image.getOriginalFilename());
+
+        int playlistId = playlistRepository.save(playlist).getId();
+
+        // 트랙 저장 -> TrackRepository
+        int order = 1;
+        for (int trackId : trackIds) {
+            PlaylistTrack playlistTrack = new PlaylistTrack();
+            playlistTrack.setPlaylist(playlist);
+            playlistTrack.setTrack(trackRepository.findById(trackId).orElseThrow());
+            playlistTrack.setPlayOrder(order++);
+            playlistTrackRepository.save(playlistTrack);
+        }
+        return playlistId;
+    }
+
+    @Transactional
+    public int updatePlaylist(ModifyPlaylistRequestDto requestDto) {
+        Playlist playlist = playlistRepository.findById(requestDto.getPlaylistId()).orElseThrow(
+                () -> {
+                    log.warn("{} playlist not found", requestDto.getPlaylistId());
+                    return new NotFoundPlaylistException();
+                }
+        );
+        playlist.setName(requestDto.getName());
+        playlist.setDescription(requestDto.getDescription());
+        return playlistRepository.save(playlist).getId();
+    }
+
+
+    @Transactional
+    public void deletePlaylist(int playlistId) {
+        Playlist playlist = playlistRepository.findById(playlistId).orElseThrow(
+                () -> {
+                    log.warn("{} playlist not found", playlistId);
+                    return new NotFoundPlaylistException();
+                }
+        );
+        playlistTrackRepository.deleteAllByPlaylist(playlist);
+        playlistRepository.delete(playlist);
+    }
+
+    public List<GetPlaylistTrackResponseDto> getPlaylistTrack(int playlistId) {
+        Playlist playlist = playlistRepository.findById(playlistId).orElseThrow(
+                () -> {
+                    log.warn("{} playlist not found", playlistId);
+                    return new NotFoundPlaylistException();
+                }
+        );
+        List<PlaylistTrack> playlistTracks = playlistTrackRepository.findAllByPlaylist(playlist);
+        List<GetPlaylistTrackResponseDto> responseDtos = new ArrayList<>();
+
+        for (PlaylistTrack playlistTrack : playlistTracks) {
+            responseDtos.add(
+                    GetPlaylistTrackResponseDto
+                            .builder()
+                            .playlistTrackId(playlistTrack.getId())
+                            .playOrder(playlistTrack.getPlayOrder())
+                            .trackInfo(TrackInfo
+                                    .builder()
+                                    .trackId(playlistTrack.getTrack().getId())
+                                    .title(playlistTrack.getTrack().getTitle())
+                                    .nickname(playlistTrack.getTrack().getMember().getNickname())
+                                    .duration(playlistTrack.getTrack().getDuration())
+                                    .imageUrl(playlistTrack.getTrack().getImageUrl())
+                                    .build()
+                            )
+                            .build()
+            );
+        }
+        return responseDtos;
+    }
+
+    @Transactional
+    public void updatePlaylistTrack(ModifyPlaylistTrackRequestDto requestDto) {
+
+        Playlist playlist = playlistRepository.findById(requestDto.getPlaylistId()).orElseThrow(
+                () -> {
+                    log.warn("{} playlist not found", requestDto.getPlaylistId());
+                    return new NotFoundPlaylistException();
+                }
+        );
+        playlistTrackRepository.deleteAllByPlaylist(playlist);
+
+        int order = 1;
+        for (int trackId : requestDto.getTracks()) {
+            PlaylistTrack playlistTrack = new PlaylistTrack();
+            playlistTrack.setPlaylist(playlist);
+            playlistTrack.setTrack(trackRepository.findById(trackId).orElseThrow());
+            playlistTrack.setPlayOrder(order++);
+            playlistTrackRepository.save(playlistTrack);
+        }
+    }
+
+    public void uploadImage(UploadPlaylistImageRequestDto requestDto) {
+        Playlist playlist = playlistRepository.findById(requestDto.getPlaylistId()).orElseThrow(
+                () -> {
+                    log.warn("{} playlist not found", requestDto.getPlaylistId());
+                    return new NotFoundPlaylistException();
+                }
+        );
+        playlist.setImageUrl(requestDto.getImage());
+        playlistRepository.save(playlist);
     }
 }
