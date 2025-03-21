@@ -69,7 +69,6 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier
                     .fillMaxSize()
                     .then(if (currentRoute != Screen.DAW.route) Modifier.systemBarsPadding() else Modifier),
-                    containerColor = Color.Yellow,
                     bottomBar = {
                         WhistleHubNavigation(navController = navController)
                     },

@@ -74,7 +74,7 @@ fun WhistleHubNavHost(
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route,
+        startDestination = Screen.DAW.route,
         modifier = modifier
     ) {
         composable(route = Screen.Home.route) { HomeScreen() }
