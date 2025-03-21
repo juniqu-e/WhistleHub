@@ -13,9 +13,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -26,14 +30,21 @@ import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.FastRewind
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -55,15 +66,19 @@ import com.whistlehub.playlist.viewmodel.PlayerViewState
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import java.util.concurrent.TimeUnit
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FullPlayerScreen(
     navController: NavController,
     paddingValues: PaddingValues,
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showPlayerMenu by remember { mutableStateOf(false) }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        topBar = { PlayerHeader(navController) },
+        topBar = { PlayerHeader(navController, onMoreClick = {showPlayerMenu = true}) },
         bottomBar = {
             Column(Modifier.padding(bottom = paddingValues.calculateBottomPadding())) {
                 PlayerController(trackPlayViewModel)
@@ -85,7 +100,11 @@ fun FullPlayerScreen(
                 }
             }
         })
-        Column(Modifier.fillMaxSize().padding(innerPadding).background(CustomColors().Grey700.copy(alpha = 0.3f)), verticalArrangement = Arrangement.SpaceBetween) {
+        Column(Modifier
+            .fillMaxSize()
+            .padding(innerPadding)
+            .background(CustomColors().Grey700.copy(alpha = 0.3f)),
+            verticalArrangement = Arrangement.SpaceBetween) {
             when (playerViewState) {
                 PlayerViewState.PLAYING -> {
                     TrackInfomation(Modifier.weight(1f))
@@ -100,11 +119,22 @@ fun FullPlayerScreen(
             }
             TrackInteraction(trackPlayViewModel)
         }
+        if (showPlayerMenu)
+            ModalBottomSheet(
+                onDismissRequest = { showPlayerMenu = false },
+                sheetState = sheetState,
+                modifier = Modifier
+                    .wrapContentHeight()
+                    .background(CustomColors().Grey950.copy(alpha = 0.7f)),
+            ) {
+                TrackMenu()
+            }
+        }
     }
-}
+
 
 @Composable
-fun PlayerHeader(navController: NavController, trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
+fun PlayerHeader(navController: NavController, trackPlayViewModel: TrackPlayViewModel = hiltViewModel(), onMoreClick: () -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         IconButton(
             {
@@ -114,7 +144,9 @@ fun PlayerHeader(navController: NavController, trackPlayViewModel: TrackPlayView
         ) {
             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "뒤로가기", tint = CustomColors().Grey200)
         }
-        IconButton({}) {
+        IconButton({
+            onMoreClick()
+        }) {
             Icon(Icons.Rounded.Menu, contentDescription = "더보기", tint = CustomColors().Grey200)
         }
     }
@@ -124,7 +156,6 @@ fun PlayerHeader(navController: NavController, trackPlayViewModel: TrackPlayView
 @Composable
 fun TrackInfomation(modifier: Modifier = Modifier, trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
     // 트랙 정보를 표시하는 UI
-    // 예: AsyncImage를 사용하여 이미지 로드
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
     Column(modifier.background(CustomColors().Grey950.copy(alpha = 0.7f)), verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Bottom)) {
         Text(
@@ -157,7 +188,7 @@ fun TrackInfomation(modifier: Modifier = Modifier, trackPlayViewModel: TrackPlay
                         Text(
                             text = tag,
                             style = Typography.bodyLarge,
-                            color = CustomColors().Grey200,
+                            color = CustomColors().Grey950,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -212,10 +243,122 @@ fun TrackInteraction(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun TrackMenu(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
+    val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
+    Column(modifier = Modifier.heightIn(min = 200.dp).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Bottom),
+        horizontalAlignment = Alignment.CenterHorizontally) {
+        if (currentTrack?.imageUrl != null) {
+            AsyncImage(
+                model = currentTrack!!.imageUrl,
+                contentDescription = "Track Image",
+                modifier = Modifier.size(75.dp),
+                contentScale = ContentScale.Crop,
+            )
+        } else {
+            // 기본 배경 이미지
+            Image(painterResource(R.drawable.default_track),
+                contentDescription = "Track Image",
+                modifier = Modifier.size(75.dp),
+                contentScale = ContentScale.Crop)
+        }
+        Text(
+            modifier = Modifier.fillMaxWidth(),
+            text = currentTrack?.title ?: "Track Title",
+            style = Typography.titleMedium,
+            color = CustomColors().Grey50,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            modifier = Modifier.fillMaxWidth(),
+            text = currentTrack?.artist?.nickname ?: "Artist Name",
+            style = Typography.bodyLarge,
+            color = CustomColors().Mint500,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            modifier = Modifier.fillMaxWidth(),
+            text = "Tags",
+            style = Typography.titleSmall,
+            color = CustomColors().Grey200,
+            textAlign = TextAlign.Center
+        )
+        if (currentTrack?.tags != null) {
+            FlowRow(Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)) {
+                currentTrack?.tags?.forEach { tag ->
+                    Button({}) {
+                        Text(
+                            text = tag,
+                            style = Typography.bodySmall,
+                            color = CustomColors().Grey950,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        } else {
+            Text(
+                modifier = Modifier.fillMaxWidth(),
+                text = "태그가 없습니다.",
+                style = Typography.bodySmall,
+                color = CustomColors().Grey200,
+                textAlign = TextAlign.Center
+            )
+        }
+        Row(
+            Modifier.clickable{}.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("플레이리스트에 추가")
+            IconButton({}) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                    contentDescription = "플레이리스트에 추가",
+                    tint = CustomColors().Grey200,
+                    modifier = Modifier.size(16.dp))
+            }
+        }
+        HorizontalDivider(thickness = 1.dp, color = CustomColors().Grey50)
+        Row(
+            Modifier.clickable{}.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("내 트랙에 Import")
+            IconButton({}) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                    contentDescription = "내 트랙에 Import",
+                    tint = CustomColors().Grey200,
+                    modifier = Modifier.size(16.dp))
+            }
+        }
+        if (true /* 내 트랙이 아닐 때 */) {
+            HorizontalDivider(thickness = 1.dp, color = CustomColors().Grey50)
+            Row(
+                Modifier.clickable {}.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("신고")
+                IconButton({}) {
+                    Icon(
+                        Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                        contentDescription = "신고",
+                        tint = CustomColors().Grey200,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun PlayerBackground(modifier: Modifier = Modifier, trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
     // 트랙의 배경 이미지를 표시하는 UI
-    // 예: AsyncImage를 사용하여 이미지 로드
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
     if (currentTrack?.imageUrl != null) {
         AsyncImage(
