@@ -5,6 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -13,10 +14,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -40,6 +43,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -414,6 +418,7 @@ fun PlayerBackground(modifier: Modifier = Modifier, trackPlayViewModel: TrackPla
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerController(
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
@@ -433,8 +438,26 @@ fun PlayerController(
             onValueChange = { newPosition ->
                 trackPlayViewModel.seekTo(newPosition.toLong())
             },
-            valueRange = 0f..trackDuration.toFloat(),
-            modifier = Modifier.fillMaxWidth()
+            valueRange = 0f..trackDuration.toFloat(), modifier = Modifier.fillMaxWidth(), thumb = {
+                Box(
+                    Modifier.size(24.dp).background(CustomColors().Mint500, CircleShape)
+                )
+            }, track = {
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(8.dp) // 트랙 두께 변경
+                        .background(CustomColors().Grey400, RoundedCornerShape(4.dp))
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(playerPosition.toFloat() / trackDuration.toFloat())
+                            .height(8.dp)
+                            .background(CustomColors().Mint500, RoundedCornerShape(4.dp))
+                    )
+                }
+            }, colors = SliderDefaults.colors(
+                thumbColor = Color.Transparent,
+                activeTrackColor = CustomColors().Mint500,
+                inactiveTrackColor = CustomColors().Grey400
+            )
         )
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -455,7 +478,8 @@ fun PlayerController(
                     Icon(
                         imageVector = Icons.Rounded.FastRewind,
                         contentDescription = "PlayBack",
-                        tint = Color.White
+                        tint = Color.White,
+                        modifier = Modifier.size(50.dp)
                     )
                 }
                 IconButton(
@@ -474,7 +498,8 @@ fun PlayerController(
                     Icon(
                         imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                         contentDescription = "Play/Pause",
-                        tint = CustomColors().Mint500
+                        tint = CustomColors().Mint500,
+                        modifier = Modifier.size(50.dp)
                     )
                 }
                 IconButton(onClick = {
@@ -483,7 +508,8 @@ fun PlayerController(
                     Icon(
                         imageVector = Icons.Rounded.FastForward,
                         contentDescription = "PlayForward",
-                        tint = Color.White
+                        tint = Color.White,
+                        modifier = Modifier.size(50.dp)
                     )
                 }
         }
