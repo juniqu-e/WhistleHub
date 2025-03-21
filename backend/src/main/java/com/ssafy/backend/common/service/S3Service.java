@@ -107,7 +107,7 @@ public class S3Service {
      * @return 새로 업로드된 파일의 Url
      */
 
-    public String updateFile(String existingFileUrl, MultipartFile newFile, String folder) throws IOException {
+    public String updateFile(String existingFileUrl, MultipartFile newFile, String folder) {
         // 기존 파일 삭제
         deleteFile(existingFileUrl);
 

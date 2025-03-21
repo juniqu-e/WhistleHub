@@ -1,6 +1,9 @@
 package com.ssafy.backend.track.controller;
 
+import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.ApiResponse;
+import com.ssafy.backend.track.dto.request.TrackImageUploadRequestDto;
+import com.ssafy.backend.track.dto.request.TrackUpdateRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
 import com.ssafy.backend.track.service.TrackService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,22 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api")
 public class TrackController {
     private final TrackService trackService;
+    private final AuthService authService;
+
+
+    @GetMapping("/track")
+    public ApiResponse<?> viewTrack(int trackId) {
+        return new ApiResponse.builder<Object>()
+                .payload(trackService.viewTrack(trackId, authService.getMember().getId()))
+                .build();
+    }
+    @PutMapping("/track")
+    public ApiResponse<?> updateTrack(TrackUpdateRequestDto trackUpdateRequestDto) {
+        trackService.updateTrack(trackUpdateRequestDto, authService.getMember().getId());
+        return new ApiResponse.builder<Object>()
+                .payload(null)
+                .build();
+    }
 
     @GetMapping("/track/play")
     public ResponseEntity<Resource> trackPlay(int trackId) {
@@ -32,6 +51,21 @@ public class TrackController {
                 .contentType(MediaType.parseMediaType("audio/mpeg"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"audio.mp3\"")
                 .body(resource);
+    }
+
+    @PostMapping("/track/image")
+    public ApiResponse<?> uploadTrackImage(TrackImageUploadRequestDto trackImageUploadRequestDto) {
+        return new ApiResponse.builder<Object>()
+                .payload(trackService.updateImage(trackImageUploadRequestDto))
+                .build();
+    }
+
+    @DeleteMapping("/track")
+    public ApiResponse<?> deleteTrack(int trackId) {
+        trackService.deleteTrack(trackId);
+        return new ApiResponse.builder<Object>()
+                .payload(null)
+                .build();
     }
 
     @PostMapping("/workstation")
