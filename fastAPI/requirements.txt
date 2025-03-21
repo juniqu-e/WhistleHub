@@ -50,3 +50,5 @@ uvicorn==0.34.0
 watchfiles==1.0.4
 wcwidth==0.2.13
 websockets==15.0
+celery==5.3.6
+redis==5.0.1
