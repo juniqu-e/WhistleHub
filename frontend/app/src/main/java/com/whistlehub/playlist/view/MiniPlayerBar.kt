@@ -7,12 +7,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.rounded.FastForward
+import androidx.compose.material.icons.rounded.FastRewind
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -21,6 +23,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -46,17 +49,21 @@ fun MiniPlayerBar(
     // 미니 플레이어 바 클릭 시 전체 트랙 플레이어 화면으로 이동
     Column(
         modifier = Modifier
+            .padding(start = 10.dp, end = 10.dp, bottom = 5.dp)
             .clickable {
                 // 화면전환
                 navController.navigate("player")
             }
             .fillMaxWidth()
-            .background(CustomColors().Grey700)
-            .padding(vertical = 20.dp, horizontal = 10.dp)
+            .background(
+                CustomColors().Grey700.copy(alpha = 0.95f), shape = RoundedCornerShape(15.dp)
+            )
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(50.dp, Alignment.CenterHorizontally),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 10.dp, horizontal = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // 현재 재생 중인 트랙의 이미지
@@ -65,8 +72,8 @@ fun MiniPlayerBar(
                     model = currentTrack!!.imageUrl,
                     contentDescription = "Track Image",
                     modifier = Modifier
-                        .height(50.dp)
-                        .width(50.dp),
+                        .size(50.dp)
+                        .clip(RoundedCornerShape(5.dp)),
                     placeholder = null,
                     error = null,
                     contentScale = ContentScale.Crop
@@ -76,12 +83,12 @@ fun MiniPlayerBar(
                     painter = painterResource(id = R.drawable.default_track),
                     contentDescription = "Track Image",
                     modifier = Modifier
-                        .height(50.dp)
-                        .width(50.dp),
+                        .size(50.dp)
+                        .clip(RoundedCornerShape(5.dp)),
                     contentScale = ContentScale.Crop
                 )
             }
-            Column(Modifier.width(200.dp)) {
+            Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                 Text(
                     text = currentTrack?.title ?: "No Track Playing",
                     style = Typography.titleLarge,
@@ -94,30 +101,36 @@ fun MiniPlayerBar(
                     color = CustomColors().Grey400,
                 )
             }
-            IconButton(
-                onClick = {
-                    if (isPlaying) {
-                        trackPlayViewModel.pauseTrack()
-                    } else {
-                        trackPlayViewModel.playTrack(currentTrack!!)
-                    }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                IconButton(onClick = {}) {
+                    Icon(
+                        imageVector = Icons.Rounded.FastRewind,
+                        contentDescription = "Play/Pause",
+                        tint = Color.White
+                    )
                 }
-            ) {
-                Icon(
-                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    contentDescription = "Play/Pause",
-                    tint = Color.White
-                )
+                IconButton(
+                    onClick = {
+                        if (isPlaying) {
+                            trackPlayViewModel.pauseTrack()
+                        } else {
+                            trackPlayViewModel.playTrack(currentTrack!!)
+                        }
+                    }) {
+                    Icon(
+                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = "Play/Pause",
+                        tint = Color.White
+                    )
+                }
+                IconButton(onClick = {}) {
+                    Icon(
+                        imageVector = Icons.Rounded.FastForward,
+                        contentDescription = "Play/Pause",
+                        tint = Color.White
+                    )
+                }
             }
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(8.dp)
-                .background(CustomColors().Grey500)
-        ) {
-            // 현재 재생 중인 트랙의 진행 상태를 나타내는 UI
-            // 예: 진행 바, 시간 표시 등
         }
     }
 }

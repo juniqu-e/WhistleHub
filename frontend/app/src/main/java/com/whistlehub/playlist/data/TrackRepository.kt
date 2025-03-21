@@ -84,6 +84,26 @@ class TrackRepositoryImpl @Inject constructor(
                 importTrack = null,
                 tags = listOf("tag1", "tag2"),
                 uri = "https://whistlehub.s3.ap-northeast-2.amazonaws.com/%EA%B5%AD%EC%95%85+%ED%9A%A8%EA%B3%BC%EC%9D%8C+%23542.mp3".toUri()
+            ), Track(
+                "4",
+                "Song 4",
+                "Artist 4",
+                artist = Artist(
+                    id = "1",
+                    nickname = "Artist 1",
+                    profileImage = "https://picsum.photos/200/300?random=1".toUri()
+                ),
+                isLike = false,
+                duration = 500,
+                imageUrl = "https://picsum.photos/200/300?random=4",
+                importCount = 2,
+                likeCount = 2,
+                viewCount = 2,
+                createdAt = Date(),
+                sourceTrack = null,
+                importTrack = null,
+                tags = null,
+                uri = "https://whistlehub.s3.ap-northeast-2.amazonaws.com/%EA%B5%AD%EC%95%85+%ED%9A%A8%EA%B3%BC%EC%9D%8C+%23542.mp3".toUri()
             )
         )
     }
