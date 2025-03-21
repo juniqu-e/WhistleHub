@@ -19,6 +19,10 @@ public enum ResponseType {
     NOT_FOLLOWING("NF", HttpStatus.BAD_REQUEST, "팔로우 취소를 요청했으나, 기존에 팔로우 관계가 아닙니다."),
     ALREADY_FOLLOWING("AF", HttpStatus.CONFLICT, "팔로우 추가를 요청했으나, 이미 팔로우 관계입니다."),
     INVALID_ORDER("IO", HttpStatus.BAD_REQUEST, "order 옵션이 잘못되었습니다."),
+
+    // 필수 값 누락
+    PARAMETER_REQUIRED("PR", HttpStatus.BAD_REQUEST, "필수 값이 누락되었습니다."),
+
     PLAYLIST_TITLE_REQUIRED("PTR", HttpStatus.BAD_REQUEST, "플레이리스트 제목이 없습니다."),
 
     // HTTP Status 401

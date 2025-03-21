@@ -1,6 +1,7 @@
 package com.ssafy.backend.playlist.controller;
 
 import com.ssafy.backend.common.ApiResponse;
+import com.ssafy.backend.common.error.exception.MissingParameterException;
 import com.ssafy.backend.playlist.dto.*;
 import com.ssafy.backend.playlist.service.PlaylistService;
 import lombok.AllArgsConstructor;
@@ -33,12 +34,16 @@ public class PlaylistController {
     // 플레이리스트 만들기
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<?> createPlaylist(
-            @RequestParam("name") String name,
+            @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "description", required = false) String description,
             @RequestParam(value = "image", required = false) MultipartFile image,
             @RequestParam(value = "track_ids", required = false) List<Integer> trackIds) {
 
-        log.warn("name: {}, description: {}, image: {}, trackIds: {}", name, description, image, trackIds);
+        log.debug("name: {}, description: {}, image: {}, trackIds: {}", name, description, image, trackIds);
+
+        if(name == null || name.isEmpty()) {
+            throw new MissingParameterException();
+        }
 
         int payload = playlistService.createPlaylist(name, description, image, trackIds);
 
@@ -50,6 +55,11 @@ public class PlaylistController {
     // 플레이리스트 수정
     @PutMapping()
     public ApiResponse<?> updatePlaylist(@RequestBody ModifyPlaylistRequestDto requestDto) {
+        if(requestDto.getName() == null || requestDto.getName().isEmpty()
+                || requestDto.getDescription() == null || requestDto.getDescription().isEmpty()) {
+            throw new MissingParameterException();
+        }
+
         int payload = playlistService.updatePlaylist(requestDto);
         return new ApiResponse.builder<Object>()
                 .payload(payload)
