@@ -4,6 +4,7 @@ import com.whistlehub.common.data.remote.api.AuthApi
 import com.whistlehub.common.data.remote.dto.request.AuthRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
 import com.whistlehub.common.data.remote.dto.response.AuthResponse
+import com.whistlehub.common.util.TokenRefresh
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -15,7 +16,8 @@ import javax.inject.Singleton
 
 @Singleton
 class AuthService @Inject constructor(
-    private val authApi: AuthApi
+    private val authApi: AuthApi,
+    private val tokenRefresh: TokenRefresh? = null
 ) : ApiRepository() {
     // 회원 가입
     suspend fun register(

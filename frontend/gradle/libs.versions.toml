@@ -4,6 +4,7 @@ coilCompose = "3.1.0"
 converterGson = "2.9.0"
 datastorePreferences = "1.1.3"
 javaJwt = "4.4.0"
+androidxSecurityCrypto = "1.1.0-alpha06"
 kotlin = "2.0.20"
 kotlinxCoroutinesAndroid = "1.7.3"
 ksp = "2.0.20-1.0.24"
@@ -23,6 +24,7 @@ media3 = "1.5.1"
 hiltAndroid = "2.55"
 hilt = "2.55"
 hiltNavigationCompose = "1.2.0"
+securityCryptoKtx = "1.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -36,6 +38,7 @@ coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCo
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coilCompose" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 java-jwt = { module = "com.auth0:java-jwt", version.ref = "javaJwt" }
+androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "androidxSecurityCrypto" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltAndroid" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -60,6 +63,7 @@ media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = 
 media3-session = { module = "androidx.media3:media3-session", version.ref = "media3" }
 lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
 androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "media3" }
+androidx-security-crypto-ktx = { group = "androidx.security", name = "security-crypto-ktx", version.ref = "securityCryptoKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

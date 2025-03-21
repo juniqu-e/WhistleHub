@@ -67,8 +67,10 @@ dependencies {
     implementation(libs.material.icons.extended)     // Material Icons Extended (Compose BOM 사용 시 버전 관리는 BOM에 포함)
     implementation(libs.retrofit)     // Retrofit
     implementation(libs.java.jwt)
+    implementation(libs.androidx.security.crypto) // 토큰 암호화
     implementation(libs.converter.gson)     // Retrofit
-    implementation(libs.okhttp.logging.interceptor) // Okhttp
+    implementation(libs.okhttp.logging.interceptor)
+    implementation(libs.androidx.security.crypto.ktx) // Okhttp
     ksp(libs.androidx.room.compiler)     // Room
     implementation(libs.androidx.room.runtime)     // Room
     implementation(libs.androidx.room.ktx)     // Room
