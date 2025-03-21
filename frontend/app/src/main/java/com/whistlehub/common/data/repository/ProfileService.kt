@@ -1,0 +1,109 @@
+package com.whistlehub.common.data.repository
+
+import com.whistlehub.common.data.remote.api.ProfileApi
+import com.whistlehub.common.data.remote.dto.request.ProfileRequest
+import com.whistlehub.common.data.remote.dto.response.ApiResponse
+import com.whistlehub.common.data.remote.dto.response.ProfileResponse
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import javax.inject.Inject
+import javax.inject.Singleton
+
+/**
+---------------------------------------
+프로필 관련 API 호출을 담당하는 서비스 클래스
+---------------------------------------
+ **/
+
+@Singleton
+class ProfileService @Inject constructor(
+    private val profileApi: ProfileApi
+) : ApiRepository() {
+    // 프로필 조회 (memberId가 생략 된 경우 AccessToken의 memberId 조회)
+    suspend fun getProfile(
+        token: String,
+        memberId: Int?
+    ): ApiResponse<ProfileResponse.GetProfileResponse> {
+        return executeApiCall { profileApi.getProfile(token, memberId) }
+    }
+    // 프로필 정보 수정
+    suspend fun updateProfile(
+        token: String,
+        request: ProfileRequest.UpdateProfileRequest
+    ): ApiResponse<Unit> {
+        return executeApiCall { profileApi.updateProfile(token, request) }
+    }
+    // 회원 탈퇴
+    suspend fun deleteProfile(
+        token: String
+    ): ApiResponse<Unit> {
+        return executeApiCall { profileApi.deleteProfile(token) }
+    }
+    // 프로필 사진 업로드 (response : 업로드 된 이미지 링크)
+    suspend fun uploadProfileImage(
+        token: String,
+        memberId: Int,
+        image: MultipartBody.Part
+    ): ApiResponse<String> {
+        val memberIdBody: RequestBody = memberId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+        return executeApiCall { profileApi.uploadProfileImage(token, memberIdBody, image) }
+    }
+    // 비밀번호 변경
+    suspend fun changePassword(
+        token: String,
+        request: ProfileRequest.ChangePasswordRequest
+    ): ApiResponse<Unit> {
+        return executeApiCall { profileApi.changePassword(token, request) }
+    }
+    // 멤버 검색
+    suspend fun searchProfile(
+        token: String,
+        query: String,
+        page: Int,
+        size: Int,
+        orderby: String
+    ): ApiResponse<List<ProfileResponse.SearchProfileResponse>> {
+        return executeApiCall { profileApi.searchProfile(token, query, page, size, orderby) }
+    }
+    // 멤버의 플레이리스트 조회 (memberId가 생략 된 경우 AccessToken의 memberId 조회)
+    suspend fun getMemberPlaylists(
+        token: String,
+        memberId: Int? = null
+    ): ApiResponse<List<ProfileResponse.GetMemberPlaylistsResponse>> {
+        return executeApiCall { profileApi.getMemberPlaylists(token, memberId) }
+    }
+    // 멤버의 트랙 조회 (memberId가 생략 된 경우 AccessToken의 memberId 조회)
+    suspend fun getMemberTracks(
+        token: String,
+        memberId: Int? = null,
+        page: Int,
+        orderby: String
+    ): ApiResponse<List<ProfileResponse.GetMemberTracksResponse>> {
+        return executeApiCall { profileApi.getMemberTracks(token, memberId, page, orderby) }
+    }
+    // 팔로우
+    suspend fun follow(
+        token: String,
+        request: ProfileRequest.FollowRequest
+    ): ApiResponse<Unit> {
+        return executeApiCall { profileApi.follow(token, request) }
+    }
+    // 멤버의 팔로워 목록 조회 (memberId가 생략 된 경우 AccessToken의 memberId 조회)
+    suspend fun getFollowers(
+        token: String,
+        memberId: Int? = null,
+        page: Int
+    ): ApiResponse<List<ProfileResponse.GetFollowersResponse>> {
+        return executeApiCall { profileApi.getFollowers(token, memberId, page) }
+    }
+    // 멤버의 팔로잉 목록 조회 (memberId가 생략 된 경우 AccessToken의 memberId 조회)
+    suspend fun getFollowings(
+        token: String,
+        memberId: Int? = null,
+        page: Int
+    ): ApiResponse<List<ProfileResponse.GetFollowingsResponse>> {
+        return executeApiCall { profileApi.getFollowings(token, memberId, page) }
+    }
+}

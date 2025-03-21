@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.ksp)
-    alias(libs.plugins.dragger.hilt)
+    alias(libs.plugins.dagger.hilt)
 
 }
 
@@ -68,6 +68,7 @@ dependencies {
     implementation(libs.retrofit)     // Retrofit
     implementation(libs.java.jwt)
     implementation(libs.converter.gson)     // Retrofit
+    implementation(libs.okhttp.logging.interceptor) // Okhttp
     ksp(libs.androidx.room.compiler)     // Room
     implementation(libs.androidx.room.runtime)     // Room
     implementation(libs.androidx.room.ktx)     // Room
@@ -82,8 +83,10 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.compose)
 
     implementation(libs.hilt.android)
+    implementation(libs.androidx.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
-
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
     // Superpowered: 직접 SDK 다운로드 및 통합 (Gradle 의존성으로 추가되지 않음)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

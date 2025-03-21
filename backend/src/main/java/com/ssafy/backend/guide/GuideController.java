@@ -1,5 +1,6 @@
 package com.ssafy.backend.guide;
 
+import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.common.error.exception.NotFoundPageException;
 import com.ssafy.backend.graph.model.entity.type.WeightType;
@@ -7,9 +8,11 @@ import com.ssafy.backend.graph.service.DataCollectingService;
 import com.ssafy.backend.graph.util.DataGenerator;
 import com.ssafy.backend.guide.service.FFmpegTestService;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -58,9 +61,18 @@ public class GuideController {
     }
 
     @GetMapping("/success")
-    public ApiResponse<?> test() {
+    public ApiResponse<?> test(Authentication authentication) {
         return new ApiResponse.builder<Object>()
-                .object("데이터")
+                .payload("데이터")
+                .build();
+    }
+
+    private final AuthService authService;
+    @GetMapping("/auth")
+    public ApiResponse<?> getAuth(Authentication authentication) {
+
+        return new ApiResponse.builder<Object>()
+                .payload(authService.getMember())
                 .build();
     }
 

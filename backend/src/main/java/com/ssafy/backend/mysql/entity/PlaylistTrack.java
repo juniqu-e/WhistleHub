@@ -1,28 +1,31 @@
 package com.ssafy.backend.mysql.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.time.Instant;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "playlist_track")
-public class PlaylistTrack {
+public class PlaylistTrack extends Common{
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "playlist_track_id", nullable = false)
     private Integer id;
 
-    @Column(name = "track_id", nullable = false)
-    private Integer trackId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "track_id", nullable = false)
+    private com.ssafy.backend.mysql.entity.Track track;
 
-    @Column(name = "playlist_id", nullable = false)
-    private Integer playlistId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "playlist_id", nullable = false)
+    private Playlist playlist;
 
     @Column(name = "play_order")
-    private Double playOrder;
+    private Integer playOrder;
+
 
 }

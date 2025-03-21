@@ -1,7 +1,7 @@
 package com.ssafy.backend.common.error;
 
 import com.ssafy.backend.common.ApiResponse;
-import com.ssafy.backend.common.error.exception.NotFoundPageException;
+import com.ssafy.backend.common.error.exception.*;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -29,6 +29,41 @@ public class ControllerExceptionHandler {
     public ApiResponse<?> entityNotFoundHandler(EntityNotFoundException e) {
         return new ApiResponse.builder<Object>()
                 .errorStatus(ResponseType.SERVER_ERROR)
+                .build();
+    }
+
+    @ExceptionHandler(NotFoundMemberException.class)
+    public ApiResponse<?> notFoundMemberHandler(NotFoundMemberException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.NOT_FOUND_MEMBER)
+                .build();
+    }
+
+    @ExceptionHandler(NotFoundPlaylistException.class)
+    public ApiResponse<?> illegalArgumentHandler(NotFoundPlaylistException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.PLAYLIST_NOT_FOUND)
+                .build();
+    }
+
+    @ExceptionHandler(DuplicateIdException.class)
+    public ApiResponse<?> duplicateIdHandler(DuplicateIdException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.DUPLICATE_ID)
+                .build();
+    }
+
+    @ExceptionHandler(DuplicateEmailException.class)
+    public ApiResponse<?> duplicateEmailHandler(DuplicateEmailException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.DUPLICATE_EMAIL)
+                .build();
+    }
+
+    @ExceptionHandler(DuplicateNicknameException.class)
+    public ApiResponse<?> duplicateNicknameHandler(DuplicateNicknameException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.DUPLICATE_NICKNAME)
                 .build();
     }
 
