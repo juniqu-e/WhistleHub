@@ -5,9 +5,6 @@ FROM python:3.11.11-slim as builder
 
 WORKDIR /FastAPI/
 
-RUN apt-get update && \
-    apt-get install -y ffmpeg
-
 COPY ./requirements.txt .
 COPY log/ ./log/
 RUN pip install --upgrade pip && pip install -r ./requirements.txt
@@ -17,6 +14,9 @@ RUN pip install --upgrade pip && pip install -r ./requirements.txt
 FROM python:3.11-slim
 
 WORKDIR /FastAPI/
+
+RUN apt-get update && \
+    apt-get install -y ffmpeg
 
 # builder 단계에서 설치된 패키지를 그대로 복사
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages

@@ -1,10 +1,6 @@
 FROM openjdk:17-slim as build
 WORKDIR /app
 
-RUN apt-get update && \
-    apt-get install -y ffmpeg
-
-
 # 1단계: Gradle Wrapper 및 설정 파일만 먼저 복사
 COPY gradlew .
 COPY gradle/ gradle/
@@ -24,6 +20,8 @@ RUN ./gradlew --no-daemon clean build -x test
 FROM openjdk:17-slim
 WORKDIR /app
 
+RUN apt-get update && \
+    apt-get install -y ffmpeg
 
 # 빌드 스테이지에서 생성된 JAR 파일 복사
 COPY --from=build /app/build/libs/*.jar app.jar
