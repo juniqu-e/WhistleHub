@@ -1,5 +1,6 @@
 package com.ssafy.backend.track.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -13,14 +14,20 @@ import java.util.Map;
 @Setter
 @ToString
 public class TrackUploadRequestDto {
+    @NotBlank
     String title;
+    @NotBlank
     String description;
+    @NotBlank
     int duration;
+    @NotBlank
     boolean visibility;
     Integer[] tags;
     Integer[] sourceTracks;
     List<LayerUploadRequestDto> layers;
+    @NotBlank
     String[] layerName;
+    @NotBlank
     String[] instrumentType;
     MultipartFile trackSoundFile;
     MultipartFile[] layerSoundFiles; //

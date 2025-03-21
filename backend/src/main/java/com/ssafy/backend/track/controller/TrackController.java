@@ -1,6 +1,8 @@
 package com.ssafy.backend.track.controller;
 
+import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.ApiResponse;
+import com.ssafy.backend.track.dto.request.TrackImageUploadRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUpdateRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
 import com.ssafy.backend.track.service.TrackService;
@@ -24,18 +26,18 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api")
 public class TrackController {
     private final TrackService trackService;
+    private final AuthService authService;
+
 
     @GetMapping("/track")
     public ApiResponse<?> viewTrack(int trackId) {
-        int memberId = 1; // TODO: 인증 기능 구현되면 교체
         return new ApiResponse.builder<Object>()
-                .payload(trackService.viewTrack(trackId, memberId))
+                .payload(trackService.viewTrack(trackId, authService.getMember().getId()))
                 .build();
     }
     @PutMapping("/track")
     public ApiResponse<?> updateTrack(TrackUpdateRequestDto trackUpdateRequestDto) {
-        int memberId = 1; // TODO: 인증 기능 구현되면 교체
-        trackService.updateTrack(trackUpdateRequestDto, memberId);
+        trackService.updateTrack(trackUpdateRequestDto, authService.getMember().getId());
         return new ApiResponse.builder<Object>()
                 .payload(null)
                 .build();
@@ -51,11 +53,25 @@ public class TrackController {
                 .body(resource);
     }
 
+    @PostMapping("/track/image")
+    public ApiResponse<?> uploadTrackImage(TrackImageUploadRequestDto trackImageUploadRequestDto) {
+        return new ApiResponse.builder<Object>()
+                .payload(trackService.updateImage(trackImageUploadRequestDto))
+                .build();
+    }
+
+    @DeleteMapping("/track")
+    public ApiResponse<?> deleteTrack(int trackId) {
+        trackService.deleteTrack(trackId);
+        return new ApiResponse.builder<Object>()
+                .payload(null)
+                .build();
+    }
+
     @PostMapping("/workstation")
     public ApiResponse<?> createTrack(TrackUploadRequestDto trackUploadRequestDto) {
-        int memberId = 1; // TODO: 인증 기능 구현되면 교체
         return new ApiResponse.builder<Object>()
-                .payload(trackService.createTrack(trackUploadRequestDto, memberId))
+                .payload(trackService.createTrack(trackUploadRequestDto, authService.getMember().getId()))
                 .build();
     }
 }

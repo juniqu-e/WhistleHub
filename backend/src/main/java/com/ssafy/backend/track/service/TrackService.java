@@ -1,10 +1,12 @@
 package com.ssafy.backend.track.service;
 
+import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.service.S3Service;
 import com.ssafy.backend.common.util.S3FileKeyExtractor;
 import com.ssafy.backend.graph.service.DataCollectingService;
 import com.ssafy.backend.mysql.entity.*;
 import com.ssafy.backend.mysql.repository.*;
+import com.ssafy.backend.track.dto.request.TrackImageUploadRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUpdateRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
 import com.ssafy.backend.track.dto.response.ArtistInfoDto;
@@ -44,6 +46,8 @@ public class TrackService {
     private final DataCollectingService dataCollectingService;
     private final S3Service s3Service;
 
+    private final AuthService authService;
+
     /**
      * 트랙 음원 데이터를 반환
      *
@@ -82,8 +86,8 @@ public class TrackService {
                 .enabled(true)
                 .importCount(0)
                 .viewCount(0)
-                // 1-1. 트랙 이미지 업로드
-                .imageUrl(s3Service.uploadFile(trackUploadRequestDto.getTrackImg(), S3Service.IMAGE))
+                // 1-1. 트랙 이미지 업로드(이미지 null 검사 처리)
+                .imageUrl(trackUploadRequestDto.getTrackImg() != null ? s3Service.uploadFile(trackUploadRequestDto.getTrackImg(), S3Service.IMAGE) : null)
                 // 1-2. 트랙 음성 업로드
                 .soundUrl(s3Service.uploadFile(trackUploadRequestDto.getTrackSoundFile(), S3Service.MUSIC))
                 .build();
@@ -217,13 +221,45 @@ public class TrackService {
                     return new RuntimeException();
                 }
         );
-        if(track.getMember().getId() != memberId) {
+        if (track.getMember().getId() != memberId) {
             log.info("본인({})의 트랙({})이 아닐 때 조회 요청", memberId, track.getId());
             throw new RuntimeException("");
         }
         track.setTitle(trackUpdateRequestDto.getTitle());
         track.setDescription(trackUpdateRequestDto.getDescription());
         track.setVisibility(trackUpdateRequestDto.isVisibility());
+        trackRepository.save(track);
+    }
+
+    public String updateImage(TrackImageUploadRequestDto trackImageUploadRequestDto) {
+        Track track = trackRepository.findById(trackImageUploadRequestDto.getTrackId()).orElseThrow();
+        String existingFileUrl = track.getImageUrl();
+        String updatedFileUrl;
+        if (existingFileUrl == null) {
+            updatedFileUrl = s3Service.uploadFile(trackImageUploadRequestDto.getTrackImg(), S3Service.MUSIC);
+        } else {
+            updatedFileUrl = s3Service.updateFile(existingFileUrl, trackImageUploadRequestDto.getTrackImg(), S3Service.MUSIC);
+        }
+        return updatedFileUrl;
+    }
+
+    public void deleteTrack(int trackId) {
+        Member member = authService.getMember();
+        Track track = trackRepository.findById(trackId).orElseThrow(
+                () -> {
+                    log.warn("{} 트랙은 없는 트랙", trackId);
+                    return new RuntimeException();
+                }
+        );
+        if (track.getMember().getId() != member.getId()) {
+            log.info("본인({})의 트랙({})이 아닐 때 삭제 요청", member.getId(), track.getId());
+            throw new RuntimeException("");
+        } else if(!track.getEnabled()){
+            log.info("트랙({})은 이미 삭제 처리 됨", track.getId());
+            return;
+        }
+        // soft delete
+        track.setEnabled(false);
         trackRepository.save(track);
     }
 }
