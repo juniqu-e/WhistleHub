@@ -72,7 +72,7 @@ public class GuideController {
     public ApiResponse<?> getAuth(Authentication authentication) {
 
         return new ApiResponse.builder<Object>()
-                .payload(authService.getMember(authentication))
+                .payload(authService.getMember())
                 .build();
     }
 
