@@ -1,8 +1,8 @@
 package com.ssafy.backend.track.controller;
 
-import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.track.dto.request.TrackImageUploadRequestDto;
+import com.ssafy.backend.track.dto.request.TrackUpdateRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUpdateRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
 import com.ssafy.backend.track.service.TrackService;
@@ -70,8 +70,9 @@ public class TrackController {
 
     @PostMapping("/workstation")
     public ApiResponse<?> createTrack(TrackUploadRequestDto trackUploadRequestDto) {
+        int memberId = 1; // TODO: 인증 기능 구현되면 교체
         return new ApiResponse.builder<Object>()
-                .payload(trackService.createTrack(trackUploadRequestDto, authService.getMember().getId()))
+                .payload(trackService.createTrack(trackUploadRequestDto, memberId))
                 .build();
     }
 }
