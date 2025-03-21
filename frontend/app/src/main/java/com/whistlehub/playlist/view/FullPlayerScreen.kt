@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
@@ -29,7 +30,9 @@ import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.FastRewind
 import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -75,6 +78,7 @@ fun FullPlayerScreen(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showPlayerMenu by remember { mutableStateOf(false) }
+    var showReportDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -127,10 +131,43 @@ fun FullPlayerScreen(
                     .wrapContentHeight()
                     .background(CustomColors().Grey950.copy(alpha = 0.7f)),
             ) {
-                TrackMenu()
+                TrackMenu(onReportClick = {
+                    showReportDialog = true
+                    showPlayerMenu = false
+                })
             }
+        if (showReportDialog) {
+            AlertDialog(
+                onDismissRequest = { showReportDialog = false },
+                title = { Text("신고하기", style = Typography.titleLarge, color = CustomColors().Grey50) },
+                text = { ReportDialog() },
+                modifier = Modifier.fillMaxWidth().background(CustomColors().Grey950),
+                confirmButton = {
+                    Button(
+                        onClick = { showReportDialog = false },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = CustomColors().Error700,
+                            contentColor = CustomColors().Grey50,
+                        )
+                    ) {
+                        Text("신고", style = Typography.bodyLarge)
+                    }
+                },
+                dismissButton = {
+                    Button(
+                        onClick = { showReportDialog = false },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = CustomColors().Grey400,
+                            contentColor = CustomColors().Grey50,
+                        )
+                    ) {
+                        Text("취소", style = Typography.bodyLarge)
+                    }
+                }
+            )
         }
     }
+}
 
 
 @Composable
@@ -245,7 +282,7 @@ fun TrackInteraction(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun TrackMenu(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
+fun TrackMenu(trackPlayViewModel: TrackPlayViewModel = hiltViewModel(), onReportClick: () -> Unit = {}) {
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
     Column(modifier = Modifier.heightIn(min = 200.dp).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Bottom),
@@ -338,12 +375,16 @@ fun TrackMenu(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
         if (true /* 내 트랙이 아닐 때 */) {
             HorizontalDivider(thickness = 1.dp, color = CustomColors().Grey50)
             Row(
-                Modifier.clickable {}.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
+                Modifier.clickable {
+                    onReportClick()
+                }.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("신고")
-                IconButton({}) {
+                IconButton({
+                    onReportClick()
+                }) {
                     Icon(
                         Icons.AutoMirrored.Rounded.ArrowForwardIos,
                         contentDescription = "신고",
@@ -445,6 +486,35 @@ fun PlayerController(
                         tint = Color.White
                     )
                 }
+        }
+    }
+}
+
+@Composable
+fun ReportDialog() {
+    // 신고 다이얼로그 UI
+    // 신고 사유는 하드코딩으로 설정
+    val reportReasons = listOf("저작권 문제 위반 음원", "청소년에게 유해한 음원", "폭력적이거나 혐오스러운 음원", "스팸 또는 광고성 음원")
+    var selectedReason by remember { mutableStateOf(reportReasons[0]) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        reportReasons.forEach { reason ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { selectedReason = reason }
+                    .background(if (selectedReason == reason) CustomColors().Grey600 else Color.Transparent, shape = RoundedCornerShape(10.dp))
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(text = reason, style = Typography.bodyLarge, color = CustomColors().Grey200)
+            }
         }
     }
 }
