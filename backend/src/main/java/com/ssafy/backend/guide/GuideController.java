@@ -29,6 +29,12 @@ public class GuideController {
     private final DataGenerator generator;
     private final FFmpegTestService ffmpegTestService;
 
+
+    @GetMapping("/one")
+    public String one() {
+        ffmpegTestService.processAllAudioFiles();
+        return "one";
+    }
     /**
      * MP3 파일을 업로드하고 2배속으로 변환하여 반환
      */
