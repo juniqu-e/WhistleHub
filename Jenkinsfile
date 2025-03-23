@@ -25,14 +25,12 @@ pipeline {
         stage('git pull') {
           steps {        
                 sshagent (credentials: ['ssh']) {
-                    withCredentials([git(credentialsId: 'dockerEnv', variable: 'envFile')]) {
-                        sh """
-                            ssh -o StrictHostKeyChecking=no ${remoteServer} '
-                                cd ${remoteDir}
-                                git pull
-                                '
-                        """
-                        }
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${remoteServer} '
+                            cd ${remoteDir}
+                            git pull
+                            '
+                    """
                 }
             }
         }
@@ -40,15 +38,13 @@ pipeline {
         stage('docker compose down') {
           steps {        
                 sshagent (credentials: ['ssh']) {
-                    withCredentials([git(credentialsId: 'dockerEnv', variable: 'envFile')]) {
-                        sh """
-                            ssh -o StrictHostKeyChecking=no ${remoteServer} '
-                                cd ${remoteDir}
-                                docker compose down
-                                docker -f docker-compose.db.yml down
-                                '
-                        """
-                        }
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${remoteServer} '
+                            cd ${remoteDir}
+                            docker compose down
+                            docker -f docker-compose.db.yml down
+                            '
+                    """
                 }
             }
         }
