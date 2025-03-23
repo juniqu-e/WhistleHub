@@ -65,9 +65,7 @@ pipeline {
                         """
                     }
                 }
-            }
 
-            steps {        
                 sshagent (credentials: ['ssh']) {
                   withCredentials([file(credentialsId: 'fastapiEnv', variable: 'envFile')]) {
                         sh """
@@ -79,9 +77,7 @@ pipeline {
                         """
                     }
                 }
-            }
-
-            steps {        
+        
                 sshagent (credentials: ['ssh']) {
                   withCredentials([file(credentialsId: 'backendEnv', variable: 'envFile')]) {
                         sh """
@@ -93,9 +89,7 @@ pipeline {
                         """
                     }
                 }
-            }
 
-            steps {        
                 sshagent (credentials: ['ssh']) {
                   withCredentials([file(credentialsId: 'mysqlEnv', variable: 'envFile')]) {
                         sh """
@@ -107,9 +101,7 @@ pipeline {
                         """
                     }
                 }
-            }
-
-            steps {        
+            
                 sshagent (credentials: ['ssh']) {
                   withCredentials([file(credentialsId: 'neo4jEnv', variable: 'envFile')]) {
                         sh """
