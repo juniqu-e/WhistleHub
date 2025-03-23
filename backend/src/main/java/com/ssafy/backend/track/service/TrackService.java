@@ -1,24 +1,19 @@
 package com.ssafy.backend.track.service;
 
-import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.service.S3Service;
 import com.ssafy.backend.common.util.S3FileKeyExtractor;
 import com.ssafy.backend.graph.service.DataCollectingService;
 import com.ssafy.backend.mysql.entity.*;
-import com.ssafy.backend.mysql.repository.*;
-import com.ssafy.backend.track.dto.request.TrackImageUploadRequestDto;
-import com.ssafy.backend.track.dto.request.TrackUpdateRequestDto;
+import com.ssafy.backend.mysql.repository.LayerFileRepository;
+import com.ssafy.backend.mysql.repository.LayerRepository;
+import com.ssafy.backend.mysql.repository.TrackRepository;
+import com.ssafy.backend.mysql.repository.TrackTagRepository;
 import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
-import com.ssafy.backend.track.dto.response.ArtistInfoDto;
-import com.ssafy.backend.track.dto.response.TagInfo;
-import com.ssafy.backend.track.dto.response.TrackInfoDto;
-import com.ssafy.backend.track.dto.response.TrackResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,17 +35,12 @@ public class TrackService {
     private final TrackTagRepository trackTagRepository;
     private final LayerRepository layerRepository;
     private final LayerFileRepository layerFileRepository;
-    private final LikeRepository likeRepository;
-    private final SamplingRepository samplingRepository;
 
     private final DataCollectingService dataCollectingService;
     private final S3Service s3Service;
 
-    private final AuthService authService;
-
     /**
      * 트랙 음원 데이터를 반환
-     *
      * @param trackId 반환할 음원의 트랙 id
      * @return byte[] 형식의 음원 데이터
      */
@@ -84,10 +74,8 @@ public class TrackService {
                 .duration(trackUploadRequestDto.getDuration())
                 .visibility(trackUploadRequestDto.isVisibility())
                 .enabled(true)
-                .importCount(0)
-                .viewCount(0)
-                // 1-1. 트랙 이미지 업로드(이미지 null 검사 처리)
-                .imageUrl(trackUploadRequestDto.getTrackImg() != null ? s3Service.uploadFile(trackUploadRequestDto.getTrackImg(), S3Service.IMAGE) : null)
+                // 1-1. 트랙 이미지 업로드
+                .imageUrl(s3Service.uploadFile(trackUploadRequestDto.getTrackImg(), S3Service.IMAGE))
                 // 1-2. 트랙 음성 업로드
                 .soundUrl(s3Service.uploadFile(trackUploadRequestDto.getTrackSoundFile(), S3Service.MUSIC))
                 .build();
@@ -104,14 +92,8 @@ public class TrackService {
                             .build();
                 })
                 .collect(Collectors.toList());
-        trackTagRepository.saveAll(trackTags);
-        // 1-3-2. 원천 트랙 insert
-        List<Sampling> samplings = Arrays.stream(trackUploadRequestDto.getSourceTracks())
-                .map(originTrackId -> Sampling.builder()
-                        .originTrack(trackRepository.findById(originTrackId).get()) //TODO: 반복문 내에서 repo 조회 개선 필요.
-                        .track(t).build()).toList();
-        samplingRepository.saveAll(samplings);
 
+        trackTagRepository.saveAll(trackTags);
         // 1-4. 그래프 추가
         // 1-4-1. Track 노드 생성 및 태그 연결
         dataCollectingService.createTrack(t.getId(), Arrays.stream(trackUploadRequestDto.getTags()).toList());
@@ -134,132 +116,5 @@ public class TrackService {
 
         }
         return t.getId();
-    }
-
-    @Transactional
-    public TrackResponseDto viewTrack(int trackId, int memberId) {
-        Track track = trackRepository.findById(trackId).orElseThrow(
-                () -> {
-                    log.warn("{}번 트랙은 존재하지 않음", trackId);
-                    return new RuntimeException("Track not found"); // TODO: 커스텀 예외로 교체
-                });
-        // visibility - public 여부 true -> 본인만 볼 수 있음
-        // block - 정지 여부 true -> 본인만 볼 수 있음
-        // enabled - 소프트 삭제 여부 true -> 조회 불가
-        if (track.getBlocked() || track.getVisibility()) {
-            if (track.getMember().getId() != memberId) {
-                log.info("{}번 트랙은 회원이 조회할 수 없는 데이터", memberId);
-                throw new RuntimeException(); // TODO: 커스텀으로 교체
-            }
-        }
-
-        if (track.getEnabled()) {
-            log.info("{}번 회원이 삭제된 트랙({})을 조회", memberId, track.getId());
-            throw new RuntimeException(); // TODO: 커스텀으로 교체
-        }
-
-        // 조회수 증가
-        int viewCount = track.getViewCount();
-        track.setViewCount(viewCount + 1);
-
-        // 가져와야 하는 데이터
-        // isLike 좋아요 누른 여부
-        boolean isLike = likeRepository.findByTrackIdAndMemberId(track.getId(), memberId).isPresent();
-
-        // 출처 트랙들
-        List<TrackInfoDto> sourceTrackList = new ArrayList<>();
-        samplingRepository.findAllByTrack(track).forEach(sampling -> {
-            sourceTrackList.add(TrackInfoDto.builder()
-                    .trackId(sampling.getOriginTrack().getId())
-                    .title(sampling.getOriginTrack().getTitle())
-                    .duration(sampling.getOriginTrack().getDuration())
-                    .imageUrl(sampling.getOriginTrack().getImageUrl())
-                    .build());
-        });
-        // 임포트해간 트랙들
-        List<TrackInfoDto> importedTrackList = new ArrayList<>();
-        samplingRepository.findAllByOriginTrack(track).forEach(sampling -> {
-            importedTrackList.add(TrackInfoDto.builder()
-                    .trackId(sampling.getTrack().getId())
-                    .title(sampling.getTrack().getTitle())
-                    .duration(sampling.getTrack().getDuration())
-                    .imageUrl(sampling.getTrack().getImageUrl())
-                    .build());
-        });
-
-        // 태그 정보
-        List<TrackTag> tags = trackTagRepository.findAllByTrack(track);
-        List<TagInfo> tagInfoList = new ArrayList<>();
-        if (!tags.isEmpty()) {
-            tags.forEach(tag -> {
-                tagInfoList.add(TagInfo.builder()
-                        .tagId(tag.getTag().getId())
-                        .name(tag.getTag().getName()).build());
-            });
-        }
-        return TrackResponseDto.builder()
-                .trackId(track.getId())
-                .title(track.getTitle())
-                .description(track.getDescription())
-                .imageUrl(track.getImageUrl())
-                .artist(ArtistInfoDto.builder().memberId(track.getMember().getId()).nickname(track.getMember().getNickname()).profileImage(track.getMember().getProfileImage()).build())
-                .isLiked(isLike)
-                .importCount(track.getImportCount())
-                .likeCount(track.getLikeCount())
-                .viewCount(track.getViewCount())
-                .sourceTracks(sourceTrackList)
-                .importTracks(importedTrackList)
-                .tags(tagInfoList)
-                .build();
-    }
-
-    @Transactional
-    public void updateTrack(TrackUpdateRequestDto trackUpdateRequestDto, int memberId) {
-        Track track = trackRepository.findById(trackUpdateRequestDto.getTrackId()).orElseThrow(
-                () -> {
-                    log.warn("{} 트랙은 없는 트랙", trackUpdateRequestDto.getTrackId());
-                    return new RuntimeException();
-                }
-        );
-        if (track.getMember().getId() != memberId) {
-            log.info("본인({})의 트랙({})이 아닐 때 조회 요청", memberId, track.getId());
-            throw new RuntimeException("");
-        }
-        track.setTitle(trackUpdateRequestDto.getTitle());
-        track.setDescription(trackUpdateRequestDto.getDescription());
-        track.setVisibility(trackUpdateRequestDto.isVisibility());
-        trackRepository.save(track);
-    }
-
-    public String updateImage(TrackImageUploadRequestDto trackImageUploadRequestDto) {
-        Track track = trackRepository.findById(trackImageUploadRequestDto.getTrackId()).orElseThrow();
-        String existingFileUrl = track.getImageUrl();
-        String updatedFileUrl;
-        if (existingFileUrl == null) {
-            updatedFileUrl = s3Service.uploadFile(trackImageUploadRequestDto.getTrackImg(), S3Service.MUSIC);
-        } else {
-            updatedFileUrl = s3Service.updateFile(existingFileUrl, trackImageUploadRequestDto.getTrackImg(), S3Service.MUSIC);
-        }
-        return updatedFileUrl;
-    }
-
-    public void deleteTrack(int trackId) {
-        Member member = authService.getMember();
-        Track track = trackRepository.findById(trackId).orElseThrow(
-                () -> {
-                    log.warn("{} 트랙은 없는 트랙", trackId);
-                    return new RuntimeException();
-                }
-        );
-        if (track.getMember().getId() != member.getId()) {
-            log.info("본인({})의 트랙({})이 아닐 때 삭제 요청", member.getId(), track.getId());
-            throw new RuntimeException("");
-        } else if(!track.getEnabled()){
-            log.info("트랙({})은 이미 삭제 처리 됨", track.getId());
-            return;
-        }
-        // soft delete
-        track.setEnabled(false);
-        trackRepository.save(track);
     }
 }
