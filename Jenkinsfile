@@ -10,7 +10,7 @@ pipeline {
     stages {
         stage('test ssh') {
           steps {        
-                sshagent (ssh) {
+                sshagent (credentials: ['ssh']) {
                 sh """
                     ssh -o StrictHostKeyChecking=no ${ssh_usr}@${hostDomain} "pwd"
                 """
@@ -22,7 +22,6 @@ pipeline {
                 sshagent (credentials: ['ssh']) {
                 sh """
                     ssh -o StrictHostKeyChecking=no ${ssh_usr}@${hostDomain}
-                    cd ${REMOTE_DIR}
                     touch test.txt
                 """
                 }
