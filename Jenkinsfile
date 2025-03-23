@@ -103,9 +103,19 @@ pipeline {
           steps {        
                 sshagent (credentials: ['ssh']) {
                     sh """
+                        echo "docker compose db up"
                         ssh -o StrictHostKeyChecking=no ${remoteServer} '
                             cd ${remoteDir}
-                            docker -f docker-compose.db.yml up -d
+                            docker compose -f docker-compose.db.yml up -d
+                            '
+                    """
+                }
+
+                sshagent (credentials: ['ssh']) {
+                    sh """
+                        echo "docker compose up"
+                        ssh -o StrictHostKeyChecking=no ${remoteServer} '
+                            cd ${remoteDir}
                             docker compose up -d --build
                             '
                     """
