@@ -142,11 +142,27 @@ pipeline {
     post {
         success {
             echo "Pipeline completed successfully!"
-            
+            withCredentials([string(credentialsId: 'discordUrl', variable: 'DISCORD')]) {
+                        discordSend description: """
+                        ✅ ${currentBuild.displayName} 빌드에 성공했습니다.
+                        실행 시간 : ${currentBuild.duration / 1000}s
+                        """,
+                        link: env.BUILD_URL, result: currentBuild.currentResult, 
+                        title: "${env.JOB_NAME} : ${currentBuild.displayName} 성공", 
+                        webhookURL: "$DISCORD"
+            }
         }
         failure {
             echo "Pipeline failed. Please check the logs for details."
-            
+            withCredentials([string(credentialsId: 'discordUrl', variable: 'DISCORD')]) {
+                        discordSend description: """
+                        ❌ ${currentBuild.displayName} 빌드에 실패했습니다.
+                        실행 시간 : ${currentBuild.duration / 1000}s
+                        """,
+                        link: env.BUILD_URL, result: currentBuild.currentResult, 
+                        title: "${env.JOB_NAME} : ${currentBuild.displayName} 실패", 
+                        webhookURL: "$DISCORD"
+            }
         }
     }
 }
