@@ -5,8 +5,8 @@ pipeline {
     environment {
         ssh = credentials('ssh')
         hostDomain = credentials('hostDomain')
-        remoteServer = ssh_usr + '@' + hostDomain
-        remoteDir = '/home/' + ssh_usr + '/Whistlehub'
+        remoteServer = "${ssh_usr}@${hostDomain}"
+        remoteDir = "/home/${ssh_usr}/Whistlehub"
     }
 
     stages {
