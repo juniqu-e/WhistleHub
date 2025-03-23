@@ -16,28 +16,147 @@ pipeline {
                   sh """
                       ssh -o StrictHostKeyChecking=no ${remoteServer} '
                           pwd
-                          touch ${remoteDir}/test.txt
                           '
                   """
                 }
             }
         }
-        // stage('Copy Environment Files') {
-        //   steps {        
-        //         sshagent (credentials: ['ssh']) {
-        //           withCredentials([file(credentialsId: 'dockerEnv', variable: 'dockerEnv')]) {
-        //                 sh """
-        //                     echo "Copying .env file to remote server..."
-        //                     ssh -o StrictHostKeyChecking=no ${remoteServer}
-        //                         cd ${remoteDir}
-        //                         echo $dockerEnv > .env
-        //                 """
-        //             }
-        //         }
-        //     }
 
-        // }
+        stage('git pull') {
+          steps {        
+                sshagent (credentials: ['ssh']) {
+                    withCredentials([git(credentialsId: 'dockerEnv', variable: 'envFile')]) {
+                        sh """
+                            ssh -o StrictHostKeyChecking=no ${remoteServer} '
+                                cd ${remoteDir}
+                                git pull
+                                '
+                        """
+                        }
+                }
+            }
+        }
+
+        stage('docker compose down') {
+          steps {        
+                sshagent (credentials: ['ssh']) {
+                    withCredentials([git(credentialsId: 'dockerEnv', variable: 'envFile')]) {
+                        sh """
+                            ssh -o StrictHostKeyChecking=no ${remoteServer} '
+                                cd ${remoteDir}
+                                docker compose down
+                                docker -f docker-compose.db.yml down
+                                '
+                        """
+                        }
+                }
+            }
+        }
+        stage('Copy Environment Files') {
+          steps {        
+                sshagent (credentials: ['ssh']) {
+                  withCredentials([file(credentialsId: 'dockerEnv', variable: 'envFile')]) {
+                        sh """
+                            echo "Copying .env file to remote server..."
+                            ssh -o StrictHostKeyChecking=no ${remoteServer} '
+                                cd ${remoteDir}
+                                echo $envFile > .env
+                                '
+                        """
+                    }
+                }
+            }
+
+            steps {        
+                sshagent (credentials: ['ssh']) {
+                  withCredentials([file(credentialsId: 'fastapiEnv', variable: 'envFile')]) {
+                        sh """
+                            echo "Copying FastAPI.env file to remote server..."
+                            ssh -o StrictHostKeyChecking=no ${remoteServer} '
+                                cd ${remoteDir}
+                                echo $envFile > ./envs/FastAPI.env
+                                '
+                        """
+                    }
+                }
+            }
+
+            steps {        
+                sshagent (credentials: ['ssh']) {
+                  withCredentials([file(credentialsId: 'backendEnv', variable: 'envFile')]) {
+                        sh """
+                            echo "Copying backend.env file to remote server..."
+                            ssh -o StrictHostKeyChecking=no ${remoteServer} '
+                                cd ${remoteDir}
+                                echo $envFile > ./envs/backend.env
+                                '
+                        """
+                    }
+                }
+            }
+
+            steps {        
+                sshagent (credentials: ['ssh']) {
+                  withCredentials([file(credentialsId: 'mysqlEnv', variable: 'envFile')]) {
+                        sh """
+                            echo "Copying mysql.env file to remote server..."
+                            ssh -o StrictHostKeyChecking=no ${remoteServer} '
+                                cd ${remoteDir}
+                                echo $envFile > ./envs/mysql.env
+                                '
+                        """
+                    }
+                }
+            }
+
+            steps {        
+                sshagent (credentials: ['ssh']) {
+                  withCredentials([file(credentialsId: 'neo4jEnv', variable: 'envFile')]) {
+                        sh """
+                            echo "Copying neo4j.env file to remote server..."
+                            ssh -o StrictHostKeyChecking=no ${remoteServer} '
+                                cd ${remoteDir}
+                                echo $envFile > ./envs/neo4j.env
+                                '
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('docker compose up') {
+          steps {        
+                sshagent (credentials: ['ssh']) {
+                    withCredentials([git(credentialsId: 'dockerEnv', variable: 'envFile')]) {
+                        sh """
+                            ssh -o StrictHostKeyChecking=no ${remoteServer} '
+                                cd ${remoteDir}
+                                docker -f docker-compose.db.yml up -d
+                                docker compose up -d --build
+                                '
+                        """
+                        }
+                }
+            }
+        }
+
+        stage('remove env files') {
+          steps {        
+                sshagent (credentials: ['ssh']) {
+                    withCredentials([git(credentialsId: 'dockerEnv', variable: 'envFile')]) {
+                        sh """
+                            ssh -o StrictHostKeyChecking=no ${remoteServer} '
+                                cd ${remoteDir}
+                                rm .env
+                                rm ./envs/*.env
+                                '
+                        """
+                        }
+                }
+            }
+        }
     }
+
 
     post {
         success {
