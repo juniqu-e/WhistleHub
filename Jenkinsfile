@@ -25,22 +25,12 @@ pipeline {
         stage('git pull') {
           steps {        
                 sshagent (credentials: ['ssh']) {
-                  withCredentials([file(credentialsId: 'askpass', variable: 'askpass')]) {
-                        sh """
-                            echo "Copying askpass file"
-                            scp -o StrictHostKeyChecking=no "${askpass}" "${remoteServer}:${remoteDir}/askpass.sh"
-                            ssh -o StrictHostKeyChecking=no ${remoteServer} '
-                                export GIT_ASKPASS=${remoteDir}/askpass.sh
-                            '
-                        """
-                    }
-                }
-
-                sshagent (credentials: ['ssh']) {
                     sh """
                         echo "git pull"
                         ssh -o StrictHostKeyChecking=no ${remoteServer} '
-                            cd ${remoteDir}
+                            cd ${remoteDir} && \
+                            chmod +x askpass.sh && \
+                            export GIT_ASKPASS=\$(pwd)/askpass.sh && \
                             git pull
                             '
                     """
