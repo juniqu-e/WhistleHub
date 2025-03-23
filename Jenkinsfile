@@ -35,19 +35,6 @@ pipeline {
             }
         }
 
-        stage('docker compose down') {
-          steps {        
-                sshagent (credentials: ['ssh']) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ${remoteServer} '
-                            cd ${remoteDir}
-                            docker compose down
-                            docker compose -f docker-compose.db.yml down
-                            '
-                    """
-                }
-            }
-        }
         stage('Copy Environment Files') {
           steps {        
                 sshagent (credentials: ['ssh']) {
@@ -108,6 +95,21 @@ pipeline {
                                 '
                         """
                     }
+                }
+            }
+        }
+
+        
+        stage('docker compose down') {
+          steps {        
+                sshagent (credentials: ['ssh']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${remoteServer} '
+                            cd ${remoteDir}
+                            docker compose down
+                            docker compose -f docker-compose.db.yml down
+                            '
+                    """
                 }
             }
         }
