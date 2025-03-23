@@ -15,7 +15,7 @@ pipeline {
                 sshagent (credentials: ['ssh']) {
                   sh """
                       ssh -o StrictHostKeyChecking=no ${remoteServer}
-                          cd remoteDir
+                          cd ${remoteDir}
                           touch test.txt
                   """
                 }
