@@ -1,14 +1,44 @@
 services:
-  fast_api:
+  fastapi:
     build:
-      context: ./fastAPI
+      context: ./FastAPI
       dockerfile: Dockerfile
     env_file:
-      - ./envs/fastapi.env
+      - ./envs/FastAPI.env
     ports:
       - "${FAST_API_PORT}:${FAST_API_PORT}"
     volumes:
-      - fastAPI_log:/fastAPI/log
+      - FastAPI_log:/FastAPI/log
+    networks:
+      - app_network
+
+  # CeleryWorker:
+  #   build:
+  #     context: ./FastAPI
+  #     dockerfile: Dockerfile
+  #   command: celery -A celery_app.celery_app worker --loglevel info --pool=solo
+  #   networks:
+  #     - app_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./envs/backend.env
+    ports:
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
+    networks:
+      - app_network
+      - nginx_net
 
 volumes:
-  fastAPI_log:
+  FastAPI_log:
+
+networks:
+  app_network:
+    name: app_network
+    driver: bridge
+  nginx_net:
+    name: nginx_net
+    driver: bridge
