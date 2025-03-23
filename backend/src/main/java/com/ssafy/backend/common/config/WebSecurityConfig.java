@@ -28,8 +28,8 @@ import java.util.List;
 /**
  * <pre>Spring Security 연동 및 설정 파일</pre>
  *
- * @author 박병주, 허현준
- * @version 1.1
+ * @author 박병주
+ * @version 1.0
  * @since 2025-03-12
  */
 
