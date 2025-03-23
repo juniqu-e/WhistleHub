@@ -3,16 +3,16 @@ pipeline {
 
     // 원격 서버 접속 정보와 작업 디렉토리 (MyFairy 폴더)
     environment {
-        REMOTE_SERVER ="${credentials('ssh').username}@${credentials('hostDomain').host}"
-        REMOTE_DIR    = "/home/${credentials('ssh').username}/WhistleHub"
+        ssh = credentials('ssh')
+        hostDomain = credentials('hostDomain')
     }
 
     stages {
         stage('test ssh') {
           steps {        
-                sshagent (credentials: ['ssh']) {
+                sshagent (ssh) {
                 sh """
-                    ssh -o StrictHostKeyChecking=no ${REMOTE_SERVER} "pwd"
+                    ssh -o StrictHostKeyChecking=no ${ssh_usr}@${hostDomain} "pwd"
                 """
                 }
             }
@@ -21,7 +21,7 @@ pipeline {
           steps {        
                 sshagent (credentials: ['ssh']) {
                 sh """
-                    ssh -o StrictHostKeyChecking=no ${REMOTE_SERVER}
+                    ssh -o StrictHostKeyChecking=no ${ssh_usr}@${hostDomain}
                     cd ${REMOTE_DIR}
                     touch test.txt
                 """
