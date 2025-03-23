@@ -42,7 +42,7 @@ pipeline {
                         ssh -o StrictHostKeyChecking=no ${remoteServer} '
                             cd ${remoteDir}
                             docker compose down
-                            docker -f docker-compose.db.yml down
+                            docker compose -f docker-compose.db.yml down
                             '
                     """
                 }
