@@ -14,6 +14,8 @@ RUN ./gradlew --no-daemon dependencies
 # 2단계: 나머지 소스코드 복사 후 전체 빌드 실행 (테스트는 제외)
 COPY . .
 
+RUN chmod +x gradlew
+
 RUN ./gradlew --no-daemon clean build -x test
 
 # 최종 이미지 스테이지
