@@ -11,7 +11,8 @@ pipeline {
         stage('test ssh') {
           steps {        
                 sshagent (credentials: ['ssh']) {
-                  sh ssh -o StrictHostKeyChecking=no ${ssh_usr}@${hostDomain} """
+                  sh """
+                      ssh -o StrictHostKeyChecking=no ${ssh_usr}@${hostDomain}
                       echo "Hello, World!"
                   """
                 }
@@ -21,8 +22,9 @@ pipeline {
           steps {        
                 sshagent (credentials: ['ssh']) {
                   withCredentials([file(credentialsId: 'dockerEnv', variable: 'dockerEnv')]) {
-                        sh ssh -o StrictHostKeyChecking=no ${ssh_usr}@${hostDomain} """
+                        sh """
                             echo "Copying .env file to remote server..."
+                            ssh -o StrictHostKeyChecking=no ${ssh_usr}@${hostDomain}
                             scp -o StrictHostKeyChecking=no ${dockerEnv} ./.env
                         """
                     }
