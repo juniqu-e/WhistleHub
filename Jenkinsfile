@@ -41,7 +41,7 @@ pipeline {
                   withCredentials([file(credentialsId: 'dockerEnv', variable: 'envFile')]) {
                         sh """
                             echo "Copying .env file to remote server..."
-                            scp -o StrictHostKeyChecking=no ${envFile} ${remoteServer}:${remoteDir}/.env
+                            scp -o StrictHostKeyChecking=no "${envFile}" "${remoteServer}:${remoteDir}/.env"
                         """
                     }
                 }
@@ -50,7 +50,7 @@ pipeline {
                   withCredentials([file(credentialsId: 'fastapiEnv', variable: 'envFile')]) {
                         sh """
                             echo "Copying FastAPI.env file to remote server..."
-                            scp -o StrictHostKeyChecking=no ${envFile} ${remoteServer}:${remoteDir}/envs/FastAPI.env
+                            scp -o StrictHostKeyChecking=no "${envFile}" "${remoteServer}:${remoteDir}/envs/FastAPI.env"
                         """
                     }
                 }
@@ -59,7 +59,7 @@ pipeline {
                   withCredentials([file(credentialsId: 'backendEnv', variable: 'envFile')]) {
                         sh """
                             echo "Copying backend.env file to remote server..."
-                            scp -o StrictHostKeyChecking=no ${envFile} ${remoteServer}:${remoteDir}/envs/backend.env
+                            scp -o StrictHostKeyChecking=no "${envFile}" "${remoteServer}:${remoteDir}/envs/backend.env"
                         """
                     }
                 }
@@ -68,7 +68,7 @@ pipeline {
                   withCredentials([file(credentialsId: 'mysqlEnv', variable: 'envFile')]) {
                         sh """
                             echo "Copying mysql.env file to remote server..."
-                            scp -o StrictHostKeyChecking=no ${envFile} ${remoteServer}:${remoteDir}/envs/mysql.env
+                            scp -o StrictHostKeyChecking=no "${envFile}" "${remoteServer}:${remoteDir}/envs/mysql.env"
                         """
                     }
                 }
@@ -77,7 +77,7 @@ pipeline {
                   withCredentials([file(credentialsId: 'neo4jEnv', variable: 'envFile')]) {
                         sh """
                             echo "Copying neo4j.env file to remote server..."
-                            scp -o StrictHostKeyChecking=no ${envFile} ${remoteServer}:${remoteDir}/envs/neo4j.env
+                            scp -o StrictHostKeyChecking=no "${envFile}" "${remoteServer}:${remoteDir}/envs/neo4j.env"
                         """
                     }
                 }
