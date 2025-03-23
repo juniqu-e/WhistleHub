@@ -6,6 +6,6 @@ __pycache__
 files
 tempCodeRunnerFile.py
 envs/*.env
-db/**/data/* 
+db/*/data/* 
 !.gitkeep
 volumes
