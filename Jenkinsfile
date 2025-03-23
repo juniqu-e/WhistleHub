@@ -102,15 +102,13 @@ pipeline {
         stage('docker compose up') {
           steps {        
                 sshagent (credentials: ['ssh']) {
-                    withCredentials([git(credentialsId: 'dockerEnv', variable: 'envFile')]) {
-                        sh """
-                            ssh -o StrictHostKeyChecking=no ${remoteServer} '
-                                cd ${remoteDir}
-                                docker -f docker-compose.db.yml up -d
-                                docker compose up -d --build
-                                '
-                        """
-                        }
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${remoteServer} '
+                            cd ${remoteDir}
+                            docker -f docker-compose.db.yml up -d
+                            docker compose up -d --build
+                            '
+                    """
                 }
             }
         }
@@ -118,15 +116,13 @@ pipeline {
         stage('remove env files') {
           steps {        
                 sshagent (credentials: ['ssh']) {
-                    withCredentials([git(credentialsId: 'dockerEnv', variable: 'envFile')]) {
-                        sh """
-                            ssh -o StrictHostKeyChecking=no ${remoteServer} '
-                                cd ${remoteDir}
-                                rm .env
-                                rm ./envs/*.env
-                                '
-                        """
-                        }
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${remoteServer} '
+                            cd ${remoteDir}
+                            rm .env
+                            rm ./envs/*.env
+                            '
+                    """
                 }
             }
         }
