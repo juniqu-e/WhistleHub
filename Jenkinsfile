@@ -11,19 +11,21 @@ pipeline {
         stage('test ssh') {
           steps {        
                 sshagent (credentials: ['ssh']) {
-                sh """
-                    ssh -o StrictHostKeyChecking=no ${ssh_usr}@${hostDomain} "pwd"
-                """
+                  sh ssh -o StrictHostKeyChecking=no ${ssh_usr}@${hostDomain} """
+                      echo "Hello, World!"
+                  """
                 }
             }
         }
-        stage('touch text file') {
+        stage('Copy Environment Files') {
           steps {        
                 sshagent (credentials: ['ssh']) {
-                sh """
-                    ssh -o StrictHostKeyChecking=no ${ssh_usr}@${hostDomain}
-                    touch test.txt
-                """
+                  withCredentials([file(credentialsId: 'dockerEnv', variable: 'dockerEnv')]) {
+                        sh ssh -o StrictHostKeyChecking=no ${ssh_usr}@${hostDomain} """
+                            echo "Copying .env file to remote server..."
+                            scp -o StrictHostKeyChecking=no ${dockerEnv} ./.env
+                        """
+                    }
                 }
             }
 
