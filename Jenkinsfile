@@ -14,8 +14,10 @@ pipeline {
           steps {        
                 sshagent (credentials: ['ssh']) {
                   sh """
-                      ssh -o StrictHostKeyChecking=no ${remoteServer}
+                      ssh -o StrictHostKeyChecking=no ${remoteServer}'
+                          pwd
                           touch ${remoteDir}/test.txt
+                          '
                   """
                 }
             }
