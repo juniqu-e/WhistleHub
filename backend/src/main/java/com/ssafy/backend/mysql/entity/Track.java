@@ -42,18 +42,9 @@ public class Track extends Common{
     private Boolean visibility = false;
 
     @Column(name = "enabled", nullable = false)
-    private Boolean enabled = false; // 소프트 삭제 속성
+    private Boolean enabled = false;
 
     @Column(name = "blocked", nullable = false)
     private Boolean blocked = false;
-
-    @Column(name = "import_count", nullable = false)
-    private Integer importCount;
-
-    @Column(name = "like_count", nullable = false)
-    private Integer likeCount;
-
-    @Column(name = "view_count", nullable = false)
-    private Integer viewCount;
 
 }

@@ -1,14 +1,14 @@
 package com.ssafy.backend.track.service;
 
-import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.service.S3Service;
 import com.ssafy.backend.common.util.S3FileKeyExtractor;
 import com.ssafy.backend.graph.model.entity.type.WeightType;
 import com.ssafy.backend.graph.service.DataCollectingService;
 import com.ssafy.backend.mysql.entity.*;
-import com.ssafy.backend.mysql.repository.*;
-import com.ssafy.backend.track.dto.request.TrackImageUploadRequestDto;
-import com.ssafy.backend.track.dto.request.TrackUpdateRequestDto;
+import com.ssafy.backend.mysql.repository.LayerFileRepository;
+import com.ssafy.backend.mysql.repository.LayerRepository;
+import com.ssafy.backend.mysql.repository.TrackRepository;
+import com.ssafy.backend.mysql.repository.TrackTagRepository;
 import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
 import com.ssafy.backend.track.dto.response.*;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,17 +37,12 @@ public class TrackService {
     private final TrackTagRepository trackTagRepository;
     private final LayerRepository layerRepository;
     private final LayerFileRepository layerFileRepository;
-    private final LikeRepository likeRepository;
-    private final SamplingRepository samplingRepository;
 
     private final DataCollectingService dataCollectingService;
     private final S3Service s3Service;
 
-    private final AuthService authService;
-
     /**
      * 트랙 음원 데이터를 반환
-     *
      * @param trackId 반환할 음원의 트랙 id
      * @return byte[] 형식의 음원 데이터
      */
@@ -92,10 +86,8 @@ public class TrackService {
                 .duration(trackUploadRequestDto.getDuration())
                 .visibility(trackUploadRequestDto.isVisibility())
                 .enabled(true)
-                .importCount(0)
-                .viewCount(0)
-                // 1-1. 트랙 이미지 업로드(이미지 null 검사 처리)
-                .imageUrl(trackUploadRequestDto.getTrackImg() != null ? s3Service.uploadFile(trackUploadRequestDto.getTrackImg(), S3Service.IMAGE) : null)
+                // 1-1. 트랙 이미지 업로드
+                .imageUrl(s3Service.uploadFile(trackUploadRequestDto.getTrackImg(), S3Service.IMAGE))
                 // 1-2. 트랙 음성 업로드
                 .soundUrl(s3Service.uploadFile(trackUploadRequestDto.getTrackSoundFile(), S3Service.MUSIC))
                 .build();
@@ -112,14 +104,8 @@ public class TrackService {
                             .build();
                 })
                 .collect(Collectors.toList());
-        trackTagRepository.saveAll(trackTags);
-        // 1-3-2. 원천 트랙 insert
-        List<Sampling> samplings = Arrays.stream(trackUploadRequestDto.getSourceTracks())
-                .map(originTrackId -> Sampling.builder()
-                        .originTrack(trackRepository.findById(originTrackId).get()) //TODO: 반복문 내에서 repo 조회 개선 필요.
-                        .track(t).build()).toList();
-        samplingRepository.saveAll(samplings);
 
+        trackTagRepository.saveAll(trackTags);
         // 1-4. 그래프 추가
         // 1-4-1. Track 노드 생성 및 태그 연결
         dataCollectingService.createTrack(t.getId(), Arrays.stream(trackUploadRequestDto.getTags()).toList());

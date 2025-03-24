@@ -1,9 +1,6 @@
 package com.ssafy.backend.track.controller;
 
-import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.ApiResponse;
-import com.ssafy.backend.track.dto.request.TrackImageUploadRequestDto;
-import com.ssafy.backend.track.dto.request.TrackUpdateRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
 import com.ssafy.backend.track.service.TrackService;
 import lombok.RequiredArgsConstructor;
