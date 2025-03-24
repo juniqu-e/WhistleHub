@@ -6,6 +6,7 @@ import jakarta.persistence.EntityNotFoundException;
 import org.apache.coyote.BadRequestException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.HttpClientErrorException;
 
 /**
  * <pre>예외 전역처리</pre>
@@ -74,6 +75,13 @@ public class ControllerExceptionHandler {
                 .errorStatus(ResponseType.PARAMETER_REQUIRED)
                 .build();
     }
+    @ExceptionHandler(NotFoundException.class)
+    public ApiResponse<?> notFoundHandler(NotFoundException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.NOT_FOUND)
+                .build();
+    }
+
 
     // 이외의 정의되지 않은 서버 에러처리
     @ExceptionHandler(Exception.class)

@@ -35,6 +35,7 @@ public enum ResponseType {
     // HTTP Status 403
 
     // HTTP Status 404
+    NOT_FOUND("NF", HttpStatus.NOT_FOUND, "해당 리소스를 찾을 수 없습니다."),
     NOT_FOUND_MEMBER("NFM", HttpStatus.NOT_FOUND, "찾는 회원이 없습니다."),
     FOLLOWER_NOT_FOUND("FNF", HttpStatus.NOT_FOUND, "찾는 팔로워가 없습니다."),
     TRACK_NOT_FOUND("TNF", HttpStatus.NOT_FOUND, "요청한 트랙이 없습니다."),
@@ -44,6 +45,7 @@ public enum ResponseType {
     DUPLICATE_NICKNAME("DNN", HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
     DUPLICATE_ID("DID", HttpStatus.CONFLICT, "이미 사용 중인 아이디입니다."),
     DUPLICATE_EMAIL("DEM", HttpStatus.CONFLICT, "이미 사용 중인 이메일입니다."),
+
 
     // HTTP Status 500
     DATABASE_ERROR("DBE", HttpStatus.INTERNAL_SERVER_ERROR, "데이터베이스 오류입니다."),

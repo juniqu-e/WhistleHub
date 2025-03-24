@@ -16,7 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @Slf4j
-@RequestMapping("/playlist")
+@RequestMapping("/api/playlist")
 @RestController
 @RequiredArgsConstructor
 public class PlaylistController {
@@ -37,9 +37,9 @@ public class PlaylistController {
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "description", required = false) String description,
             @RequestParam(value = "image", required = false) MultipartFile image,
-            @RequestParam(value = "trackIds", required = false) List<Integer> trackIds) {
+            @RequestParam(value = "trackIds", required = false) int[] trackIds) {
 
-        log.debug("name: {}, description: {}, image: {}, trackIds: {}", name, description, image, trackIds);
+        log.warn("name: {}, description: {}, image: {}, trackIds: {}", name, description, image, trackIds);
 
         if(name == null || name.isEmpty()) {
             throw new MissingParameterException();
@@ -96,6 +96,15 @@ public class PlaylistController {
     @PostMapping("/image")
     public ApiResponse<?> uploadImage(@RequestBody UploadPlaylistImageRequestDto requestDto) {
         playlistService.uploadImage(requestDto);
+        return new ApiResponse.builder<Object>()
+                .payload(null)
+                .build();
+    }
+
+    // 플레이리스트에 트랙 추가
+    @PostMapping("/track")
+    public ApiResponse<?> addTrack(@RequestBody AddTrackRequestDto requestDto) {
+        playlistService.addTrack(requestDto);
         return new ApiResponse.builder<Object>()
                 .payload(null)
                 .build();

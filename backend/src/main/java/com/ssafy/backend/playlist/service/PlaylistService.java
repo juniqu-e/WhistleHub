@@ -1,10 +1,12 @@
 package com.ssafy.backend.playlist.service;
 
 import com.ssafy.backend.auth.service.AuthService;
+import com.ssafy.backend.common.error.exception.NotFoundException;
 import com.ssafy.backend.common.error.exception.NotFoundPlaylistException;
 import com.ssafy.backend.common.service.S3Service;
 import com.ssafy.backend.mysql.entity.Playlist;
 import com.ssafy.backend.mysql.entity.PlaylistTrack;
+import com.ssafy.backend.mysql.entity.Track;
 import com.ssafy.backend.mysql.repository.PlaylistRepository;
 import com.ssafy.backend.mysql.repository.PlaylistTrackRepository;
 import com.ssafy.backend.mysql.repository.TrackRepository;
@@ -14,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
@@ -34,7 +37,7 @@ public class PlaylistService {
         Playlist playlist = playlistRepository.findById(playlistid).orElseThrow(
                 () -> {
                     log.warn("{} 플레이리스트가 없습니다.", playlistid);
-                    return new NotFoundPlaylistException();
+                    return new NotFoundException();
                 }
         );
 
@@ -48,7 +51,7 @@ public class PlaylistService {
     }
 
     @Transactional
-    public int createPlaylist(String name, String description, MultipartFile image, List<Integer> trackIds) {
+    public int createPlaylist(String name, String description, MultipartFile image, int[] trackIds) {
         Playlist playlist = new Playlist();
         playlist.setName(name);
         playlist.setDescription(description);
@@ -73,7 +76,7 @@ public class PlaylistService {
                 playlistTrackRepository.save(playlistTrack);
             }
         } catch (Exception e) {
-            log.warn("트랙 저장 중 오류 발생");
+            log.warn("플레이리스트 생성 중 오류 발생: {}", e.getMessage());
             //만들었던 트랙 삭제
             playlistRepository.deleteById(playlistId);
             throw new NotFoundPlaylistException();
@@ -86,7 +89,7 @@ public class PlaylistService {
         Playlist playlist = playlistRepository.findById(requestDto.getPlaylistId()).orElseThrow(
                 () -> {
                     log.warn("{} 플레이리스트가 없습니다.", requestDto.getPlaylistId());
-                    return new NotFoundPlaylistException();
+                    return new NotFoundException();
                 }
         );
         playlist.setName(requestDto.getName());
@@ -100,7 +103,7 @@ public class PlaylistService {
         Playlist playlist = playlistRepository.findById(playlistId).orElseThrow(
                 () -> {
                     log.warn("{} 플레이리스트가 없습니다.", playlistId);
-                    return new NotFoundPlaylistException();
+                    return new NotFoundException();
                 }
         );
         playlistTrackRepository.deleteAllByPlaylist(playlist);
@@ -111,7 +114,7 @@ public class PlaylistService {
         Playlist playlist = playlistRepository.findById(playlistId).orElseThrow(
                 () -> {
                     log.warn("{} 플레이리스트가 없습니다.", playlistId);
-                    return new NotFoundPlaylistException();
+                    return new NotFoundException();
                 }
         );
         List<PlaylistTrack> playlistTracks = playlistTrackRepository.findAllByPlaylist(playlist);
@@ -144,7 +147,7 @@ public class PlaylistService {
         Playlist playlist = playlistRepository.findById(requestDto.getPlaylistId()).orElseThrow(
                 () -> {
                     log.warn("{} 플레이리스트가 없습니다.", requestDto.getPlaylistId());
-                    return new NotFoundPlaylistException();
+                    return new NotFoundException();
                 }
         );
         playlistTrackRepository.deleteAllByPlaylist(playlist);
@@ -163,10 +166,41 @@ public class PlaylistService {
         Playlist playlist = playlistRepository.findById(requestDto.getPlaylistId()).orElseThrow(
                 () -> {
                     log.warn("{} 플레이리스트가 없습니다.", requestDto.getPlaylistId());
-                    return new NotFoundPlaylistException();
+                    return new NotFoundException();
                 }
         );
         playlist.setImageUrl(requestDto.getImage());
         playlistRepository.save(playlist);
+    }
+
+    @Transactional
+    public void addTrack(AddTrackRequestDto requestDto) {
+        Playlist playlist = playlistRepository.findById(requestDto.getPlaylistId()).orElseThrow(
+                () -> {
+                    log.warn("{} 해당 플레이리스트가 없습니다.", requestDto.getPlaylistId());
+                    return new NotFoundException();
+                }
+        );
+        Track track = trackRepository.findById(requestDto.getTrackId()).orElseThrow(
+                () -> {
+                    log.warn("{} 해당 트랙이 없습니다.", requestDto.getTrackId());
+                    return new NotFoundException();
+                }
+        );
+
+        List<PlaylistTrack> playlistTracks = playlistTrackRepository.findAllByPlaylist(playlist);
+
+        for(PlaylistTrack playlistTrack : playlistTracks) {
+            if(playlistTrack.getTrack().getId().equals(track.getId())) {
+                throw new Duplica
+            }
+        }
+
+
+        playlistTrackRepository.save(PlaylistTrack.builder()
+                .playlist(playlist)
+                .track(track)
+                .playOrder(playlistTracks.size() + 1)
+                .build());
     }
 }
