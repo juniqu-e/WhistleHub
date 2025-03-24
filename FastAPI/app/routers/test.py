@@ -42,5 +42,5 @@ async def error_endpoint():
     description="이름과 나이를 입력하면 이름, 나이, 메시지를 반환",
     response_model=ApiResponse[res.TestResponseDto]
 )
-def item(testRequestDto: req.TestRequestDto) -> int:
+def item(testRequestDto: req.TestRequestDto):
     return ApiResponse(payload=test_service.get_item(testRequestDto))
