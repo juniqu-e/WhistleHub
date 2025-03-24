@@ -36,7 +36,7 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://api.whistlehub.com/") // 실제 API 서버 URL로 변경하세요
+            .baseUrl("https://j12c104.p.ssafy.io/api/") // 실제 API 서버 URL로 변경하세요
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

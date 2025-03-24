@@ -70,7 +70,6 @@ dependencies {
     implementation(libs.androidx.security.crypto) // 토큰 암호화
     implementation(libs.converter.gson)     // Retrofit
     implementation(libs.okhttp.logging.interceptor)
-    implementation(libs.androidx.security.crypto.ktx) // Okhttp
     ksp(libs.androidx.room.compiler)     // Room
     implementation(libs.androidx.room.runtime)     // Room
     implementation(libs.androidx.room.ktx)     // Room
