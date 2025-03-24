@@ -7,6 +7,11 @@ import utils
 from common import ApiResponse, ResponseType
 from common.exceptions import CustomException
 
+import app.models.request as req
+import app.models.response as res
+
+import app.services.test as test_service
+
 router = APIRouter(prefix=f"{config.API_BASE_URL}/test", tags=["test"])
 
 
@@ -18,7 +23,7 @@ router = APIRouter(prefix=f"{config.API_BASE_URL}/test", tags=["test"])
 )
 @utils.logger()
 async def success_endpoint():
-    return ApiResponse(object="hello world")
+    return ApiResponse(payload="hello world")
 
 
 @router.get(
@@ -28,4 +33,14 @@ async def success_endpoint():
 )
 @utils.logger()
 async def error_endpoint():
-    raise CustomException(ResponseType.SERVER_ERROR)
+    raise CustomException(ResponseType.NOT_FOUND_PAGE)
+
+
+@router.get(
+    "/item",
+    summary="테스트용 item API",
+    description="이름과 나이를 입력하면 이름, 나이, 메시지를 반환",
+    response_model=ApiResponse[res.TestResponseDto]
+)
+def item(testRequestDto: req.TestRequestDto) -> int:
+    return ApiResponse(payload=test_service.get_item(testRequestDto))
