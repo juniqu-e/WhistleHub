@@ -1,5 +1,6 @@
 package com.whistlehub.playlist.view
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -16,11 +17,16 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,10 +39,13 @@ import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Pretendard
 import com.whistlehub.common.view.theme.Typography
+import com.whistlehub.playlist.view.component.CreatePlaylist
 
 @Preview(showBackground = true, backgroundColor = 0xFF16171B)
 @Composable
 fun PlayListScreen(){
+    var showCreatePlaylistDialog by remember { mutableStateOf(false) }
+
     // 임시 플레이리스트 하드코딩
     val tempPlaylist = remember {
         listOf(
@@ -61,9 +70,11 @@ fun PlayListScreen(){
         )
     }
 
+    // 플레이리스트 화면
     LazyColumn(Modifier
         .height(800.dp)
-        .padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        .padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp))
+    {
         // 페이지 제목
         item {
             Text(
@@ -156,7 +167,9 @@ fun PlayListScreen(){
         item {
             Row(Modifier
                 .fillMaxWidth()
-                .clickable {},
+                .clickable {
+                    showCreatePlaylistDialog = true
+                },
                 horizontalArrangement = Arrangement.spacedBy(10.dp, alignment = Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.AddCircleOutline, contentDescription = "플레이리스트 추가", tint = CustomColors().Grey50, modifier = Modifier.size(24.dp))
@@ -168,5 +181,44 @@ fun PlayListScreen(){
                 )
             }
         }
+    }
+
+    // CreatePlaylist Dialog
+    if (showCreatePlaylistDialog) {
+        AlertDialog(
+            onDismissRequest = { showCreatePlaylistDialog = false },
+            title = { Text(
+                text = "Create Playlist",
+                style = Typography.titleLarge,
+                color = CustomColors().Grey50,
+                modifier = Modifier.padding(bottom = 8.dp)
+            ) },
+            text = { CreatePlaylist() },
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(CustomColors().Grey950),
+            confirmButton = {
+                Button(
+                    onClick = { showCreatePlaylistDialog = false },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CustomColors().Mint500,
+                        contentColor = CustomColors().Grey50,
+                    )
+                ) {
+                    Text("생성", style = Typography.bodyLarge)
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { showCreatePlaylistDialog = false },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CustomColors().Grey400,
+                        contentColor = CustomColors().Grey50,
+                    )
+                ) {
+                    Text("취소", style = Typography.bodyLarge)
+                }
+            }
+        )
     }
 }
