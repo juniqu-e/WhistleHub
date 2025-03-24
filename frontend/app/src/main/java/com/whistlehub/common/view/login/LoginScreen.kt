@@ -24,44 +24,19 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.whistlehub.R
-import com.whistlehub.common.viewmodel.LoginViewModel
-import com.whistlehub.common.viewmodel.LoginState
-
 
 @Composable
-fun LoginScreen(
-    onLoginSuccess: () -> Unit = {},
+fun HomeScreen(
+    onLoginClick: () -> Unit = {},
     onSignUpClick: () -> Unit = {},
-    onForgotPasswordClick: () -> Unit = {},
-    viewModel: LoginViewModel = hiltViewModel()
+    onForgotPasswordClick: () -> Unit = {}
 ) {
     // 아이디/비밀번호 상태 관리
     var userId by remember { mutableStateOf("") }
     var userPassword by remember { mutableStateOf("") }
     var isUserIdFocused by remember { mutableStateOf(false) }
     var isPasswordFocused by remember { mutableStateOf(false) }
-
-    // 로그인 결과에 따른 UI 처리 (예: 에러 메시지 출력)
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-
-    // ViewModel의 로그인 상태를 구독합니다.
-    val loginState by viewModel.loginState.collectAsState()
-
-    // 로그인 상태에 따른 이벤트 처리
-    LaunchedEffect(loginState) {
-        when (loginState) {
-            is LoginState.Success -> {
-                onLoginSuccess()
-                viewModel.resetState()
-            }
-            is LoginState.Error -> {
-                errorMessage = (loginState as LoginState.Error).message
-            }
-            else -> { /* Idle 또는 Loading 상태는 별도 처리 */ }
-        }
-    }
 
     // 커스텀 색상 객체 생성
     val colors = CustomColors()
@@ -84,6 +59,7 @@ fun LoginScreen(
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.7f))
         )
+
         // 중앙 정렬을 위한 Box
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -95,7 +71,6 @@ fun LoginScreen(
                     .widthIn(max = 800.dp)
                     .fillMaxHeight()
             ) {
-                @Suppress("UnusedBoxWithConstraintsScope") // Lint 오류방지 코드
                 BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                     val verticalPadding = when {
                         maxHeight < 500.dp -> 30.dp
@@ -103,6 +78,7 @@ fun LoginScreen(
                         maxHeight < 800.dp -> 120.dp
                         else -> 150.dp
                     }
+
                     // 전체 화면을 채우는 Column
                     Column(
                         modifier = Modifier
@@ -119,7 +95,8 @@ fun LoginScreen(
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()
                         )
-                        // 최하단: 폼 영역
+
+                        // 최하단: 폼 영역 (입력 필드, 버튼, 행)
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -163,6 +140,7 @@ fun LoginScreen(
                                     }
                                 )
                             }
+
                             // 비밀번호 입력 필드
                             Box(
                                 modifier = Modifier
@@ -204,38 +182,22 @@ fun LoginScreen(
                                     }
                                 )
                             }
-                            // 에러 메시지 표시
-                            if (errorMessage != null) {
-                                Text(
-                                    text = errorMessage!!,
-                                    color = MaterialTheme.colorScheme.error,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    modifier = Modifier.padding(8.dp)
-                                )
-                            }
+
                             // 로그인 버튼
                             Button(
-                                onClick = { viewModel.login(userId, userPassword) },
+                                onClick = onLoginClick,
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = ButtonDefaults.buttonColors(containerColor = colors.Mint500),
-                                shape = RoundedCornerShape(8.dp),
-                                enabled = loginState != LoginState.Loading // 로딩 시 비활성화
+                                shape = RoundedCornerShape(8.dp)
                             ) {
-                                if (loginState == LoginState.Loading) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(24.dp),
-                                        color = Color.White,
-                                        strokeWidth = 2.dp
-                                    )
-                                } else {
-                                    Text(
-                                        text = "로그인",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        modifier = Modifier.padding(vertical = 4.dp)
-                                    )
-                                }
+                                Text(
+                                    text = "로그인",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
                             }
-                            // 회원가입/비밀번호 찾기 행
+
+                            // 회원가입/비밀번호 찾기 행 (아이템 간 20.dp 간격, 가운데 "|" 구분자)
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.Center,
@@ -259,12 +221,11 @@ fun LoginScreen(
     }
 }
 
-
 @Preview(showBackground = true, device = "spec:width=360dp,height=740dp")
 @Composable
 fun LoginScreenPhonePreview() {
     WhistleHubTheme {
-        LoginScreen()
+        HomeScreen()
     }
 }
 

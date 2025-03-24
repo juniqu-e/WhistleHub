@@ -3,10 +3,8 @@ package com.ssafy.backend.common.error;
 import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.common.error.exception.*;
 import jakarta.persistence.EntityNotFoundException;
-import org.apache.coyote.BadRequestException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.client.HttpClientErrorException;
 
 /**
  * <pre>예외 전역처리</pre>
@@ -66,25 +64,6 @@ public class ControllerExceptionHandler {
     public ApiResponse<?> duplicateNicknameHandler(DuplicateNicknameException e) {
         return new ApiResponse.builder<Object>()
                 .errorStatus(ResponseType.DUPLICATE_NICKNAME)
-                .build();
-    }
-
-    @ExceptionHandler(MissingParameterException.class)
-    public ApiResponse<?> badRequestHandler(MissingParameterException e) {
-        return new ApiResponse.builder<Object>()
-                .errorStatus(ResponseType.PARAMETER_REQUIRED)
-                .build();
-    }
-    @ExceptionHandler(NotFoundException.class)
-    public ApiResponse<?> notFoundHandler(NotFoundException e) {
-        return new ApiResponse.builder<Object>()
-                .errorStatus(ResponseType.NOT_FOUND)
-                .build();
-    }
-    @ExceptionHandler(DuplicateTrackException.class)
-    public ApiResponse<?> duplicateTrackHandler(DuplicateTrackException e) {
-        return new ApiResponse.builder<Object>()
-                .errorStatus(ResponseType.DUPLICATE_TRACK)
                 .build();
     }
 

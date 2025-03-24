@@ -1,15 +1,13 @@
 package com.ssafy.backend.mysql.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.Instant;
 
 @Getter
 @Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "playlist_track")
 public class PlaylistTrack extends Common{
@@ -28,5 +26,6 @@ public class PlaylistTrack extends Common{
 
     @Column(name = "play_order")
     private Integer playOrder;
+
 
 }

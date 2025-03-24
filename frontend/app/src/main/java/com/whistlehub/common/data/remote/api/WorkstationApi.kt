@@ -15,20 +15,20 @@ import retrofit2.http.*
 
 interface WorkstationApi {
     // 트랙 업로드
-    @POST("workstation")
+    @POST("/workstation")
     suspend fun uploadTrack(
         @Header("Authorization") token: String,
         @Body request: WorkstationRequest.UploadTrackRequest
     ): Response<ApiResponse<Int>>
     // 레이어 업로드
     @Multipart
-    @POST("workstation/layer")
+    @POST("/workstation/layer")
     suspend fun uploadLayerFile(
         @Header("Authorization") token: String,
         @Part file: MultipartBody.Part,
     ): Response<ApiResponse<Int>>
     // 트랙 임포트
-    @POST("workstation/import")
+    @POST("/workstation/import")
     suspend fun importTrack(
         @Header("Authorization") token: String,
         @Body request: WorkstationRequest.ImportTrackRequest

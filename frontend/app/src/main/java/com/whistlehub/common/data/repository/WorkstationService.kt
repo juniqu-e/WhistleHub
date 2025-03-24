@@ -4,7 +4,6 @@ import com.whistlehub.common.data.remote.api.WorkstationApi
 import com.whistlehub.common.data.remote.dto.request.WorkstationRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
 import com.whistlehub.common.data.remote.dto.response.WorkstationResponse
-import com.whistlehub.common.util.TokenRefresh
 import okhttp3.MultipartBody
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -17,9 +16,7 @@ import javax.inject.Singleton
 
 @Singleton
 class WorkstationService @Inject constructor(
-    private val workstationApi: WorkstationApi,
-    private val tokenRefresh: TokenRefresh? = null
-
+    private val workstationApi: WorkstationApi
 ) : ApiRepository() {
 
     // 트랙 업로드

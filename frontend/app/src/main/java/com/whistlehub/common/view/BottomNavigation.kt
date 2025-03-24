@@ -104,7 +104,7 @@ fun WhistleHubNavHost(
 
         // 기타화면
         composable(route = Screen.Player.route) {
-            FullPlayerScreen(navController = navController, paddingValues = paddingValues)
+            FullPlayerScreen(navController = navController)
         }
     }
 }

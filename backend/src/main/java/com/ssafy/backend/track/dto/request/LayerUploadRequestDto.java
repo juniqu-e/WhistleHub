@@ -9,6 +9,5 @@ import lombok.ToString;
 @ToString
 public class LayerUploadRequestDto {
     String name;
-    @NotBlank
-    int instrumentType;
+    String instrumentType;
 }

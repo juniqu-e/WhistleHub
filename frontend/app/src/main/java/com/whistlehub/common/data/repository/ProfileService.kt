@@ -4,7 +4,6 @@ import com.whistlehub.common.data.remote.api.ProfileApi
 import com.whistlehub.common.data.remote.dto.request.ProfileRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
 import com.whistlehub.common.data.remote.dto.response.ProfileResponse
-import com.whistlehub.common.util.TokenRefresh
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -20,8 +19,7 @@ import javax.inject.Singleton
 
 @Singleton
 class ProfileService @Inject constructor(
-    private val profileApi: ProfileApi,
-    private val tokenRefresh: TokenRefresh? = null
+    private val profileApi: ProfileApi
 ) : ApiRepository() {
     // 프로필 조회 (memberId가 생략 된 경우 AccessToken의 memberId 조회)
     suspend fun getProfile(
