@@ -1,6 +1,7 @@
 package com.ssafy.backend.playlist.service;
 
 import com.ssafy.backend.auth.service.AuthService;
+import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.common.error.exception.DuplicateTrackException;
 import com.ssafy.backend.common.error.exception.NotFoundException;
 import com.ssafy.backend.common.error.exception.NotFoundPlaylistException;
@@ -15,6 +16,8 @@ import com.ssafy.backend.playlist.dto.*;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -202,5 +205,21 @@ public class PlaylistService {
                 .track(track)
                 .playOrder(playlistTracks.size() + 1)
                 .build());
+    }
+
+    public List<GetMemberPlaylistResponseDto> getMemberPlaylist(int memberId, PageRequest pageRequest) {
+        List<Playlist> playlists = playlistRepository.findAllByMemberId(memberId, pageRequest);
+
+        List<GetMemberPlaylistResponseDto> responseDtos = new ArrayList<>();
+
+       for(Playlist playlist : playlists) {
+              responseDtos.add(
+                     GetMemberPlaylistResponseDto.builder()
+                            .playlistId(playlist.getId())
+                            .imageUrl(playlist.getImageUrl())
+                            .build()
+              );
+       }
+       return responseDtos;
     }
 }

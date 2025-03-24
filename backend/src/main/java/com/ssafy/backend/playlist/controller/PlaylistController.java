@@ -2,17 +2,22 @@ package com.ssafy.backend.playlist.controller;
 
 import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.common.error.exception.MissingParameterException;
+import com.ssafy.backend.mysql.entity.Playlist;
 import com.ssafy.backend.playlist.dto.*;
 import com.ssafy.backend.playlist.service.PlaylistService;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.awt.print.Book;
+import java.awt.print.Pageable;
 import java.util.List;
 
 @Slf4j
@@ -107,6 +112,28 @@ public class PlaylistController {
         playlistService.addTrack(requestDto);
         return new ApiResponse.builder<Object>()
                 .payload(null)
+                .build();
+    }
+
+    @GetMapping("/member")
+    public ApiResponse<?> getMemberPlaylist(
+            @RequestParam int memberId,
+            @RequestParam int page,
+            @RequestParam int size,
+            @RequestParam String orderby) {
+
+        List<GetMemberPlaylistResponseDto> playlists;
+
+        if(orderby.equals("ASC")) {
+            playlists = playlistService.getMemberPlaylist(memberId, PageRequest.of(page, size, Sort.by(Sort.Order.asc("createdAt"))));
+        } else if(orderby.equals("DESC")) {
+            playlists = playlistService.getMemberPlaylist(memberId, PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt"))));
+        } else {
+            throw new MissingParameterException();
+        }
+
+        return new ApiResponse.builder<Object>()
+                .payload(playlists)
                 .build();
     }
 }
