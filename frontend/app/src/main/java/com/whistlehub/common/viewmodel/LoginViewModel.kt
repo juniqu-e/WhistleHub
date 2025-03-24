@@ -1,5 +1,6 @@
 package com.whistlehub.common.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.whistlehub.common.data.repository.AuthService
@@ -42,20 +43,18 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val request = AuthRequest.LoginRequest(loginId, password)
-                // AuthService의 login() 호출 (이미 executeApiCall 사용)
-                val response: ApiResponse<AuthResponse.LoginResponse> = authService.login(request)
-                if (response.code == "SU" && response.payload != null) {
-                    // 토큰 저장
-                    val payload = response.payload
-                    tokenManager.saveTokens(payload.accessToken, payload.refreshToken)
+                val loginResponse = authService.login(request)
+                if (loginResponse != null) {
+                    tokenManager.saveTokens(loginResponse.accessToken, loginResponse.refreshToken)
                     _loginState.value = LoginState.Success
                 } else {
-                    _loginState.value = LoginState.Error(response.message)
+                    _loginState.value = LoginState.Error("로그인 실패")
                 }
             } catch (e: Exception) {
                 _loginState.value = LoginState.Error(e.message ?: "알 수 없는 오류 발생")
             }
         }
+
     }
 
     // 필요에 따라 상태를 초기화할 함수

@@ -1,6 +1,7 @@
 package com.whistlehub.common.util
 
 import android.content.SharedPreferences
+import android.util.Log
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,6 +19,7 @@ class TokenManager @Inject constructor(
             .putString(ACCESS_TOKEN_KEY, accessToken)
             .putString(REFRESH_TOKEN_KEY, refreshToken)
             .apply()
+        Log.d("TokenManager", "AccessToken: $accessToken, RefreshToken: $refreshToken saved")
     }
 
     fun getAccessToken(): String? {

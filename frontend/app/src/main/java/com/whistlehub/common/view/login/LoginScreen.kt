@@ -95,6 +95,7 @@ fun LoginScreen(
                     .widthIn(max = 800.dp)
                     .fillMaxHeight()
             ) {
+                @Suppress("UnusedBoxWithConstraintsScope") // Lint 오류방지 코드
                 BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                     val verticalPadding = when {
                         maxHeight < 500.dp -> 30.dp
