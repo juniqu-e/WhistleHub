@@ -5,6 +5,7 @@ import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.track.dto.request.TrackImageUploadRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUpdateRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
+import com.ssafy.backend.track.service.TrackCommentService;
 import com.ssafy.backend.track.service.TrackService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/track")
 public class TrackController {
     private final TrackService trackService;
+    private final TrackCommentService trackCommentService;
     private final AuthService authService;
 
 
@@ -94,14 +96,6 @@ public class TrackController {
                 .body(resource);
     }
 
-    //TODO: API 주소 변경 해야함.
-    @PostMapping("/workstation")
-    public ApiResponse<?> createTrack(TrackUploadRequestDto trackUploadRequestDto) {
-        return new ApiResponse.builder<Object>()
-                .payload(trackService.createTrack(trackUploadRequestDto, authService.getMember().getId()))
-                .build();
-    }
-
     @PostMapping("/like")
     public ApiResponse<?> likeTrack(int trackId) {
         trackService.likeTrack(trackId);
@@ -113,6 +107,34 @@ public class TrackController {
     @DeleteMapping("/like")
     public ApiResponse<?> unlikeTrack(int trackId) {
         trackService.unlikeTrack(trackId);
+        return new ApiResponse.builder<Object>()
+                .payload(null)
+                .build();
+    }
+
+    @GetMapping("/comment")
+    public ApiResponse<?> getTrackComments(int trackId) {
+        return new ApiResponse.builder<Object>()
+                .payload(trackCommentService.getComments(trackId))
+                .build();
+    }
+    @PostMapping("/comment")
+    public ApiResponse<?> insertTrackComment(int trackId, String context) {
+        trackCommentService.insertTrackComment(trackId, context);
+        return new ApiResponse.builder<Object>()
+                .payload(null)
+                .build();
+    }
+    @PutMapping("/comment")
+    public ApiResponse<?> updateTrackComment(int commentId, String context) {
+        trackCommentService.updateTrackComment(commentId, context);
+        return new ApiResponse.builder<Object>()
+                .payload(null)
+                .build();
+    }
+    @DeleteMapping("/comment")
+    public ApiResponse<?> deleteTrackComment(int commentId) {
+        trackCommentService.deleteTrackComment(commentId);
         return new ApiResponse.builder<Object>()
                 .payload(null)
                 .build();

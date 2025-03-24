@@ -76,13 +76,13 @@ public class TrackService {
      * 트랙의 업로드
      *
      * @param trackUploadRequestDto 업로드 정보
-     * @param memberId              업로드 멤버 id
      */
     @Transactional
-    public int createTrack(TrackUploadRequestDto trackUploadRequestDto, int memberId) {
+    public int createTrack(TrackUploadRequestDto trackUploadRequestDto) {
+        Member m = authService.getMember();
         // 트랜젝션
         Member member = new Member();
-        member.setId(memberId);
+        member.setId(m.getId());
         // 1. 트랙 생성
         Track track = Track.builder()
                 .title(trackUploadRequestDto.getTitle())
