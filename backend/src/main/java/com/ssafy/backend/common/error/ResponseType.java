@@ -45,7 +45,7 @@ public enum ResponseType {
     DUPLICATE_NICKNAME("DNN", HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
     DUPLICATE_ID("DID", HttpStatus.CONFLICT, "이미 사용 중인 아이디입니다."),
     DUPLICATE_EMAIL("DEM", HttpStatus.CONFLICT, "이미 사용 중인 이메일입니다."),
-
+    DUPLICATE_TRACK("DT", HttpStatus.CONFLICT, "이미 존재하는 트랙입니다."),
 
     // HTTP Status 500
     DATABASE_ERROR("DBE", HttpStatus.INTERNAL_SERVER_ERROR, "데이터베이스 오류입니다."),

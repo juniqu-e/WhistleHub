@@ -1,6 +1,7 @@
 package com.ssafy.backend.playlist.service;
 
 import com.ssafy.backend.auth.service.AuthService;
+import com.ssafy.backend.common.error.exception.DuplicateTrackException;
 import com.ssafy.backend.common.error.exception.NotFoundException;
 import com.ssafy.backend.common.error.exception.NotFoundPlaylistException;
 import com.ssafy.backend.common.service.S3Service;
@@ -192,11 +193,10 @@ public class PlaylistService {
 
         for(PlaylistTrack playlistTrack : playlistTracks) {
             if(playlistTrack.getTrack().getId().equals(track.getId())) {
-                throw new Duplica
+                throw new DuplicateTrackException();
             }
         }
-
-
+        
         playlistTrackRepository.save(PlaylistTrack.builder()
                 .playlist(playlist)
                 .track(track)

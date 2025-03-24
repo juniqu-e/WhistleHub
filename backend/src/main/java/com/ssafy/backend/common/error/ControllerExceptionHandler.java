@@ -81,7 +81,12 @@ public class ControllerExceptionHandler {
                 .errorStatus(ResponseType.NOT_FOUND)
                 .build();
     }
-
+    @ExceptionHandler(DuplicateTrackException.class)
+    public ApiResponse<?> duplicateTrackHandler(DuplicateTrackException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.DUPLICATE_TRACK)
+                .build();
+    }
 
     // 이외의 정의되지 않은 서버 에러처리
     @ExceptionHandler(Exception.class)
