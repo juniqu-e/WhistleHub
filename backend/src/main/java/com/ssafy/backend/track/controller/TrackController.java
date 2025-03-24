@@ -2,9 +2,7 @@ package com.ssafy.backend.track.controller;
 
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.ApiResponse;
-import com.ssafy.backend.track.dto.request.TrackImageUploadRequestDto;
-import com.ssafy.backend.track.dto.request.TrackUpdateRequestDto;
-import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
+import com.ssafy.backend.track.dto.request.*;
 import com.ssafy.backend.track.service.TrackCommentService;
 import com.ssafy.backend.track.service.TrackService;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +12,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 /**
  * <pre>Track 컨트롤러</pre>
@@ -39,7 +39,8 @@ public class TrackController {
     }
 
     @PutMapping()
-    public ApiResponse<?> updateTrack(TrackUpdateRequestDto trackUpdateRequestDto) {
+    public ApiResponse<?> updateTrack(@RequestBody TrackUpdateRequestDto trackUpdateRequestDto) {
+        System.out.println(trackUpdateRequestDto);
         trackService.updateTrack(trackUpdateRequestDto, authService.getMember().getId());
         return new ApiResponse.builder<Object>()
                 .payload(null)
@@ -72,8 +73,8 @@ public class TrackController {
     }
 
     @PostMapping("/play")
-    public ApiResponse<?> recordPlay(int trackId) {
-        trackService.recordPlay(trackId);
+    public ApiResponse<?> recordPlay(@RequestBody Map<String, Integer> request) {
+        trackService.recordPlay(request.get("trackId"));
         return new ApiResponse.builder<Object>()
                 .payload(null)
                 .build();
@@ -97,8 +98,8 @@ public class TrackController {
     }
 
     @PostMapping("/like")
-    public ApiResponse<?> likeTrack(int trackId) {
-        trackService.likeTrack(trackId);
+    public ApiResponse<?> likeTrack(@RequestBody Map<String, Integer> request) {
+        trackService.likeTrack(request.get("trackId"));
         return new ApiResponse.builder<Object>()
                 .payload(null)
                 .build();
@@ -119,15 +120,15 @@ public class TrackController {
                 .build();
     }
     @PostMapping("/comment")
-    public ApiResponse<?> insertTrackComment(int trackId, String context) {
-        trackCommentService.insertTrackComment(trackId, context);
+    public ApiResponse<?> insertTrackComment(@RequestBody TrackCommentRequresDto trackCommentRequresDto) {
+        trackCommentService.insertTrackComment(trackCommentRequresDto.getTrackId(), trackCommentRequresDto.getContext());
         return new ApiResponse.builder<Object>()
                 .payload(null)
                 .build();
     }
     @PutMapping("/comment")
-    public ApiResponse<?> updateTrackComment(int commentId, String context) {
-        trackCommentService.updateTrackComment(commentId, context);
+    public ApiResponse<?> updateTrackComment(@RequestBody TrackCommentUpdateRequestDto trackCommentUpdateRequestDto) {
+        trackCommentService.updateTrackComment(trackCommentUpdateRequestDto.getCommentId(), trackCommentUpdateRequestDto.getContext());
         return new ApiResponse.builder<Object>()
                 .payload(null)
                 .build();
@@ -135,6 +136,14 @@ public class TrackController {
     @DeleteMapping("/comment")
     public ApiResponse<?> deleteTrackComment(int commentId) {
         trackCommentService.deleteTrackComment(commentId);
+        return new ApiResponse.builder<Object>()
+                .payload(null)
+                .build();
+    }
+
+    @PostMapping("/report")
+    public ApiResponse<?> reportTrack(@RequestBody TrackReportRequestDto trackReportRequestDto) {
+        trackService.reportTrack(trackReportRequestDto.getTrackId(), trackReportRequestDto.getType(), trackReportRequestDto.getDetail());
         return new ApiResponse.builder<Object>()
                 .payload(null)
                 .build();

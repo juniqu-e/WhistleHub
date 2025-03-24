@@ -40,6 +40,7 @@ public class TrackService {
     private final LayerFileRepository layerFileRepository;
     private final LikeRepository likeRepository;
     private final SamplingRepository samplingRepository;
+    private final ReportRepository reportRepository;
 
     private final DataCollectingService dataCollectingService;
     private final S3Service s3Service;
@@ -94,6 +95,7 @@ public class TrackService {
                 .enabled(true)
                 .importCount(0)
                 .viewCount(0)
+                .likeCount(0)
                 // 1-1. 트랙 이미지 업로드(이미지 null 검사 처리)
                 .imageUrl(trackUploadRequestDto.getTrackImg() != null ? s3Service.uploadFile(trackUploadRequestDto.getTrackImg(), S3Service.IMAGE) : null)
                 // 1-2. 트랙 음성 업로드
@@ -107,6 +109,9 @@ public class TrackService {
                     Tag tag = new Tag();
                     tag.setId(tagId);
                     return TrackTag.builder()
+                            .id(TrackTagId.builder()
+                                    .tagId(tagId)
+                                    .trackId(track.getId()).build())
                             .track(t)
                             .tag(tag)
                             .build();
@@ -125,15 +130,16 @@ public class TrackService {
         dataCollectingService.createTrack(t.getId(), Arrays.stream(trackUploadRequestDto.getTags()).toList());
         // 1-4-2. TODO: FastAPI로 음원 보내기
         // 2. 레이어 목록 저장
-        for (int i = 0; i < trackUploadRequestDto.getLayers().size(); i++) {
+        int layerSize = trackUploadRequestDto.getLayerName().length;
+        for (int i = 0; i < layerSize; i++) {
             // 2-1. 음성 업로드
             LayerFile layerFile = new LayerFile();
             layerFile.setSoundUrl(s3Service.uploadFile(trackUploadRequestDto.getLayerSoundFiles()[i], S3Service.MUSIC));
             LayerFile lf = layerFileRepository.save(layerFile);
 
             Layer layer = Layer.builder()
-                    .name(trackUploadRequestDto.getLayers().get(i).getName())
-                    .instrumentType(trackUploadRequestDto.getLayers().get(i).getInstrumentType())
+                    .name(trackUploadRequestDto.getLayerName()[i])
+                    .instrumentType(trackUploadRequestDto.getInstrumentType()[i])
                     .blocked(false)
                     .track(t)
                     .layerFile(lf).build();
@@ -161,7 +167,7 @@ public class TrackService {
             }
         }
 
-        if (track.getEnabled()) {
+        if (!track.getEnabled()) {
             log.info("{}번 회원이 삭제된 트랙({})을 조회", memberId, track.getId());
             throw new RuntimeException(); // TODO: 커스텀으로 교체
         }
@@ -212,6 +218,7 @@ public class TrackService {
                 .imageUrl(track.getImageUrl())
                 .artist(ArtistInfoDto.builder().memberId(track.getMember().getId()).nickname(track.getMember().getNickname()).profileImage(track.getMember().getProfileImage()).build())
                 .isLiked(isLike)
+                .createdAt(track.getCreatedAt())
                 .importCount(track.getImportCount())
                 .likeCount(track.getLikeCount())
                 .viewCount(track.getViewCount())
@@ -312,13 +319,14 @@ public class TrackService {
 
         // Like 관계 매핑
         Like like = new Like();
+        like.setId(LikeId.builder().trackId(track.getId()).memberId(member.getId()).build());
         like.setTrack(track);
         like.setMember(member);
         likeRepository.save(like);
 
 
         // 2. graph 반영
-        dataCollectingService.viewTrack(authService.getMember().getId(), trackId, WeightType.LIKE);
+//        dataCollectingService.viewTrack(authService.getMember().getId(), trackId, WeightType.LIKE);
     }
 
     @Transactional
@@ -337,12 +345,33 @@ public class TrackService {
         trackRepository.save(track);
 
         // Like 관계 매핑 삭제
-        Like like = new Like();
-        like.setTrack(track);
-        like.setMember(member);
+        Like like = likeRepository.findByTrackIdAndMemberId(trackId, member.getId()).orElseThrow(
+                () -> {
+                    log.warn("없는 관계 조회");
+                    return new RuntimeException();
+                }
+        );
         likeRepository.delete(like);
 
         // 2. graph 반영
-        dataCollectingService.viewTrack(authService.getMember().getId(), trackId, WeightType.DISLIKE);
+//        dataCollectingService.viewTrack(authService.getMember().getId(), trackId, WeightType.DISLIKE);
+    }
+
+    public void reportTrack(int trackId, int type, String detail) {
+        Member member = authService.getMember();
+        Track track = trackRepository.findById(trackId).orElseThrow(
+                () -> {
+                    log.warn("트랙({})은 없는 트랙에 대한 요청", trackId);
+                    return new RuntimeException();
+                }
+        );
+
+        Report report = Report.builder()
+                .reportType(type)
+                .track(track)
+                .member(member)
+                .detail(detail)
+                .build();
+        reportRepository.save(report);
     }
 }

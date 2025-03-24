@@ -32,7 +32,8 @@ public class TrackCommentService {
                 () -> new RuntimeException("Track not found")
         );
         Member member = authService.getMember();
-        if (track.getBlocked() || track.getEnabled()) return null; // 정지된 트랙 처리
+
+        if (track.getBlocked() || !track.getEnabled()) return null; // 정지된 트랙 처리
         if (!track.getVisibility() && !member.getId().equals(track.getMember().getId())) return null; // 비공개 트랙 처리
 
 
@@ -43,7 +44,7 @@ public class TrackCommentService {
             Member m = memberRepository.findById(comment.getMember().getId()).orElseThrow(
                     () -> new RuntimeException("Member not found")
             );
-            if (m.getEnabled()) { // 삭제된 회원 처리
+            if (!m.getEnabled()) { // 삭제된 회원 처리
                 m = Member.builder().id(-1)
                         .nickname("알수 없음")
                         .profileImage(null)
@@ -66,7 +67,10 @@ public class TrackCommentService {
 
     public void insertTrackComment(int trackId, String context) {
         Track track = trackRepository.findById(trackId).orElseThrow(
-                () -> new RuntimeException("Track not found")
+                () -> {
+                    log.error("Track({}) not found", trackId);
+                    return new RuntimeException("Track not found");
+                }
         );
         Member member = authService.getMember();
         commentRepository.save(Comment.builder()
@@ -77,14 +81,18 @@ public class TrackCommentService {
     }
 
     @Transactional
-    public void updateTrackComment(int trackId, String context) {
+    public void updateTrackComment(int commentId, String context) {
         Member member = authService.getMember();
-        Comment comment = commentRepository.findByTrackIdAndMemberId(trackId, member.getId()).orElseThrow(
+        Comment comment = commentRepository.findById(commentId).orElseThrow(
                 () -> {
-                    log.warn("찾을 수 없는 Comment");
+                    log.warn("찾을 수 없는 Comment({})", commentId);
                     return new RuntimeException();
                 }
         );
+        if(!comment.getMember().getId().equals(member.getId())) {
+            log.warn("권한 없는 덧글 수정 요청");
+            throw new RuntimeException();
+        }
         comment.setComment(context);
         commentRepository.save(comment);
     }
