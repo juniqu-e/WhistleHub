@@ -3,16 +3,14 @@ package com.ssafy.backend.track.service;
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.service.S3Service;
 import com.ssafy.backend.common.util.S3FileKeyExtractor;
+import com.ssafy.backend.graph.model.entity.type.WeightType;
 import com.ssafy.backend.graph.service.DataCollectingService;
 import com.ssafy.backend.mysql.entity.*;
 import com.ssafy.backend.mysql.repository.*;
 import com.ssafy.backend.track.dto.request.TrackImageUploadRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUpdateRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
-import com.ssafy.backend.track.dto.response.ArtistInfoDto;
-import com.ssafy.backend.track.dto.response.TagInfo;
-import com.ssafy.backend.track.dto.response.TrackInfoDto;
-import com.ssafy.backend.track.dto.response.TrackResponseDto;
+import com.ssafy.backend.track.dto.response.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -62,6 +60,16 @@ public class TrackService {
                 }
         );
         return s3Service.downloadFile(S3FileKeyExtractor.extractS3FileKey(track.getSoundUrl()));
+    }
+
+    public byte[] layerPlay(int layerId) {
+        Layer layer = layerRepository.findById(layerId).orElseThrow(
+                () -> {
+                    log.warn("Layer id {} not found", layerId);
+                    return new RuntimeException("Layer not found");
+                }
+        );
+        return s3Service.downloadFile(S3FileKeyExtractor.extractS3FileKey(layer.getLayerFile().getSoundUrl()));
     }
 
     /**
@@ -231,6 +239,7 @@ public class TrackService {
         trackRepository.save(track);
     }
 
+    @Transactional
     public String updateImage(TrackImageUploadRequestDto trackImageUploadRequestDto) {
         Track track = trackRepository.findById(trackImageUploadRequestDto.getTrackId()).orElseThrow();
         String existingFileUrl = track.getImageUrl();
@@ -240,9 +249,14 @@ public class TrackService {
         } else {
             updatedFileUrl = s3Service.updateFile(existingFileUrl, trackImageUploadRequestDto.getTrackImg(), S3Service.MUSIC);
         }
+        // 변경된 이미지 반영
+        track.setImageUrl(updatedFileUrl);
+        trackRepository.save(track);
+
         return updatedFileUrl;
     }
 
+    @Transactional
     public void deleteTrack(int trackId) {
         Member member = authService.getMember();
         Track track = trackRepository.findById(trackId).orElseThrow(
@@ -254,12 +268,81 @@ public class TrackService {
         if (track.getMember().getId() != member.getId()) {
             log.info("본인({})의 트랙({})이 아닐 때 삭제 요청", member.getId(), track.getId());
             throw new RuntimeException("");
-        } else if(!track.getEnabled()){
+        } else if (!track.getEnabled()) {
             log.info("트랙({})은 이미 삭제 처리 됨", track.getId());
             return;
         }
         // soft delete
         track.setEnabled(false);
         trackRepository.save(track);
+    }
+
+    public void recordPlay(int trackId) {
+        dataCollectingService.viewTrack(authService.getMember().getId(), trackId, WeightType.VIEW);
+    }
+
+    public List<LayerResponseDto> getLayers(int trackId) {
+        List<Layer> layers = layerRepository.findAllByTrackId(trackId);
+        List<LayerResponseDto> layerResponseDtoList = new ArrayList<>();
+        layers.forEach(layer -> {
+            layerResponseDtoList.add(LayerResponseDto.builder()
+                    .layerId(layer.getId())
+                    .instrumentType(layer.getInstrumentType())
+                    .name(layer.getName()).build());
+        });
+        return layerResponseDtoList;
+    }
+
+    @Transactional
+    public void likeTrack(int trackId) {
+        Member member = authService.getMember();
+        Like l = likeRepository.findByTrackIdAndMemberId(trackId, member.getId()).orElse(null);
+        if (l != null) return; // 중복된 요청 처리
+        // 1. TrackLike, Track.LikeCount 반영
+        Track track = trackRepository.findById(trackId).orElseThrow(
+                () -> {
+                    log.warn("트랙({})은 없는 트랙에 대한 요청", trackId);
+                    return new RuntimeException();
+                }
+        );
+        // 트랙에 Like 정보 반영
+        int likeCount = track.getLikeCount();
+        track.setLikeCount(++likeCount);
+        trackRepository.save(track);
+
+        // Like 관계 매핑
+        Like like = new Like();
+        like.setTrack(track);
+        like.setMember(member);
+        likeRepository.save(like);
+
+
+        // 2. graph 반영
+        dataCollectingService.viewTrack(authService.getMember().getId(), trackId, WeightType.LIKE);
+    }
+
+    @Transactional
+    public void unlikeTrack(int trackId) {
+        // 1. TrackLike, Track.LikeCount 반영
+        Member member = authService.getMember();
+        Track track = trackRepository.findById(trackId).orElseThrow(
+                () -> {
+                    log.warn("트랙({})은 없는 트랙에 대한 요청", trackId);
+                    return new RuntimeException();
+                }
+        );
+        // 트랙에 Like 정보 반영
+        int likeCount = track.getLikeCount();
+        track.setLikeCount(--likeCount);
+        trackRepository.save(track);
+
+        // Like 관계 매핑 삭제
+        Like like = new Like();
+        like.setTrack(track);
+        like.setMember(member);
+        likeRepository.delete(like);
+
+        // 2. graph 반영
+        dataCollectingService.viewTrack(authService.getMember().getId(), trackId, WeightType.DISLIKE);
     }
 }

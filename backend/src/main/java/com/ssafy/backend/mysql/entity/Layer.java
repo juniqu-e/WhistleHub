@@ -29,7 +29,7 @@ public class Layer extends Common{
     private String name;
 
     @Column(name = "instrument_type", length = 100)
-    private String instrumentType;
+    private int instrumentType;
 
     @Column(name = "modification")
     @JdbcTypeCode(SqlTypes.JSON)
