@@ -6,6 +6,7 @@ import com.ssafy.backend.common.error.exception.DuplicateEmailException;
 import com.ssafy.backend.common.error.exception.DuplicateIdException;
 import com.ssafy.backend.common.error.exception.DuplicateNicknameException;
 import com.ssafy.backend.common.error.exception.NotFoundMemberException;
+import com.ssafy.backend.graph.service.DataCollectingService;
 import com.ssafy.backend.mysql.entity.Member;
 import com.ssafy.backend.mysql.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @RequiredArgsConstructor
 public class AuthService {
+    private final DataCollectingService dataCollectingService;
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -50,7 +52,7 @@ public class AuthService {
         if(checkDuplicatedEmail(email))
             throw new DuplicateEmailException();
 
-
+        //todo : 아이디, 비밀번호, 닉네임, 이메일 형식 체크
 
         // 새 회원 등록
         Member member = Member.builder()
@@ -63,6 +65,9 @@ public class AuthService {
                 .build();
 
         member = memberRepository.save(member);
+
+        // 그래프 DB에도 추가
+        dataCollectingService.createMember(member.getId());
 
         return member.getId();
     }
