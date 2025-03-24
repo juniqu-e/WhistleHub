@@ -38,7 +38,7 @@ public class PlaylistService {
         Playlist playlist = playlistRepository.findById(playlistid).orElseThrow(
                 () -> {
                     log.warn("{} 플레이리스트가 없습니다.", playlistid);
-                    return new NotFoundException();
+                    return new NotFoundPlaylistException();
                 }
         );
 
@@ -90,7 +90,7 @@ public class PlaylistService {
         Playlist playlist = playlistRepository.findById(requestDto.getPlaylistId()).orElseThrow(
                 () -> {
                     log.warn("{} 플레이리스트가 없습니다.", requestDto.getPlaylistId());
-                    return new NotFoundException();
+                    return new NotFoundPlaylistException();
                 }
         );
         playlist.setName(requestDto.getName());
@@ -104,7 +104,7 @@ public class PlaylistService {
         Playlist playlist = playlistRepository.findById(playlistId).orElseThrow(
                 () -> {
                     log.warn("{} 플레이리스트가 없습니다.", playlistId);
-                    return new NotFoundException();
+                    return new NotFoundPlaylistException();
                 }
         );
         playlistTrackRepository.deleteAllByPlaylist(playlist);
@@ -115,7 +115,7 @@ public class PlaylistService {
         Playlist playlist = playlistRepository.findById(playlistId).orElseThrow(
                 () -> {
                     log.warn("{} 플레이리스트가 없습니다.", playlistId);
-                    return new NotFoundException();
+                    return new NotFoundPlaylistException();
                 }
         );
         List<PlaylistTrack> playlistTracks = playlistTrackRepository.findAllByPlaylist(playlist);
@@ -148,7 +148,7 @@ public class PlaylistService {
         Playlist playlist = playlistRepository.findById(requestDto.getPlaylistId()).orElseThrow(
                 () -> {
                     log.warn("{} 플레이리스트가 없습니다.", requestDto.getPlaylistId());
-                    return new NotFoundException();
+                    return new NotFoundPlaylistException();
                 }
         );
         playlistTrackRepository.deleteAllByPlaylist(playlist);
@@ -167,7 +167,7 @@ public class PlaylistService {
         Playlist playlist = playlistRepository.findById(requestDto.getPlaylistId()).orElseThrow(
                 () -> {
                     log.warn("{} 플레이리스트가 없습니다.", requestDto.getPlaylistId());
-                    return new NotFoundException();
+                    return new NotFoundPlaylistException();
                 }
         );
         playlist.setImageUrl(requestDto.getImage());

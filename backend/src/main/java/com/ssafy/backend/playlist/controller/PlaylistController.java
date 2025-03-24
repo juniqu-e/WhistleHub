@@ -39,7 +39,7 @@ public class PlaylistController {
             @RequestParam(value = "image", required = false) MultipartFile image,
             @RequestParam(value = "trackIds", required = false) int[] trackIds) {
 
-        log.warn("name: {}, description: {}, image: {}, trackIds: {}", name, description, image, trackIds);
+        log.debug("name: {}, description: {}, image: {}, trackIds: {}", name, description, image, trackIds);
 
         if(name == null || name.isEmpty()) {
             throw new MissingParameterException();
