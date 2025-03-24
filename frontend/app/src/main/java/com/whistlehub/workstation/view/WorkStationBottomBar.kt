@@ -3,6 +3,7 @@ package com.whistlehub.workstation.view
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,6 +19,7 @@ class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .height(50.dp)
                 .padding(0.dp)
                 .background(Color.White)
         ) {

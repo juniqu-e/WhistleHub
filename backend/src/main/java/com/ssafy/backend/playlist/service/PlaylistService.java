@@ -1,9 +1,14 @@
 package com.ssafy.backend.playlist.service;
 
+import com.ssafy.backend.auth.service.AuthService;
+import com.ssafy.backend.common.ApiResponse;
+import com.ssafy.backend.common.error.exception.DuplicateTrackException;
+import com.ssafy.backend.common.error.exception.NotFoundException;
 import com.ssafy.backend.common.error.exception.NotFoundPlaylistException;
 import com.ssafy.backend.common.service.S3Service;
 import com.ssafy.backend.mysql.entity.Playlist;
 import com.ssafy.backend.mysql.entity.PlaylistTrack;
+import com.ssafy.backend.mysql.entity.Track;
 import com.ssafy.backend.mysql.repository.PlaylistRepository;
 import com.ssafy.backend.mysql.repository.PlaylistTrackRepository;
 import com.ssafy.backend.mysql.repository.TrackRepository;
@@ -11,8 +16,11 @@ import com.ssafy.backend.playlist.dto.*;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
@@ -25,13 +33,14 @@ public class PlaylistService {
 
     private final PlaylistRepository playlistRepository;
     private final PlaylistTrackRepository playlistTrackRepository;
+    private final AuthService authService;
     private final TrackRepository trackRepository;
     private final S3Service s3Service;
 
     public GetPlaylistResponseDto getPlaylist(int playlistid) {
         Playlist playlist = playlistRepository.findById(playlistid).orElseThrow(
                 () -> {
-                    log.warn("{} playlist not found", playlistid);
+                    log.warn("{} 플레이리스트가 없습니다.", playlistid);
                     return new NotFoundPlaylistException();
                 }
         );
@@ -46,28 +55,35 @@ public class PlaylistService {
     }
 
     @Transactional
-    public int createPlaylist(String name, String description, MultipartFile image, List<Integer> trackIds) {
+    public int createPlaylist(String name, String description, MultipartFile image, int[] trackIds) {
         Playlist playlist = new Playlist();
         playlist.setName(name);
         playlist.setDescription(description);
 
         //멤버 정보 추가
-        //playlist.setMember(memberRepository.findById(member
+        playlist.setMember(authService.getMember());
 
         // 이미지 저장 -> S3
         String imageUrl = s3Service.uploadFile(image, S3Service.IMAGE);
-        playlist.setImageUrl(image.getOriginalFilename());
+        playlist.setImageUrl(imageUrl);
 
         int playlistId = playlistRepository.save(playlist).getId();
 
         // 트랙 저장 -> TrackRepository
-        int order = 1;
-        for (int trackId : trackIds) {
-            PlaylistTrack playlistTrack = new PlaylistTrack();
-            playlistTrack.setPlaylist(playlist);
-            playlistTrack.setTrack(trackRepository.findById(trackId).orElseThrow());
-            playlistTrack.setPlayOrder(order++);
-            playlistTrackRepository.save(playlistTrack);
+        try {
+            int order = 1;
+            for (int trackId : trackIds) {
+                PlaylistTrack playlistTrack = new PlaylistTrack();
+                playlistTrack.setPlaylist(playlist);
+                playlistTrack.setTrack(trackRepository.findById(trackId).orElseThrow());
+                playlistTrack.setPlayOrder(order++);
+                playlistTrackRepository.save(playlistTrack);
+            }
+        } catch (Exception e) {
+            log.warn("플레이리스트 생성 중 오류 발생: {}", e.getMessage());
+            //만들었던 트랙 삭제
+            playlistRepository.deleteById(playlistId);
+            throw new NotFoundPlaylistException();
         }
         return playlistId;
     }
@@ -76,7 +92,7 @@ public class PlaylistService {
     public int updatePlaylist(ModifyPlaylistRequestDto requestDto) {
         Playlist playlist = playlistRepository.findById(requestDto.getPlaylistId()).orElseThrow(
                 () -> {
-                    log.warn("{} playlist not found", requestDto.getPlaylistId());
+                    log.warn("{} 플레이리스트가 없습니다.", requestDto.getPlaylistId());
                     return new NotFoundPlaylistException();
                 }
         );
@@ -90,7 +106,7 @@ public class PlaylistService {
     public void deletePlaylist(int playlistId) {
         Playlist playlist = playlistRepository.findById(playlistId).orElseThrow(
                 () -> {
-                    log.warn("{} playlist not found", playlistId);
+                    log.warn("{} 플레이리스트가 없습니다.", playlistId);
                     return new NotFoundPlaylistException();
                 }
         );
@@ -101,7 +117,7 @@ public class PlaylistService {
     public List<GetPlaylistTrackResponseDto> getPlaylistTrack(int playlistId) {
         Playlist playlist = playlistRepository.findById(playlistId).orElseThrow(
                 () -> {
-                    log.warn("{} playlist not found", playlistId);
+                    log.warn("{} 플레이리스트가 없습니다.", playlistId);
                     return new NotFoundPlaylistException();
                 }
         );
@@ -134,7 +150,7 @@ public class PlaylistService {
 
         Playlist playlist = playlistRepository.findById(requestDto.getPlaylistId()).orElseThrow(
                 () -> {
-                    log.warn("{} playlist not found", requestDto.getPlaylistId());
+                    log.warn("{} 플레이리스트가 없습니다.", requestDto.getPlaylistId());
                     return new NotFoundPlaylistException();
                 }
         );
@@ -153,11 +169,57 @@ public class PlaylistService {
     public void uploadImage(UploadPlaylistImageRequestDto requestDto) {
         Playlist playlist = playlistRepository.findById(requestDto.getPlaylistId()).orElseThrow(
                 () -> {
-                    log.warn("{} playlist not found", requestDto.getPlaylistId());
+                    log.warn("{} 플레이리스트가 없습니다.", requestDto.getPlaylistId());
                     return new NotFoundPlaylistException();
                 }
         );
         playlist.setImageUrl(requestDto.getImage());
         playlistRepository.save(playlist);
+    }
+
+    @Transactional
+    public void addTrack(AddTrackRequestDto requestDto) {
+        Playlist playlist = playlistRepository.findById(requestDto.getPlaylistId()).orElseThrow(
+                () -> {
+                    log.warn("{} 해당 플레이리스트가 없습니다.", requestDto.getPlaylistId());
+                    return new NotFoundException();
+                }
+        );
+        Track track = trackRepository.findById(requestDto.getTrackId()).orElseThrow(
+                () -> {
+                    log.warn("{} 해당 트랙이 없습니다.", requestDto.getTrackId());
+                    return new NotFoundException();
+                }
+        );
+
+        List<PlaylistTrack> playlistTracks = playlistTrackRepository.findAllByPlaylist(playlist);
+
+        for(PlaylistTrack playlistTrack : playlistTracks) {
+            if(playlistTrack.getTrack().getId().equals(track.getId())) {
+                throw new DuplicateTrackException();
+            }
+        }
+        
+        playlistTrackRepository.save(PlaylistTrack.builder()
+                .playlist(playlist)
+                .track(track)
+                .playOrder(playlistTracks.size() + 1)
+                .build());
+    }
+
+    public List<GetMemberPlaylistResponseDto> getMemberPlaylist(int memberId, PageRequest pageRequest) {
+        List<Playlist> playlists = playlistRepository.findAllByMemberId(memberId, pageRequest);
+
+        List<GetMemberPlaylistResponseDto> responseDtos = new ArrayList<>();
+
+       for(Playlist playlist : playlists) {
+              responseDtos.add(
+                     GetMemberPlaylistResponseDto.builder()
+                            .playlistId(playlist.getId())
+                            .imageUrl(playlist.getImageUrl())
+                            .build()
+              );
+       }
+       return responseDtos;
     }
 }
