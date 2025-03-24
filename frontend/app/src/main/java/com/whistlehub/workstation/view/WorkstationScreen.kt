@@ -27,7 +27,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Slider
@@ -130,7 +132,13 @@ fun WorkStationScreen(navController: NavController) {
                     tracks = tracks + Layer(newId, "$newId")
                 },
                 verticalScrollState = verticalScrollState,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                onDeleteLayer = { layer ->
+                    tracks = tracks.filter { it.id != layer.id }
+                },
+                onResetLayer = {
+                    //믹싱 옵션 초기화
+                }
             )
         }
 
@@ -142,6 +150,8 @@ fun WorkStationScreen(navController: NavController) {
 fun LayerPanel(
     tracks: List<Layer>,
     onAddInstrument: () -> Unit,
+    onDeleteLayer: (Layer) -> Unit,
+    onResetLayer: (Layer) -> Unit,
     verticalScrollState: ScrollState,
     modifier: Modifier
 ) {
@@ -154,9 +164,12 @@ fun LayerPanel(
     ) {
         tracks.forEach { layer ->
             LayerItem(
-                layer = layer, modifier = Modifier
+                layer = layer,
+                modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp)
+                    .height(80.dp),
+                onDelete = onDeleteLayer,
+                onReset = onResetLayer,
             )
             Spacer(modifier = Modifier.heightIn(8.dp))
         }
@@ -165,7 +178,7 @@ fun LayerPanel(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(60.dp)
-                .padding(vertical = 8.dp)
+                .padding(8.dp)
                 .background(Color.DarkGray, RoundedCornerShape(6.dp))
                 .clickable { onAddInstrument() },
             contentAlignment = Alignment.Center
@@ -181,71 +194,101 @@ fun LayerPanel(
 }
 
 @Composable
-fun LayerItem(layer: Layer, modifier: Modifier) {
+fun LayerItem(
+    layer: Layer,
+    modifier: Modifier,
+    onDelete: (Layer) -> Unit,
+    onReset: (Layer) -> Unit
+) {
     val bgColor = getTrackColor(layer)
     val textColor = if (bgColor.luminance() > 0.5f) Color.Black else Color.White
+    var menuExpanded by remember { mutableStateOf(false) }
 
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp), // 하드웨어 고려 살짝 줄이기 (양쪽 padding)
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
+        // 왼쪽 카테고리 박스
         Box(
             modifier = Modifier
                 .background(bgColor, RoundedCornerShape(6.dp))
                 .size(80.dp)
-                .padding(12.dp)
+                .padding(12.dp),
+            contentAlignment = Alignment.Center
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = layer.name,
-                    color = Color.White,
+                    color = Color.Black,
                     fontSize = 14.sp
                 )
             }
         }
-
+        //구분 패딩
         Spacer(modifier = Modifier.width(8.dp))
-
-        Column(
+        //오른쪽 레이어
+        Row(
             modifier = Modifier
+                .height(80.dp)
                 .weight(1f)
                 .background(bgColor, RoundedCornerShape(6.dp))
-                .padding(12.dp)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.weight(1f)
             ) {
-                Column {
-                    Text(
-                        text = layer.name,
-                        style = Typography.displaySmall,
-                        color = Color.Black
-                    )
-                }
+                Text(
+                    text = layer.name,
+                    style = Typography.bodyLarge,
+                    color = textColor
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = layer.description,
+                    style = Typography.bodyMedium,
+                    color = textColor
+                )
+            }
+            // 레이어 메뉴 버튼
+            Box() {
                 Icon(
-                    imageVector = Icons.Default.Refresh,
-                    contentDescription = "Refresh",
-                    tint = Color.Black,
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "More Options",
+                    tint = textColor,
                     modifier = Modifier
                         .size(24.dp)
                         .clickable {
+                            menuExpanded = true
                         }
                 )
+
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+                    //삭제 이벤트
+                    DropdownMenuItem(
+                        text = { Text("레이어 삭제") },
+                        onClick = {
+                            menuExpanded = false
+                            onDelete(layer)
+                        }
+                    )
+                    //초기화 이벤트
+                    DropdownMenuItem(
+                        text = { Text("믹싱 초기화") },
+                        onClick = {
+                            menuExpanded = false
+                            onReset(layer)
+                        }
+                    )
+                }
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            AudioProgressBar(
-                modifier = Modifier.fillMaxWidth(),
-                backgroundColor = Color.LightGray,
-                progressColor = Color.Green,
-                height = 6.dp
-            )
-
-            SliderMinimalExample()
         }
     }
 
