@@ -14,10 +14,7 @@ fun PlayerPlaylist(
     modifier: Modifier = Modifier,
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
 ) {
-    val trackList = trackPlayViewModel.trackList.collectAsState(initial = emptyList())
+    val trackList = trackPlayViewModel.playerTrackList.collectAsState()
 
-    TrackListColumn(
-        modifier = modifier.background(CustomColors().Grey950.copy(alpha = 0.7f)),
-        trackList = trackList
-    )
+    TrackListColumn(modifier.background(CustomColors().Grey950.copy(alpha = 0.7f)), trackList)
 }

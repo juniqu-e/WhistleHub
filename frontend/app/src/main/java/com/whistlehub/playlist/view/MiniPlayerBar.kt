@@ -102,10 +102,12 @@ fun MiniPlayerBar(
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                IconButton(onClick = {}) {
+                IconButton(onClick = {
+                    trackPlayViewModel.previousTrack()
+                }) {
                     Icon(
                         imageVector = Icons.Rounded.FastRewind,
-                        contentDescription = "Play/Pause",
+                        contentDescription = "PlayBack",
                         tint = Color.White
                     )
                 }
@@ -114,7 +116,12 @@ fun MiniPlayerBar(
                         if (isPlaying) {
                             trackPlayViewModel.pauseTrack()
                         } else {
-                            trackPlayViewModel.playTrack(currentTrack!!)
+                            if (currentTrack == null && trackPlayViewModel.playerTrackList.value.isNotEmpty()) {
+                                // 트랙이 없을 경우 첫 번째 트랙 재생
+                                trackPlayViewModel.playTrack(trackPlayViewModel.playerTrackList.value[0])
+                            } else if (currentTrack != null) {
+                                trackPlayViewModel.resumeTrack()
+                            }
                         }
                     }) {
                     Icon(
@@ -123,10 +130,12 @@ fun MiniPlayerBar(
                         tint = Color.White
                     )
                 }
-                IconButton(onClick = {}) {
+                IconButton(onClick = {
+                    trackPlayViewModel.nextTrack()
+                }) {
                     Icon(
                         imageVector = Icons.Rounded.FastForward,
-                        contentDescription = "Play/Pause",
+                        contentDescription = "PlayForward",
                         tint = Color.White
                     )
                 }
