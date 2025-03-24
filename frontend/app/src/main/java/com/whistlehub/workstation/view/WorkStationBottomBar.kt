@@ -23,10 +23,7 @@ class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
                 .padding(0.dp)
                 .background(Color.White)
         ) {
-            Text(
-                text = "Custom Bottom Bar",
-                color = Color.Black
-            )
+            
         }
     }
 }
