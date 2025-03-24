@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import com.whistlehub.common.view.theme.Typography
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -27,9 +28,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import com.whistlehub.R
+import com.whistlehub.common.view.copmonent.BirthDropdownFields
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.WhistleHubTheme
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(
     onSignUpSuccess: () -> Unit = {},
@@ -69,12 +72,10 @@ fun SignUpScreen(
 
     // 커스텀 색상 및 텍스트 스타일
     val colors = CustomColors()
-    val textFieldStyle: TextStyle =
-        MaterialTheme.typography.bodyMedium.copy(color = Color.White, fontSize = 16.sp)
-    val placeholderStyle: TextStyle =
-        MaterialTheme.typography.bodyMedium.copy(color = Color.White.copy(alpha = 0.7f), fontSize = 16.sp)
-    val labelStyle: TextStyle =
-        MaterialTheme.typography.labelMedium.copy(color = Color.White, fontSize = 14.sp)
+    val textFieldStyle = Typography.bodySmall.copy(color = CustomColors().Grey50)
+    val placeholderStyle = Typography.bodySmall.copy(color = CustomColors().Grey300)
+    val buttonTextStyle = Typography.titleSmall.copy(color = CustomColors().Grey950)
+    val labelStyle = Typography.labelLarge.copy(color = colors.Grey50)
 
     // (테스트용으로 에러 표시)
     userIdError = "이미 존재하는 아이디입니다."
@@ -104,6 +105,7 @@ fun SignUpScreen(
                     .fillMaxHeight()
                     .verticalScroll(rememberScrollState())
             ) {
+                @Suppress("UnusedBoxWithConstraintsScope")
                 BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                     val verticalPadding = 60.dp
                     Column(
@@ -229,33 +231,27 @@ fun SignUpScreen(
                                 errorMessage = nicknameError
                             )
 
+                            // 성별 입력 (RadioButton 그룹)
+                            GenderSelection(
+                                selectedGender = "남성", // 기본값은 필요에 따라 관리
+                                onGenderSelected = { /* 성별 상태 업데이트 */ },
+                                labelStyle = labelStyle,
+                                optionTextStyle = textFieldStyle,
+                                colors = colors
+                            )
+
                             // 생년월일 (Birth)
-                            BirthInputFields(
-                                birthYear = birthYear,
-                                onBirthYearChange = {
-                                    birthYear = it
-                                    birthError = if (birthYear.isEmpty()) "생년월일을 입력해주세요." else null
-                                },
-                                birthMonth = birthMonth,
-                                onBirthMonthChange = {
-                                    birthMonth = it
-                                    birthError = if (birthMonth.isEmpty()) "생년월일을 입력해주세요." else null
-                                },
-                                birthDay = birthDay,
-                                onBirthDayChange = {
-                                    birthDay = it
-                                    birthError = if (birthDay.isEmpty()) "생년월일을 입력해주세요." else null
-                                },
+                            BirthDropdownFields(
+                                selectedYear = birthYear,
+                                onYearSelected = { birthYear = it },
+                                selectedMonth = birthMonth,
+                                onMonthSelected = { birthMonth = it },
+                                selectedDay = birthDay,
+                                onDaySelected = { birthDay = it },
                                 birthError = birthError,
                                 labelStyle = labelStyle,
                                 textStyle = textFieldStyle,
-                                placeholderStyle = placeholderStyle,
-                                isYearFocused = isBirthYearFocused,
-                                onYearFocusChange = { isBirthYearFocused = it },
-                                isMonthFocused = isBirthMonthFocused,
-                                onMonthFocusChange = { isBirthMonthFocused = it },
-                                isDayFocused = isBirthDayFocused,
-                                onDayFocusChange = { isBirthDayFocused = it }
+                                placeholderStyle = placeholderStyle
                             )
 
                             // 전체 폼 레벨 에러 메시지
@@ -290,7 +286,7 @@ fun SignUpScreen(
                             ) {
                                 Text(
                                     text = "회원가입",
-                                    style = MaterialTheme.typography.bodyLarge,
+                                    style = buttonTextStyle,
                                     modifier = Modifier.padding(vertical = 4.dp)
                                 )
                             }
@@ -320,168 +316,49 @@ fun SignUpScreen(
 }
 
 /**
- * 생년월일 입력 컴포저블:
- * "Birth" 라벨 + 3개의 텍스트 필드를 가로로 배치하여 각각 라인을 그린 뒤, "년", "월", "일" 텍스트 표시.
- * 에러 메시지는 아래쪽에 고정 높이 영역에서 표시합니다.
+ * GenderSelection: 성별 입력을 위한 RadioButton 그룹 (선택된 항목은 민트색)
  */
 @Composable
-fun BirthInputFields(
-    birthYear: String,
-    onBirthYearChange: (String) -> Unit,
-    birthMonth: String,
-    onBirthMonthChange: (String) -> Unit,
-    birthDay: String,
-    onBirthDayChange: (String) -> Unit,
-    birthError: String?,
+fun GenderSelection(
+    selectedGender: String,
+    onGenderSelected: (String) -> Unit,
     labelStyle: TextStyle,
-    textStyle: TextStyle,
-    placeholderStyle: TextStyle,
-    isYearFocused: Boolean,
-    onYearFocusChange: (Boolean) -> Unit,
-    isMonthFocused: Boolean,
-    onMonthFocusChange: (Boolean) -> Unit,
-    isDayFocused: Boolean,
-    onDayFocusChange: (Boolean) -> Unit
+    optionTextStyle: TextStyle,
+    colors: CustomColors,
+    modifier: Modifier = Modifier
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        // 통합 라벨
-        Text(text = "Birth", style = labelStyle)
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = "Gender",
+            style = labelStyle
+        )
         Spacer(modifier = Modifier.height(8.dp))
-
-        // 년/월/일 가로 배치
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 연도
-            Box(
-                modifier = Modifier
-                    .widthIn(min = 60.dp)
-                    .heightIn(min = 48.dp)
-                    .drawBehind {
-                        val strokeWidth = 1.dp.toPx()
-                        val y = size.height - strokeWidth
-                        drawLine(
-                            color = if (isYearFocused) Color.White else Color.White.copy(alpha = 0.7f),
-                            start = Offset(0f, y),
-                            end = Offset(size.width, y),
-                            strokeWidth = strokeWidth
-                        )
-                    }
-            ) {
-                BasicTextField(
-                    value = birthYear,
-                    onValueChange = onBirthYearChange,
-                    textStyle = textStyle,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.CenterStart)
-                        .onFocusChanged { onYearFocusChange(it.isFocused) },
-                    interactionSource = remember { MutableInteractionSource() },
-                    decorationBox = { innerTextField ->
-                        Box {
-                            if (birthYear.isEmpty()) {
-                                Text("년", style = placeholderStyle)
-                            }
-                            innerTextField()
-                        }
-                    }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            RadioButton(
+                selected = selectedGender == "남성",
+                onClick = { onGenderSelected("남성") },
+                colors = RadioButtonDefaults.colors(
+                    selectedColor = colors.Mint500,
+                    unselectedColor = Color.White
                 )
-            }
-            Text(text = "년", color = Color.White)
-
-            // 월
-            Box(
-                modifier = Modifier
-                    .widthIn(min = 60.dp)
-                    .heightIn(min = 48.dp)
-                    .drawBehind {
-                        val strokeWidth = 1.dp.toPx()
-                        val y = size.height - strokeWidth
-                        drawLine(
-                            color = if (isMonthFocused) Color.White else Color.White.copy(alpha = 0.7f),
-                            start = Offset(0f, y),
-                            end = Offset(size.width, y),
-                            strokeWidth = strokeWidth
-                        )
-                    }
-            ) {
-                BasicTextField(
-                    value = birthMonth,
-                    onValueChange = onBirthMonthChange,
-                    textStyle = textStyle,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.CenterStart)
-                        .onFocusChanged { onMonthFocusChange(it.isFocused) },
-                    interactionSource = remember { MutableInteractionSource() },
-                    decorationBox = { innerTextField ->
-                        Box {
-                            if (birthMonth.isEmpty()) {
-                                Text("월", style = placeholderStyle)
-                            }
-                            innerTextField()
-                        }
-                    }
+            )
+            Text(
+                text = "남성",
+                style = optionTextStyle,
+                modifier = Modifier.padding(end = 16.dp)
+            )
+            RadioButton(
+                selected = selectedGender == "여성",
+                onClick = { onGenderSelected("여성") },
+                colors = RadioButtonDefaults.colors(
+                    selectedColor = colors.Mint500,
+                    unselectedColor = Color.White
                 )
-            }
-            Text(text = "월", color = Color.White)
-
-            // 일
-            Box(
-                modifier = Modifier
-                    .widthIn(min = 60.dp)
-                    .heightIn(min = 48.dp)
-                    .drawBehind {
-                        val strokeWidth = 1.dp.toPx()
-                        val y = size.height - strokeWidth
-                        drawLine(
-                            color = if (isDayFocused) Color.White else Color.White.copy(alpha = 0.7f),
-                            start = Offset(0f, y),
-                            end = Offset(size.width, y),
-                            strokeWidth = strokeWidth
-                        )
-                    }
-            ) {
-                BasicTextField(
-                    value = birthDay,
-                    onValueChange = onBirthDayChange,
-                    textStyle = textStyle,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.CenterStart)
-                        .onFocusChanged { onDayFocusChange(it.isFocused) },
-                    interactionSource = remember { MutableInteractionSource() },
-                    decorationBox = { innerTextField ->
-                        Box {
-                            if (birthDay.isEmpty()) {
-                                Text("일", style = placeholderStyle)
-                            }
-                            innerTextField()
-                        }
-                    }
-                )
-            }
-            Text(text = "일", color = Color.White)
-        }
-
-        // 에러 메시지 (항상 고정 높이로 배치해 레이아웃이 밀리지 않게 함)
-        Box(modifier = Modifier.height(30.dp)) {
-            if (!birthError.isNullOrEmpty()) {
-                Text(
-                    text = birthError,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.align(Alignment.CenterStart)
-                )
-            }
+            )
+            Text(
+                text = "여성",
+                style = optionTextStyle
+            )
         }
     }
 }
@@ -510,7 +387,7 @@ fun LabeledCustomInputField(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 60.dp)
+                .heightIn(min = 52.dp)
                 .drawBehind {
                     val strokeWidth = 1.dp.toPx()
                     val y = size.height - strokeWidth
@@ -575,7 +452,7 @@ fun LabeledCustomInputField(
 
 @Preview(showBackground = true, device = "spec:width=360dp,height=740dp")
 @Composable
-fun SignUpScreenPreview() {
+fun SignUpScreenInteractivePreview() {
     WhistleHubTheme {
         SignUpScreen()
     }
