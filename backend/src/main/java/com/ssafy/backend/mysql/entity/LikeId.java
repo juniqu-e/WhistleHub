@@ -2,14 +2,16 @@ package com.ssafy.backend.mysql.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.Hibernate;
 
 import java.util.Objects;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Embeddable
 public class LikeId implements java.io.Serializable {
     private static final long serialVersionUID = -7989052852313785267L;
