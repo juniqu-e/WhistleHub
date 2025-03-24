@@ -4,6 +4,7 @@ import com.whistlehub.common.data.remote.api.PlaylistApi
 import com.whistlehub.common.data.remote.dto.request.PlaylistRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
 import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
+import com.whistlehub.common.util.TokenRefresh
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -19,7 +20,8 @@ import javax.inject.Singleton
 
 @Singleton
 class PlaylistService @Inject constructor(
-    private val playlistApi: PlaylistApi
+    private val playlistApi: PlaylistApi,
+    private val tokenRefresh: TokenRefresh? = null
 ) : ApiRepository() {
     // 플레이리스트 조회
     suspend fun getPlaylists(

@@ -4,6 +4,7 @@ import com.whistlehub.common.data.remote.api.TrackApi
 import com.whistlehub.common.data.remote.dto.request.TrackRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
+import com.whistlehub.common.util.TokenRefresh
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -18,7 +19,8 @@ import javax.inject.Singleton
  **/
 @Singleton
 class TrackService @Inject constructor(
-    private val trackApi: TrackApi
+    private val trackApi: TrackApi,
+    private val tokenRefresh: TokenRefresh
 ) : ApiRepository() {
     // 트랙 상세 조회
     suspend fun getTrackDetail(

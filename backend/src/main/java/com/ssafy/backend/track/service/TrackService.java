@@ -3,16 +3,14 @@ package com.ssafy.backend.track.service;
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.service.S3Service;
 import com.ssafy.backend.common.util.S3FileKeyExtractor;
+import com.ssafy.backend.graph.model.entity.type.WeightType;
 import com.ssafy.backend.graph.service.DataCollectingService;
 import com.ssafy.backend.mysql.entity.*;
 import com.ssafy.backend.mysql.repository.*;
 import com.ssafy.backend.track.dto.request.TrackImageUploadRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUpdateRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
-import com.ssafy.backend.track.dto.response.ArtistInfoDto;
-import com.ssafy.backend.track.dto.response.TagInfo;
-import com.ssafy.backend.track.dto.response.TrackInfoDto;
-import com.ssafy.backend.track.dto.response.TrackResponseDto;
+import com.ssafy.backend.track.dto.response.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -42,6 +40,7 @@ public class TrackService {
     private final LayerFileRepository layerFileRepository;
     private final LikeRepository likeRepository;
     private final SamplingRepository samplingRepository;
+    private final ReportRepository reportRepository;
 
     private final DataCollectingService dataCollectingService;
     private final S3Service s3Service;
@@ -64,17 +63,27 @@ public class TrackService {
         return s3Service.downloadFile(S3FileKeyExtractor.extractS3FileKey(track.getSoundUrl()));
     }
 
+    public byte[] layerPlay(int layerId) {
+        Layer layer = layerRepository.findById(layerId).orElseThrow(
+                () -> {
+                    log.warn("Layer id {} not found", layerId);
+                    return new RuntimeException("Layer not found");
+                }
+        );
+        return s3Service.downloadFile(S3FileKeyExtractor.extractS3FileKey(layer.getLayerFile().getSoundUrl()));
+    }
+
     /**
      * 트랙의 업로드
      *
      * @param trackUploadRequestDto 업로드 정보
-     * @param memberId              업로드 멤버 id
      */
     @Transactional
-    public int createTrack(TrackUploadRequestDto trackUploadRequestDto, int memberId) {
+    public int createTrack(TrackUploadRequestDto trackUploadRequestDto) {
+        Member m = authService.getMember();
         // 트랜젝션
         Member member = new Member();
-        member.setId(memberId);
+        member.setId(m.getId());
         // 1. 트랙 생성
         Track track = Track.builder()
                 .title(trackUploadRequestDto.getTitle())
@@ -86,6 +95,7 @@ public class TrackService {
                 .enabled(true)
                 .importCount(0)
                 .viewCount(0)
+                .likeCount(0)
                 // 1-1. 트랙 이미지 업로드(이미지 null 검사 처리)
                 .imageUrl(trackUploadRequestDto.getTrackImg() != null ? s3Service.uploadFile(trackUploadRequestDto.getTrackImg(), S3Service.IMAGE) : null)
                 // 1-2. 트랙 음성 업로드
@@ -99,6 +109,9 @@ public class TrackService {
                     Tag tag = new Tag();
                     tag.setId(tagId);
                     return TrackTag.builder()
+                            .id(TrackTagId.builder()
+                                    .tagId(tagId)
+                                    .trackId(track.getId()).build())
                             .track(t)
                             .tag(tag)
                             .build();
@@ -117,15 +130,16 @@ public class TrackService {
         dataCollectingService.createTrack(t.getId(), Arrays.stream(trackUploadRequestDto.getTags()).toList());
         // 1-4-2. TODO: FastAPI로 음원 보내기
         // 2. 레이어 목록 저장
-        for (int i = 0; i < trackUploadRequestDto.getLayers().size(); i++) {
+        int layerSize = trackUploadRequestDto.getLayerName().length;
+        for (int i = 0; i < layerSize; i++) {
             // 2-1. 음성 업로드
             LayerFile layerFile = new LayerFile();
             layerFile.setSoundUrl(s3Service.uploadFile(trackUploadRequestDto.getLayerSoundFiles()[i], S3Service.MUSIC));
             LayerFile lf = layerFileRepository.save(layerFile);
 
             Layer layer = Layer.builder()
-                    .name(trackUploadRequestDto.getLayers().get(i).getName())
-                    .instrumentType(trackUploadRequestDto.getLayers().get(i).getInstrumentType())
+                    .name(trackUploadRequestDto.getLayerName()[i])
+                    .instrumentType(trackUploadRequestDto.getInstrumentType()[i])
                     .blocked(false)
                     .track(t)
                     .layerFile(lf).build();
@@ -153,7 +167,7 @@ public class TrackService {
             }
         }
 
-        if (track.getEnabled()) {
+        if (!track.getEnabled()) {
             log.info("{}번 회원이 삭제된 트랙({})을 조회", memberId, track.getId());
             throw new RuntimeException(); // TODO: 커스텀으로 교체
         }
@@ -204,6 +218,7 @@ public class TrackService {
                 .imageUrl(track.getImageUrl())
                 .artist(ArtistInfoDto.builder().memberId(track.getMember().getId()).nickname(track.getMember().getNickname()).profileImage(track.getMember().getProfileImage()).build())
                 .isLiked(isLike)
+                .createdAt(track.getCreatedAt())
                 .importCount(track.getImportCount())
                 .likeCount(track.getLikeCount())
                 .viewCount(track.getViewCount())
@@ -231,6 +246,7 @@ public class TrackService {
         trackRepository.save(track);
     }
 
+    @Transactional
     public String updateImage(TrackImageUploadRequestDto trackImageUploadRequestDto) {
         Track track = trackRepository.findById(trackImageUploadRequestDto.getTrackId()).orElseThrow();
         String existingFileUrl = track.getImageUrl();
@@ -240,9 +256,14 @@ public class TrackService {
         } else {
             updatedFileUrl = s3Service.updateFile(existingFileUrl, trackImageUploadRequestDto.getTrackImg(), S3Service.MUSIC);
         }
+        // 변경된 이미지 반영
+        track.setImageUrl(updatedFileUrl);
+        trackRepository.save(track);
+
         return updatedFileUrl;
     }
 
+    @Transactional
     public void deleteTrack(int trackId) {
         Member member = authService.getMember();
         Track track = trackRepository.findById(trackId).orElseThrow(
@@ -254,12 +275,103 @@ public class TrackService {
         if (track.getMember().getId() != member.getId()) {
             log.info("본인({})의 트랙({})이 아닐 때 삭제 요청", member.getId(), track.getId());
             throw new RuntimeException("");
-        } else if(!track.getEnabled()){
+        } else if (!track.getEnabled()) {
             log.info("트랙({})은 이미 삭제 처리 됨", track.getId());
             return;
         }
         // soft delete
         track.setEnabled(false);
         trackRepository.save(track);
+    }
+
+    public void recordPlay(int trackId) {
+        dataCollectingService.viewTrack(authService.getMember().getId(), trackId, WeightType.VIEW);
+    }
+
+    public List<LayerResponseDto> getLayers(int trackId) {
+        List<Layer> layers = layerRepository.findAllByTrackId(trackId);
+        List<LayerResponseDto> layerResponseDtoList = new ArrayList<>();
+        layers.forEach(layer -> {
+            layerResponseDtoList.add(LayerResponseDto.builder()
+                    .layerId(layer.getId())
+                    .instrumentType(layer.getInstrumentType())
+                    .name(layer.getName()).build());
+        });
+        return layerResponseDtoList;
+    }
+
+    @Transactional
+    public void likeTrack(int trackId) {
+        Member member = authService.getMember();
+        Like l = likeRepository.findByTrackIdAndMemberId(trackId, member.getId()).orElse(null);
+        if (l != null) return; // 중복된 요청 처리
+        // 1. TrackLike, Track.LikeCount 반영
+        Track track = trackRepository.findById(trackId).orElseThrow(
+                () -> {
+                    log.warn("트랙({})은 없는 트랙에 대한 요청", trackId);
+                    return new RuntimeException();
+                }
+        );
+        // 트랙에 Like 정보 반영
+        int likeCount = track.getLikeCount();
+        track.setLikeCount(++likeCount);
+        trackRepository.save(track);
+
+        // Like 관계 매핑
+        Like like = new Like();
+        like.setId(LikeId.builder().trackId(track.getId()).memberId(member.getId()).build());
+        like.setTrack(track);
+        like.setMember(member);
+        likeRepository.save(like);
+
+
+        // 2. graph 반영
+//        dataCollectingService.viewTrack(authService.getMember().getId(), trackId, WeightType.LIKE);
+    }
+
+    @Transactional
+    public void unlikeTrack(int trackId) {
+        // 1. TrackLike, Track.LikeCount 반영
+        Member member = authService.getMember();
+        Track track = trackRepository.findById(trackId).orElseThrow(
+                () -> {
+                    log.warn("트랙({})은 없는 트랙에 대한 요청", trackId);
+                    return new RuntimeException();
+                }
+        );
+        // 트랙에 Like 정보 반영
+        int likeCount = track.getLikeCount();
+        track.setLikeCount(--likeCount);
+        trackRepository.save(track);
+
+        // Like 관계 매핑 삭제
+        Like like = likeRepository.findByTrackIdAndMemberId(trackId, member.getId()).orElseThrow(
+                () -> {
+                    log.warn("없는 관계 조회");
+                    return new RuntimeException();
+                }
+        );
+        likeRepository.delete(like);
+
+        // 2. graph 반영
+//        dataCollectingService.viewTrack(authService.getMember().getId(), trackId, WeightType.DISLIKE);
+    }
+
+    public void reportTrack(int trackId, int type, String detail) {
+        Member member = authService.getMember();
+        Track track = trackRepository.findById(trackId).orElseThrow(
+                () -> {
+                    log.warn("트랙({})은 없는 트랙에 대한 요청", trackId);
+                    return new RuntimeException();
+                }
+        );
+
+        Report report = Report.builder()
+                .reportType(type)
+                .track(track)
+                .member(member)
+                .detail(detail)
+                .build();
+        reportRepository.save(report);
     }
 }

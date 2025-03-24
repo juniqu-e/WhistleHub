@@ -12,5 +12,5 @@ public class LayerUploadRequestDto {
     @NotBlank
     String name;
     @NotBlank
-    String instrumentType;
+    int instrumentType;
 }

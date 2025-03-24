@@ -3,6 +3,7 @@ package com.whistlehub.common.data.repository
 import com.whistlehub.common.data.remote.api.RankingApi
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
 import com.whistlehub.common.data.remote.dto.response.RankingResponse
+import com.whistlehub.common.util.TokenRefresh
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -14,7 +15,8 @@ import javax.inject.Singleton
 
 @Singleton
 class RankingService @Inject constructor(
-    private val rankingApi: RankingApi
+    private val rankingApi: RankingApi,
+    private val tokenRefresh: TokenRefresh? = null
 ) : ApiRepository() {
     // 랭킹 조회
     suspend fun getRanking(

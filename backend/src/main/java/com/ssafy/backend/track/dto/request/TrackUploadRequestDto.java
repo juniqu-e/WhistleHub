@@ -24,11 +24,11 @@ public class TrackUploadRequestDto {
     boolean visibility;
     Integer[] tags;
     Integer[] sourceTracks;
-    List<LayerUploadRequestDto> layers;
+//    List<LayerUploadRequestDto> layers;
     @NotBlank
     String[] layerName;
     @NotBlank
-    String[] instrumentType;
+    int[] instrumentType;
     MultipartFile trackSoundFile;
     MultipartFile[] layerSoundFiles; //
     MultipartFile trackImg;
