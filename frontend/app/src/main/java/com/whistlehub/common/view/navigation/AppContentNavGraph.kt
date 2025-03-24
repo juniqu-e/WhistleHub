@@ -20,7 +20,8 @@ import com.whistlehub.workstation.view.WorkStationScreen
 fun AppContentNavGraph(
     navController: NavHostController,
     paddingValues: PaddingValues,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    originNavController: NavHostController  // 로그아웃을 위해 전달받은 네비게이션 컨트롤러
 ) {
     NavHost(
         navController = navController,
@@ -40,7 +41,7 @@ fun AppContentNavGraph(
             PlayListScreen()
         }
         composable(route = Screen.Profile.route) {
-            ProfileScreen()
+            ProfileScreen(/*navController = navController, */originNavController = originNavController)  // 로그아웃을 위해 최상위 컨트롤러 전달
         }
         // 플레이어 화면
         composable(route = Screen.Player.route) {

@@ -1,17 +1,13 @@
 package com.whistlehub.common.view.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.whistlehub.common.view.AppScaffold
 import com.whistlehub.common.view.login.LoginScreen
-import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 
 /**
  * 앱의 전체 네비게이션 구조를 처리하는 메인 네비게이션 그래프
@@ -20,7 +16,7 @@ import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 fun MainNavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
     NavHost(
         navController = navController,
-        startDestination = "main",
+        startDestination = "login",
         modifier = modifier
     ) {
         //유저 인증(로그인)
@@ -46,15 +42,18 @@ fun MainNavGraph(navController: NavHostController, modifier: Modifier = Modifier
  */
 @Composable
 fun MainScreenWithBottomNav(navController: NavHostController) {
+    // 새로운 내부 네비게이션 컨트롤러 생성
+    val newNavController = rememberNavController()
     AppScaffold(
-        navController = navController,
+        navController = newNavController,
         bottomBar = {
-            BottomNavigationBar(navController = navController)
-        }
+            BottomNavigationBar(navController = newNavController)
+        },
     ) { paddingValues ->
         AppContentNavGraph(
-            navController = navController,
-            paddingValues = paddingValues
+            navController = newNavController,
+            paddingValues = paddingValues,
+            originNavController = navController // 기존 컨트롤러는 로그아웃 시 사용하기 위해 전달
         )
     }
 }
