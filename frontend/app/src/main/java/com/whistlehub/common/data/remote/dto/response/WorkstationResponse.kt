@@ -1,26 +1,18 @@
 package com.whistlehub.common.data.remote.dto.response
 
+import com.google.gson.JsonObject
+
+/**
+---------------------------
+워크스테이션 관련 API 응답 DTO
+---------------------------
+ **/
+
 sealed class WorkstationResponse {
-    data class WorkstationTrack(
-        val trackId: String,
-        val title: String,
-        val description: String,
-        val isPublic: Boolean,
-        val genre: String,
-        val tags: List<String>,
-        val layers: List<Layer>
-    )
-
-    data class Layer(
-        val layerId: String,
-        val name: String,
-        val type: String,
-        val audioUrl: String,
-        val isBase: Boolean
-    )
-
-    data class PublishResult(
-        val trackId: String,
-        val publishedAt: String
+    // 트랙 임포트
+    data class ImportTrackResponse(
+        val layerId: Int,
+        val modification: JsonObject,
+        val soundUrl: String?
     )
 }

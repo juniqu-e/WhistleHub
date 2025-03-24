@@ -1,21 +1,25 @@
 package com.whistlehub.common.data.remote.dto.response
 
-sealed class RankingResponse {
-    data class RankingList(
-        val tracks: List<RankingTrack>,
-        val category: String,
-        val timeRange: String,
-        val updateDate: String
-    )
+/**
+---------------------
+랭킹 관련 API 응답 DTO
+---------------------
+ **/
 
-    data class RankingTrack(
-        val trackId: String,
-        val rank: Int,
-        val previousRank: Int?, // null if new entry
+sealed class RankingResponse {
+    // 랭킹 조회
+    data class GetRankingResponse(
+        val trackId: Int,
+        val nickname: String,
         val title: String,
-        val artistName: String,
-        val playCount: Int,
-        val likesCount: Int,
+        val duration: Int,
+        val imageUrl: String?
+    )
+    // 추천 목록 조회
+    data class RecommendTrackResponse(
+        val trackId: Int,
+        val nickname: String,
+        val title: String,
         val duration: Int,
         val imageUrl: String?
     )

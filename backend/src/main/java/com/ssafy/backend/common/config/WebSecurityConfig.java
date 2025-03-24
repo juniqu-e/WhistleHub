@@ -1,7 +1,10 @@
 package com.ssafy.backend.common.config;
 
 
+import com.ssafy.backend.common.filter.JWTFilter;
+import com.ssafy.backend.common.filter.LoginFilter;
 import com.ssafy.backend.common.prop.OriginProp;
+import com.ssafy.backend.common.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,10 +13,12 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -23,17 +28,26 @@ import java.util.List;
 /**
  * <pre>Spring Security 연동 및 설정 파일</pre>
  *
- * @author 박병주
- * @version 1.0
+ * @author 박병주, 허현준
+ * @version 1.1
  * @since 2025-03-12
  */
 
 @Configuration
-@EnableScheduling
+@EnableWebSecurity
 @RequiredArgsConstructor
 public class WebSecurityConfig {
 
     final private OriginProp originProp;
+    private final JWTUtil jwtUtil;
+    private final JWTConfig jwtConfig;
+    private final AuthenticationConfiguration authenticationConfiguration;
+
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+    }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -51,30 +65,38 @@ public class WebSecurityConfig {
     }
 
     @Bean
+    public BCryptPasswordEncoder bCryptPasswordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
     @Order(1)
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        //form 로그인 방식 사용하지 않음
+        http
+                .formLogin((auth) -> auth.disable());
+
+
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Bean 참조
+                .httpBasic((auth) -> auth.disable())
                 // 인증 실패 시 대응 핸들러 (401 응답 등)
 //                .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 // 세션 정책: JWT를 사용한다면 항상 STATELESS1
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/**").permitAll()
-                        .anyRequest().authenticated());
+                        .requestMatchers("/api/auth/**").permitAll()
+                        //.requestMatchers("/**").permitAll()
+                        .anyRequest().authenticated())
+
+                .addFilterBefore(new JWTFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
+                .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil,jwtConfig), UsernamePasswordAuthenticationFilter.class);
+
+
+
         return http.build();
     }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
 
-    @Bean
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration configuration
-    ) throws Exception {
-        return configuration.getAuthenticationManager();
-    }
 }

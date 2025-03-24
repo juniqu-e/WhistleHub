@@ -1,8 +1,7 @@
 package com.ssafy.backend.mysql.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -13,6 +12,9 @@ import java.util.Map;
 @Setter
 @Entity
 @Table(name = "layer")
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Layer extends Common{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
