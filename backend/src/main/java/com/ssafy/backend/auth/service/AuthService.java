@@ -1,5 +1,7 @@
 package com.ssafy.backend.auth.service;
 
+import com.ssafy.backend.Mail.model.common.EmailMessage;
+import com.ssafy.backend.Mail.service.EmailService;
 import com.ssafy.backend.auth.model.common.CustomUserDetails;
 import com.ssafy.backend.auth.model.request.RefreshRequestDto;
 import com.ssafy.backend.auth.model.request.RegisterRequestDto;
@@ -12,6 +14,7 @@ import com.ssafy.backend.mysql.entity.Member;
 import com.ssafy.backend.mysql.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -29,6 +33,14 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JWTUtil jwtUtil;
     private final JWTConfig jwtConfig;
+    private final EmailService emailService;
+
+
+    @Value("${MAIL_CODE_EXPIRE_TIME}")
+    private Long MAIL_CODE_EXPIRE_TIME;
+
+    @Value("${MAIL_CODE_LENGTH}")
+    private Long MAIL_CODE_LENGTH;
 
     public Member getMember() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -135,4 +147,23 @@ public class AuthService {
                 .build();
     }
 
+    public void verifyEmailRequest(String email) {
+        // 이메일 인증 코드 생성
+        String code = UUID.randomUUID().toString().substring(0, MAIL_CODE_LENGTH.intValue());
+
+        // 이메일 전송
+        // 메일 객체 생성
+        EmailMessage emailMessage = EmailMessage.builder()
+                .to(email)
+                .subject("[WhistleHub] 이메일 인증 코드")
+                .message("WhistleHub 이메일 인증 코드입니다 <br /> <strong>" + code+ "</strong>")
+                .build();
+
+        emailService.sendMail(emailMessage, true); // 내부적으로 메일발송에 실패했을때 예외를 던집니다.
+        // redis에 저장
+
+
+        // key : email, value : code
+
+    }
 }

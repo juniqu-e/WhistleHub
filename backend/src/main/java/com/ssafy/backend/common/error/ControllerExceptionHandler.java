@@ -119,6 +119,13 @@ public class ControllerExceptionHandler {
                 .build();
     }
 
+    @ExceptionHandler(EmailSendFailedException.class)
+    public ApiResponse<?> emailSendFailedHandler(EmailSendFailedException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.EMAIL_SEND_FAILED)
+                .build();
+    }
+
     // 이외의 정의되지 않은 서버 에러처리
     @ExceptionHandler(Exception.class)
     public ApiResponse<?> serverErrorHandler(Exception e) {
