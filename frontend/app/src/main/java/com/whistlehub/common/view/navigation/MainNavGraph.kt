@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.whistlehub.common.view.AppScaffold
 import com.whistlehub.common.view.login.LoginScreen
+import com.whistlehub.common.view.signup.SignUpScreen
 
 /**
  * 앱의 전체 네비게이션 구조를 처리하는 메인 네비게이션 그래프
@@ -23,9 +24,33 @@ fun MainNavGraph(navController: NavHostController, modifier: Modifier = Modifier
         composable("login") {
             LoginScreen(
                 onLoginSuccess = {
-                    // 로그인 성공 시, 로그인 화면 제거 후 메인 화면으로 전환
+                    // 로그인 성공 시 메인 화면으로 이동
                     navController.navigate("main") {
                         popUpTo("login") { inclusive = true }
+                    }
+                },
+                onSignUpClick = {
+                    // 회원가입 화면으로 이동
+                    navController.navigate("signup") {
+                        popUpTo("login") { inclusive = true }
+                    }
+
+                }
+            )
+        }
+        // 회원가입 화면
+        composable("signup") {
+            SignUpScreen(
+                onSignUpSuccess = {
+                    // 회원가입 성공 시 메인화면으로 이동
+                    navController.navigate("main") {
+                        popUpTo("signup") { inclusive = true }
+                    }
+                },
+                onLoginClick = {
+                    // 로그인 화면으로 이동
+                    navController.navigate("login") {
+                        popUpTo("signup") { inclusive = true }
                     }
                 }
             )

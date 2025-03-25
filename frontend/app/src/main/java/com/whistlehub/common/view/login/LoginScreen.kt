@@ -1,5 +1,6 @@
 package com.whistlehub.common.view.login
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -241,7 +242,11 @@ fun LoginScreen(
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                TextButton(onClick = onSignUpClick) {
+                                TextButton(onClick = {
+                                    Log.d("LoginScreen", "회원가입 버튼 클릭")
+                                    onSignUpClick()
+                                }
+                                ) {
                                     Text(text = "회원가입", color = Color.White)
                                 }
                                 Spacer(modifier = Modifier.width(20.dp))
@@ -256,15 +261,6 @@ fun LoginScreen(
                 }
             }
         }
-    }
-}
-
-
-@Preview(showBackground = true, device = "spec:width=360dp,height=740dp")
-@Composable
-fun LoginScreenPhonePreview() {
-    WhistleHubTheme {
-        LoginScreen()
     }
 }
 
