@@ -15,6 +15,6 @@ class TestResponseDto(BaseModel):
     msg: str
         메시지
     """
-    name = Field(..., title="이름", description="이름을 입력해주세요.")
-    age = Field(..., title="나이", description="나이를 입력해주세요.")
-    msg = Field(..., title="메시지", description="메시지를 입력해주세요.")
+    name: str = Field(..., title="이름", description="이름을 입력해주세요.")
+    age: int = Field(..., title="나이", description="나이를 입력해주세요.")
+    msg: str = Field(..., title="메시지", description="메시지를 입력해주세요.")
