@@ -16,12 +16,6 @@ public class JWTConfig {
     @Value("${JWT_SECRET}")
     private String secret;
 
-    @Value("${JWT_ACCESS_EXPIRATION}")
-    private Long accessExpiration;
-
-    @Value("${JWT_REFRESH_EXPIRATION}")
-    private Long refreshExpiration;
-
     @Bean
     public SecretKey secretKey() {
         return new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), Jwts.SIG.HS256.key().build().getAlgorithm());

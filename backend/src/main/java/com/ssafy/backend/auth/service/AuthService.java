@@ -5,16 +5,19 @@ import com.ssafy.backend.Mail.service.EmailService;
 import com.ssafy.backend.auth.model.common.CustomUserDetails;
 import com.ssafy.backend.auth.model.request.RefreshRequestDto;
 import com.ssafy.backend.auth.model.request.RegisterRequestDto;
+import com.ssafy.backend.auth.model.request.ValidateEmailRequestDto;
 import com.ssafy.backend.auth.model.response.RefreshResponseDto;
 import com.ssafy.backend.common.config.JWTConfig;
 import com.ssafy.backend.common.error.exception.*;
+import com.ssafy.backend.common.prop.JWTProp;
+import com.ssafy.backend.common.prop.MailProp;
+import com.ssafy.backend.common.service.RedisService;
 import com.ssafy.backend.common.util.JWTUtil;
 import com.ssafy.backend.graph.service.DataCollectingService;
 import com.ssafy.backend.mysql.entity.Member;
 import com.ssafy.backend.mysql.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,13 +37,9 @@ public class AuthService {
     private final JWTUtil jwtUtil;
     private final JWTConfig jwtConfig;
     private final EmailService emailService;
-
-
-    @Value("${MAIL_CODE_EXPIRE_TIME}")
-    private Long MAIL_CODE_EXPIRE_TIME;
-
-    @Value("${MAIL_CODE_LENGTH}")
-    private Long MAIL_CODE_LENGTH;
+    private final RedisService redisService;
+    private final MailProp mailProp;
+    private final JWTProp jwtProp;
 
     public Member getMember() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -137,10 +136,10 @@ public class AuthService {
         HashMap<String, Object> claims = new HashMap<>();
         claims.put("loginId", loginId);
         claims.put("id", id);
-        String newAccessToken = jwtUtil.createJwt(claims, jwtConfig.getAccessExpiration());
+        String newAccessToken = jwtUtil.createJwt(claims, jwtProp.getACCESS_TOKEN_EXPIRATION());
 
         claims.put("refresh", true);
-        String newRefreshToken = jwtUtil.createJwt(claims, jwtConfig.getRefreshExpiration());
+        String newRefreshToken = jwtUtil.createJwt(claims, jwtProp.getREFRESH_TOKEN_EXPIRATION());
 
         return RefreshResponseDto.builder()
                 .accessToken(newAccessToken)
@@ -184,5 +183,7 @@ public class AuthService {
         //코드와 이메일이 일치하면 인증 성공
         // redis에서 code 삭제
         redisService.delete(validateEmailRequestDto.getEmail());
+        // redis에 인증 완료된 이메일 저장
+        redisService.setKeyOnly(validateEmailRequestDto.getEmail() + "-validated", mailProp.getMAIL_CODE_EXPIRE_TIME());
     }
 }
