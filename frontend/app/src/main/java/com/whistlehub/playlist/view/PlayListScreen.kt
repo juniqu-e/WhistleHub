@@ -32,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
@@ -41,7 +40,6 @@ import com.whistlehub.common.view.theme.Pretendard
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.view.component.CreatePlaylist
 
-@Preview(showBackground = true, backgroundColor = 0xFF16171B)
 @Composable
 fun PlayListScreen(){
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
@@ -191,7 +189,6 @@ fun PlayListScreen(){
                 text = "Create Playlist",
                 style = Typography.titleLarge,
                 color = CustomColors().Grey50,
-                modifier = Modifier.padding(bottom = 8.dp)
             ) },
             text = { CreatePlaylist() },
             modifier = Modifier
@@ -202,7 +199,7 @@ fun PlayListScreen(){
                     onClick = { showCreatePlaylistDialog = false },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = CustomColors().Mint500,
-                        contentColor = CustomColors().Grey50,
+                        contentColor = CustomColors().Grey950,
                     )
                 ) {
                     Text("생성", style = Typography.bodyLarge)
