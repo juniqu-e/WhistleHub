@@ -131,12 +131,15 @@ class SignUpViewModel @Inject constructor(
         password: String,
         email: String,
         nickname: String,
+        birth: String,
+        gender: Char,
+        tags: List<String>,
         onSuccess: () -> Unit
     ) {
         viewModelScope.launch {
             _signUpState.value = SignUpState.Loading
             try {
-                val request = AuthRequest.RegisterRequest(loginId, password, email, nickname)
+                val request = AuthRequest.RegisterRequest(loginId, password, email, nickname, birth, gender, tags)
                 val response = authService.register(request)
                 if (response.code == "SU" && response.payload != null) {
                     _signUpState.value = SignUpState.Success("회원가입에 성공했습니다.")

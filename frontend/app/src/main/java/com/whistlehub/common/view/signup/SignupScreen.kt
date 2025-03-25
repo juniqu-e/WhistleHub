@@ -455,7 +455,10 @@ fun SignUpScreen(
                                     birthDay.isNotEmpty() &&
                                     verificationCodeError == "인증 성공" // Todo: 인증 성공시 메세지
                                 ) {
-                                    viewModel.register(userId, password, email, nickname) {
+                                    // gender가 "남성"이면 'M', "여성"이면 'F'로 변환
+                                    val gender = if (gender == "남성") 'M' else 'F'
+                                    val birth = "$birthYear-$birthMonth-$birthDay"
+                                    viewModel.register(userId, password, email, nickname, birth, gender, tags) {
                                         onSignUpSuccess()
                                     }
                                 } else {
