@@ -24,4 +24,8 @@ public class RegisterRequestDto {
     private String email;
     @NotBlank
     private String nickname;
+    @NotBlank
+    private String birth;
+    @NotBlank
+    private Character gender;
 }

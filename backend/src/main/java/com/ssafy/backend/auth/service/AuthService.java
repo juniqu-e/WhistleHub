@@ -71,7 +71,7 @@ public class AuthService {
         if (checkDuplicatedEmail(email))
             throw new DuplicateEmailException();
 
-        //todo : 아이디, 비밀번호, 닉네임, 이메일 형식 체크
+        //todo : 아이디, 비밀번호, 닉네임, 이메일, 생일, 성별 형식 체크
         //todo : 이메일 인증 체크
 
         // 새 회원 등록
@@ -81,7 +81,8 @@ public class AuthService {
                 .nickname(nickname)
                 .email(email)
                 .enabled(true)
-                .firstLogin(true)
+                .birth(birth)
+                .gender(gender)
                 .build();
 
         member = memberRepository.save(member);
