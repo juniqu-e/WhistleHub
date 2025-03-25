@@ -1,4 +1,4 @@
-package com.whistlehub.common.view.copmonent
+package com.whistlehub.common.view.signup
 
 import androidx.compose.foundation.background
 import androidx.compose.material3.*
@@ -25,9 +25,24 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.TextStyle
 import com.whistlehub.common.view.theme.CustomColors
+import java.time.YearMonth
+
+/**
+ * Helper: 선택된 연도와 월에 따른 최대 일수 반환.
+ * 연도나 월이 비어있으면 기본 31일을 반환.
+ */
+private fun getMaxDays(year: String, month: String): Int {
+    return try {
+        if (year.isNotEmpty() && month.isNotEmpty()) {
+            YearMonth.of(year.toInt(), month.toInt()).lengthOfMonth()
+        } else 31
+    } catch (e: Exception) {
+        31
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,6 +58,11 @@ fun BirthDropdownFields(
     textStyle: TextStyle,
     placeholderStyle: TextStyle
 ) {
+    // Birth 포커스 상태 (년/월/일 각각 관리)
+    var isBirthYearFocused by remember { mutableStateOf(false) }
+    var isBirthMonthFocused by remember { mutableStateOf(false) }
+    var isBirthDayFocused by remember { mutableStateOf(false) }
+
     Column(modifier = Modifier.fillMaxWidth()) {
         // 통합 라벨
         Text(text = "Birth", style = labelStyle)
@@ -56,10 +76,12 @@ fun BirthDropdownFields(
             BirthDropdownField(
                 label = "Year",
                 selectedOption = selectedYear,
-                options = (1900..2023).map { it.toString().padStart(4, '0') },
+                options = (2023 downTo 1900).map { it.toString().padStart(4, '0') },
                 onOptionSelected = onYearSelected,
                 textStyle = textStyle,
                 placeholderStyle = placeholderStyle,
+                isFocused = isBirthYearFocused,
+                onFocusChange = { isBirthYearFocused = it },
                 modifier = Modifier.weight(1f)
             )
             // 월 드롭다운 (01 ~ 12)
@@ -70,6 +92,8 @@ fun BirthDropdownFields(
                 onOptionSelected = onMonthSelected,
                 textStyle = textStyle,
                 placeholderStyle = placeholderStyle,
+                isFocused = isBirthMonthFocused,
+                onFocusChange = { isBirthMonthFocused = it },
                 modifier = Modifier.weight(1f)
             )
             // 일 드롭다운 (01 ~ 31)
@@ -80,6 +104,8 @@ fun BirthDropdownFields(
                 onOptionSelected = onDaySelected,
                 textStyle = textStyle,
                 placeholderStyle = placeholderStyle,
+                isFocused = isBirthDayFocused,
+                onFocusChange = { isBirthDayFocused = it },
                 modifier = Modifier.weight(1f)
             )
         }
@@ -106,6 +132,8 @@ fun BirthDropdownField(
     onOptionSelected: (String) -> Unit,
     textStyle: TextStyle,
     placeholderStyle: TextStyle,
+    isFocused: Boolean,
+    onFocusChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val colors = CustomColors()
@@ -113,7 +141,10 @@ fun BirthDropdownField(
 
     ExposedDropdownMenuBox(
         expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
+        onExpandedChange = {
+            expanded = !expanded
+            onFocusChange(expanded) // 드롭다운이 확장되면 포커스 상태 변경
+        },
         modifier = modifier
     ) {
         BasicTextField(
@@ -124,6 +155,7 @@ fun BirthDropdownField(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(36.dp)
+                .onFocusChanged { focusState -> onFocusChange(focusState.isFocused) }
                 .menuAnchor(),
             decorationBox = { innerTextField ->
                 Box(
@@ -155,7 +187,7 @@ fun BirthDropdownField(
                             .fillMaxWidth()
                             .align(Alignment.BottomStart)
                             .height(1.dp)
-                            .background(colors.Grey50)
+                            .background(if (isFocused) colors.Mint500 else colors.Grey50)
                     )
                 }
             }
@@ -169,7 +201,10 @@ fun BirthDropdownField(
         ) {
             ExposedDropdownMenu(
                 expanded = expanded,
-                onDismissRequest = { expanded = false }
+                onDismissRequest = {
+                    expanded = false
+                    onFocusChange(false) // 드롭다운이 닫히면 포커스 해제
+                }
             ) {
                 options.forEach { option ->
                     DropdownMenuItem(
@@ -177,6 +212,7 @@ fun BirthDropdownField(
                         onClick = {
                             onOptionSelected(option)
                             expanded = false
+                            onFocusChange(false)
                         }
                     )
                 }
