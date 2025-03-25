@@ -5,6 +5,7 @@ import com.ssafy.backend.Mail.service.EmailService;
 import com.ssafy.backend.auth.model.common.CustomUserDetails;
 import com.ssafy.backend.auth.model.request.RefreshRequestDto;
 import com.ssafy.backend.auth.model.request.RegisterRequestDto;
+import com.ssafy.backend.auth.model.request.ResetPasswordRequestDto;
 import com.ssafy.backend.auth.model.request.ValidateEmailRequestDto;
 import com.ssafy.backend.auth.model.response.RefreshResponseDto;
 import com.ssafy.backend.common.config.JWTConfig;
@@ -153,7 +154,7 @@ public class AuthService {
             throw new DuplicateEmailException();
 
         // 이메일 인증 코드 생성
-        String code = UUID.randomUUID().toString().substring(0, mailProp.getMAIL_CODE_LENGTH().intValue());
+        String code = createCode();
 
         // 이메일 전송
         // 메일 객체 생성
@@ -185,5 +186,35 @@ public class AuthService {
         redisService.delete(validateEmailRequestDto.getEmail());
         // redis에 인증 완료된 이메일 저장
         redisService.setKeyOnly(validateEmailRequestDto.getEmail() + "-validated", mailProp.getMAIL_CODE_EXPIRE_TIME());
+    }
+
+    public void resetPassword(ResetPasswordRequestDto resetPasswordRequestDto){
+        Member member = memberRepository.findByLoginId(resetPasswordRequestDto.getLoginId());
+
+        if(member == null)
+            throw new NotMatchIdAndEmailException();
+        if(!member.getEmail().equals(resetPasswordRequestDto.getEmail()))
+            throw new NotMatchIdAndEmailException();
+
+        // 임시 비밀번호 생성
+        String tempPassword = createCode();
+
+        // 비밀번호 변경
+        member.setPassword(passwordEncoder.encode(tempPassword));
+        memberRepository.save(member);
+
+        // 메일 전송
+        // 메일 객체 생성
+        EmailMessage emailMessage = EmailMessage.builder()
+                .to(member.getEmail())
+                .subject("[WhistleHub] 임시 비밀번호 발급")
+                .message("WhistleHub 임시 비밀번호입니다 <br /> <strong>" + tempPassword + "</strong>")
+                .build();
+
+        emailService.sendMail(emailMessage, true); // 내부적으로 메일발송에 실패했을때 예외를 던집니다.
+    }
+
+    private String createCode(){
+        return UUID.randomUUID().toString().substring(0, mailProp.getMAIL_CODE_LENGTH().intValue());
     }
 }

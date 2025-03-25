@@ -2,6 +2,7 @@ package com.ssafy.backend.auth.controller;
 
 import com.ssafy.backend.auth.model.request.RefreshRequestDto;
 import com.ssafy.backend.auth.model.request.RegisterRequestDto;
+import com.ssafy.backend.auth.model.request.ResetPasswordRequestDto;
 import com.ssafy.backend.auth.model.request.ValidateEmailRequestDto;
 import com.ssafy.backend.auth.model.response.RefreshResponseDto;
 import com.ssafy.backend.auth.service.AuthService;
@@ -124,8 +125,15 @@ public class AuthController {
     }
 
     /**
-     * todo: 비밀번호 찾기
+     * 비밀번호 찾기
      *
+     * @param resetPasswordRequestDto 이메일, 아이디
      */
+    @PostMapping("/reset/password")
+    public ApiResponse<?> resetPassword(@RequestBody ResetPasswordRequestDto resetPasswordRequestDto) {
+        authService.resetPassword(resetPasswordRequestDto);
 
+        return new ApiResponse.builder<>()
+                .build();
+    }
 }
