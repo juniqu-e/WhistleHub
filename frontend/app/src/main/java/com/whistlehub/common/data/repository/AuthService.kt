@@ -62,17 +62,11 @@ class AuthService @Inject constructor(
         return executeApiCall { authApi.resetPassword(request) }
     }
     // 로그인
-    // 공통 ApiResponse 를 사용하지 않고 단일 Json 객체만 반환하므로
-    suspend fun login(request: AuthRequest.LoginRequest): AuthResponse.LoginResponse? {
-        val response = authApi.login(request)
-        return if (response.isSuccessful) {
-            response.body()
-        } else {
-            null // 에러 처리 로직 추가 가능
-        }
+    suspend fun login(
+        request: AuthRequest.LoginRequest
+    ): ApiResponse<AuthResponse.LoginResponse> {
+        return executeApiCall { authApi.login(request) }
     }
-
-
     // 토큰 갱신
     suspend fun updateToken(
         request: AuthRequest.UpdateTokenRequest
