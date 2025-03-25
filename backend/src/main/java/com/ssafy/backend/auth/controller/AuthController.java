@@ -95,4 +95,17 @@ public class AuthController {
                 .payload(result)
                 .build();
     }
+
+    /**
+     * todo: 이메일 인증 요청
+     *
+     * @param email 이메일
+     */
+    @GetMapping("/email")
+    public ApiResponse<?> verifyEmailRequest(@PathParam("email") String email) {
+        authService.verifyEmailRequest(email);
+
+        return new ApiResponse.builder<>()
+                .build();
+    }
 }
