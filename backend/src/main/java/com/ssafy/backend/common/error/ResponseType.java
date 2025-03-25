@@ -30,7 +30,8 @@ public enum ResponseType {
     EMAIL_NOT_VERIFIED("ENV", HttpStatus.UNAUTHORIZED, "이메일 인증이 완료되지 않았습니다."),
     INVALID_REFRESH_TOKEN("IRT", HttpStatus.UNAUTHORIZED, "Refresh 토큰이 올바르지 않습니다."),
     EXPIRED_REFRESH_TOKEN("ERT", HttpStatus.UNAUTHORIZED, "Refresh 토큰이 만료되었습니다."),
-
+    INVALID_ACCESS_TOKEN("IAT", HttpStatus.UNAUTHORIZED, "Access 토큰이 올바르지 않습니다."),
+    EXPIRED_ACCESS_TOKEN("EAT", HttpStatus.UNAUTHORIZED, "Access 토큰이 만료되었습니다."),
 
     // HTTP Status 403
 
