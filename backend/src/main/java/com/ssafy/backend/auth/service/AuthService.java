@@ -70,6 +70,7 @@ public class AuthService {
             throw new DuplicateEmailException();
 
         //todo : 아이디, 비밀번호, 닉네임, 이메일 형식 체크
+        //todo : 이메일 인증 체크
 
         // 새 회원 등록
         Member member = Member.builder()
@@ -147,23 +148,41 @@ public class AuthService {
                 .build();
     }
 
-    public void verifyEmailRequest(String email) {
+    public void validateEmailRequest(String email) {
+        // 이미 가입된 이메일인지 확인
+        if (checkDuplicatedEmail(email))
+            throw new DuplicateEmailException();
+
         // 이메일 인증 코드 생성
-        String code = UUID.randomUUID().toString().substring(0, MAIL_CODE_LENGTH.intValue());
+        String code = UUID.randomUUID().toString().substring(0, mailProp.getMAIL_CODE_LENGTH().intValue());
 
         // 이메일 전송
         // 메일 객체 생성
         EmailMessage emailMessage = EmailMessage.builder()
                 .to(email)
                 .subject("[WhistleHub] 이메일 인증 코드")
-                .message("WhistleHub 이메일 인증 코드입니다 <br /> <strong>" + code+ "</strong>")
+                .message("WhistleHub 이메일 인증 코드입니다 <br /> <strong>" + code + "</strong>")
                 .build();
 
         emailService.sendMail(emailMessage, true); // 내부적으로 메일발송에 실패했을때 예외를 던집니다.
         // redis에 저장
-
-
         // key : email, value : code
+        redisService.set(email, code, mailProp.getMAIL_CODE_LENGTH().intValue());
+    }
 
+    public void validateEmail(ValidateEmailRequestDto validateEmailRequestDto) {
+        // code가 없으면 인증 실패 (만료되거나, 이메일이 잘못된 경우)
+        Object codeObject = redisService.get(validateEmailRequestDto.getEmail());
+        if (codeObject == null)
+            throw new InvalidEmailAuthException();
+
+        // code가 일치하지 않으면 인증 실패
+        String code = (String) codeObject;
+        if (!code.equals(validateEmailRequestDto.getCode()))
+            throw new InvalidEmailAuthException();
+
+        //코드와 이메일이 일치하면 인증 성공
+        // redis에서 code 삭제
+        redisService.delete(validateEmailRequestDto.getEmail());
     }
 }

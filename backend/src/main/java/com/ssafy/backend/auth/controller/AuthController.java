@@ -2,6 +2,7 @@ package com.ssafy.backend.auth.controller;
 
 import com.ssafy.backend.auth.model.request.RefreshRequestDto;
 import com.ssafy.backend.auth.model.request.RegisterRequestDto;
+import com.ssafy.backend.auth.model.request.ValidateEmailRequestDto;
 import com.ssafy.backend.auth.model.response.RefreshResponseDto;
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.ApiResponse;
@@ -97,15 +98,34 @@ public class AuthController {
     }
 
     /**
-     * todo: 이메일 인증 요청
-     *
+     * 이메일 인증 요청
+     * 가입시 이메일 인증코드 발송
      * @param email 이메일
      */
     @GetMapping("/email")
-    public ApiResponse<?> verifyEmailRequest(@PathParam("email") String email) {
-        authService.verifyEmailRequest(email);
+    public ApiResponse<?> validateEmailRequest(@PathParam("email") String email) {
+        authService.validateEmailRequest(email);
 
         return new ApiResponse.builder<>()
                 .build();
     }
+
+    /**
+     * 이메일 인증 확인
+     *
+     * @param validateEmailRequestDto 이메일, 인증코드
+     */
+    @PostMapping("/validate/email")
+    public ApiResponse<?> validateEmail(@RequestBody ValidateEmailRequestDto validateEmailRequestDto) {
+        authService.validateEmail(validateEmailRequestDto);
+
+        return new ApiResponse.builder<>()
+                .build();
+    }
+
+    /**
+     * todo: 비밀번호 찾기
+     *
+     */
+
 }
