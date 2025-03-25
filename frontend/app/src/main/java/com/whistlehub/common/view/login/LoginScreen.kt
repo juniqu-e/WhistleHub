@@ -25,10 +25,14 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.whistlehub.R
 import com.whistlehub.common.viewmodel.LoginViewModel
 import com.whistlehub.common.viewmodel.LoginState
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 
 
 @Composable
@@ -38,6 +42,9 @@ fun LoginScreen(
     onForgotPasswordClick: () -> Unit = {},
     viewModel: LoginViewModel = hiltViewModel()
 ) {
+    // 키보드 자동으로 올라오게 하기
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     // 아이디/비밀번호 상태 관리
     var userId by remember { mutableStateOf("") }
     var userPassword by remember { mutableStateOf("") }
@@ -71,7 +78,11 @@ fun LoginScreen(
     val textFieldStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
     val placeholderStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White.copy(alpha = 0.7f))
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding()
+    ) {
         // 배경 이미지
         Image(
             painter = painterResource(id = R.drawable.login_background),
@@ -134,7 +145,7 @@ fun LoginScreen(
                                         val strokeWidth = 1.dp.toPx()
                                         val y = size.height
                                         drawLine(
-                                            color = if (isUserIdFocused) Color.White else Color.White.copy(alpha = 0.7f),
+                                            color = if (isUserIdFocused) colors.Mint500 else colors.Grey50,
                                             start = Offset(0f, y),
                                             end = Offset(size.width, y),
                                             strokeWidth = strokeWidth
@@ -145,10 +156,16 @@ fun LoginScreen(
                                     value = userId,
                                     onValueChange = { userId = it },
                                     textStyle = textFieldStyle,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .align(Alignment.CenterStart)
-                                        .onFocusChanged { isUserIdFocused = it.isFocused },
+                                        .onFocusChanged { focusState ->
+                                            isUserIdFocused = focusState.isFocused
+                                            if (focusState.isFocused) {
+                                                keyboardController?.show()
+                                            }
+                                        },
                                     singleLine = true,
                                     interactionSource = remember { MutableInteractionSource() },
                                     decorationBox = { innerTextField ->
@@ -173,7 +190,7 @@ fun LoginScreen(
                                         val strokeWidth = 1.dp.toPx()
                                         val y = size.height
                                         drawLine(
-                                            color = if (isPasswordFocused) Color.White else Color.White.copy(alpha = 0.7f),
+                                            color = if (isPasswordFocused) colors.Mint500 else colors.Grey50,
                                             start = Offset(0f, y),
                                             end = Offset(size.width, y),
                                             strokeWidth = strokeWidth
@@ -189,7 +206,12 @@ fun LoginScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .align(Alignment.CenterStart)
-                                        .onFocusChanged { isPasswordFocused = it.isFocused },
+                                        .onFocusChanged { focusState ->
+                                            isPasswordFocused = focusState.isFocused
+                                            if (focusState.isFocused) {
+                                                keyboardController?.show()
+                                            }
+                                        },
                                     singleLine = true,
                                     interactionSource = remember { MutableInteractionSource() },
                                     decorationBox = { innerTextField ->
@@ -263,4 +285,3 @@ fun LoginScreen(
         }
     }
 }
-

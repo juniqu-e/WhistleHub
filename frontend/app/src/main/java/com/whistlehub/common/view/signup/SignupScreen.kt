@@ -80,7 +80,11 @@ fun SignUpScreen(
     val coroutineScope = rememberCoroutineScope()
 
     // 최상위 레이아웃
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding()
+    ) {
         // 배경 이미지
         Image(
             painter = painterResource(id = R.drawable.login_background),
