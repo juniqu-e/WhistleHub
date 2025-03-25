@@ -6,8 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * <pre>로그인 응답 dto</pre>
- * 로그인 성공 시 응답할 데이터
+ * <pre>토큰 재발급 응답 dto</pre>
  *
  * @author 허현준
  * @version 1.0
@@ -15,12 +14,10 @@ import lombok.NoArgsConstructor;
  */
 
 @Data
-@Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class LoginResponseDto {
+@NoArgsConstructor
+@Builder
+public class RefreshResponseDto {
     private String accessToken;
     private String refreshToken;
-    private String profileImage;
-    private String nickname;
 }

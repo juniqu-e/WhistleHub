@@ -39,7 +39,7 @@ spring:
 #    properties:
 #      mail.smtp.auth: true
 #      mail.smtp.starttls.enable: true
-#    port: ${SPRING_MAIL_PORT}
+#    port: 587 #smtp port
 
 #  security:
 #    oauth2:

@@ -1,5 +1,6 @@
 package com.ssafy.backend.common.util;
 
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,15 @@ public class JWTUtil {
         Object value = Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token)
                 .getPayload().get(key, Object.class);
         return value != null ? value.toString() : null;
+    }
+
+    public Boolean validateToken(String token) {
+        try {
+            Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public Boolean isExpired(String token) {

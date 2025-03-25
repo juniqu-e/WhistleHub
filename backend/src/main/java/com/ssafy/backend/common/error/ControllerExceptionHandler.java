@@ -11,6 +11,7 @@ import org.springframework.web.client.HttpClientErrorException;
 /**
  * <pre>예외 전역처리</pre>
  * Exception catch of Spring Container
+ *
  * @author 박병주
  * @version 1.0
  * @since 2025-03-12
@@ -75,16 +76,46 @@ public class ControllerExceptionHandler {
                 .errorStatus(ResponseType.PARAMETER_REQUIRED)
                 .build();
     }
+
     @ExceptionHandler(NotFoundException.class)
     public ApiResponse<?> notFoundHandler(NotFoundException e) {
         return new ApiResponse.builder<Object>()
                 .errorStatus(ResponseType.NOT_FOUND)
                 .build();
     }
+
     @ExceptionHandler(DuplicateTrackException.class)
     public ApiResponse<?> duplicateTrackHandler(DuplicateTrackException e) {
         return new ApiResponse.builder<Object>()
                 .errorStatus(ResponseType.DUPLICATE_TRACK)
+                .build();
+    }
+
+    @ExceptionHandler(InvalidAccessTokenException.class)
+    public ApiResponse<?> invalidAccessTokenHandler(InvalidAccessTokenException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.INVALID_ACCESS_TOKEN)
+                .build();
+    }
+
+    @ExceptionHandler(ExpiredAccessTokenException.class)
+    public ApiResponse<?> expiredAccessTokenHandler(ExpiredAccessTokenException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.EXPIRED_ACCESS_TOKEN)
+                .build();
+    }
+
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ApiResponse<?> invalidRefreshTokenHandler(InvalidRefreshTokenException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.INVALID_REFRESH_TOKEN)
+                .build();
+    }
+
+    @ExceptionHandler(ExpiredRefreshTokenException.class)
+    public ApiResponse<?> expiredRefreshTokenHandler(ExpiredRefreshTokenException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.EXPIRED_REFRESH_TOKEN)
                 .build();
     }
 
