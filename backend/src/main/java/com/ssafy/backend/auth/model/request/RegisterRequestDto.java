@@ -1,5 +1,6 @@
 package com.ssafy.backend.auth.model.request;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 /**
@@ -15,8 +16,12 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class RegisterRequestDto {
+    @NotBlank
     private String loginId;
+    @NotBlank
     private String password;
+    @NotBlank
     private String email;
+    @NotBlank
     private String nickname;
 }
