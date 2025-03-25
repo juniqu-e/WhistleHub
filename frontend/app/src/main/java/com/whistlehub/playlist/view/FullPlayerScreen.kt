@@ -104,7 +104,7 @@ fun FullPlayerScreen(
                 if (trackPlayViewModel.isPlaying.value) {
                     trackPlayViewModel.pauseTrack()
                 } else {
-                    trackPlayViewModel.playTrack(currentTrack!!)
+                    trackPlayViewModel.resumeTrack()
                 }
             }
         })
