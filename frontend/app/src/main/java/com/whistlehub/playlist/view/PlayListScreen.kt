@@ -23,6 +23,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,40 +34,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
-import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
+import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Pretendard
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.view.component.CreatePlaylist
+import com.whistlehub.playlist.viewmodel.PlaylistViewModel
 
 @Composable
-fun PlayListScreen(){
+fun PlayListScreen(navController: NavHostController, playlistViewModel: PlaylistViewModel = hiltViewModel()) {
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
 
-    // 임시 플레이리스트 하드코딩
-    val tempPlaylist = remember {
-        listOf(
-            PlaylistResponse.GetPlaylistResponse(
-                memberId = 1,
-                name = "내 플레이리스트",
-                description = "내가 좋아하는 트랙들",
-                imageUrl = "https://picsum.photos/200/300?random=31"
-            ),
-            PlaylistResponse.GetPlaylistResponse(
-                memberId = 2,
-                name = "내 플레이리스트2",
-                description = "내가 좋아하는 트랙들2",
-                imageUrl = "https://picsum.photos/200/300?random=32"
-            ),
-            PlaylistResponse.GetPlaylistResponse(
-                memberId = 3,
-                name = "긴 플레이리스트 이름 테스트 플레이 리스트 플레이 리스트",
-                description = "내가 좋아하는 트랙들3 긴 플레이리스트 설명 테스트 테스트",
-                imageUrl = "https://picsum.photos/200/300?random=33"
-            ),
-        )
-    }
+    playlistViewModel.getPlaylists()
+    val playlists = playlistViewModel.playlists.collectAsState()
 
     // 플레이리스트 화면
     LazyColumn(Modifier
@@ -119,11 +102,16 @@ fun PlayListScreen(){
         }
 
         // 플레이리스트
-        items(tempPlaylist.size) { index ->
-            val playlist = tempPlaylist[index]
+        items(playlists.value.size) { index ->
+            val playlist = playlists.value[index]
             Row(Modifier
                 .fillMaxWidth()
-                .clickable {},
+                .clickable {
+                    // 플레이리스트 클릭 시 트랙 목록 받아옴
+                    // TODO("플레이리스트 클릭 시 트랙 목록 받아오기")
+                    playlistViewModel.getPlaylistTrack(playlist.playlistId)
+                    navController.navigate(Screen.PlayListTrackList.route)
+                },
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 AsyncImage(

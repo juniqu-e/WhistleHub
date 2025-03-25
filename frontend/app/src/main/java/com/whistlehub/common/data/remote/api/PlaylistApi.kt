@@ -15,6 +15,14 @@ import retrofit2.http.*
  **/
 
 interface PlaylistApi {
+    // 특정 멤버의 플레이리스트 목록 조회
+    @GET("playlist/member")
+    suspend fun getMemberPlaylists(
+        @Header("Authorization") token: String,
+        @Query("memberId") memberId: Int,
+        @Query("page") page: Int,
+        @Query("size") size: Int
+    ): Response<ApiResponse<List<PlaylistResponse.GetMemberPlaylistsResponse>>>
     // 플레이리스트 조회
     @GET("playlist")
     suspend fun getPlaylists(
