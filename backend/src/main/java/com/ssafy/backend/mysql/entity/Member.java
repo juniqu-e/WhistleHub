@@ -50,7 +50,7 @@ public class Member extends Common{
     @Column(name = "enabled", nullable = false)
     private Boolean enabled = false;
 
-    @Column(name="birth", nullable = false)
+    @Column(name="birth", nullable = false,  length = 20)
     private String birth;
 
     @Column(name="gender", nullable = false)
