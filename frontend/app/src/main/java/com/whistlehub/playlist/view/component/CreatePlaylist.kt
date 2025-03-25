@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.whistlehub.common.view.copmonent.ImageUpload
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 
@@ -41,6 +42,9 @@ fun CreatePlaylist() {
             .fillMaxWidth()
             .padding(10.dp)
     ) {
+        // Image
+        ImageUpload {}
+
         // Title
         Row(
             modifier = Modifier
@@ -135,7 +139,6 @@ fun CreatePlaylist() {
                     )
                 }
             }
-
         }
     }
 }
