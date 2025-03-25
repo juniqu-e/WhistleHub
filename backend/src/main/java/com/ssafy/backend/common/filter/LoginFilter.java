@@ -22,6 +22,18 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+
+/**
+ * <pre>로그인 필터</pre>
+ * 로그인 요청을 처리하는 필터
+ *
+ * @author 허현준
+ * @version 1.0
+ * @see JWTUtil
+ * @see JWTProp
+ * @since 2025-03-20
+ */
+
 @Slf4j
 public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 

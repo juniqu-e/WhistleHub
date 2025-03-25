@@ -12,6 +12,17 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * <pre>
+ * 회원 인증 관련 API 요청을 처리합니다.
+ * </pre>
+ *
+ * @see com.ssafy.backend.auth.service.AuthService
+ * @author 허현준
+ * @version 1.0
+ * @since 2025-03-26
+ */
+
 @RequestMapping("/api/auth")
 @RestController
 @RequiredArgsConstructor

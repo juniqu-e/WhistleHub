@@ -18,6 +18,18 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * <pre>JWT 토큰 검증 필터</pre>
+ * JWT 토큰을 검증하는 필터
+ *
+ * @author 허현준
+ * @version 1.0
+ * @see JWTUtil
+ * @see FilterApiResponse
+ * @see Member
+ * @since 2025-03-20
+ */
+
 @Slf4j
 public class JWTFilter extends OncePerRequestFilter {
 

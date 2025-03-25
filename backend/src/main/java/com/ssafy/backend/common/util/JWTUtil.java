@@ -9,6 +9,15 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.Map;
 
+/**
+ * <pre>JWT 유틸</pre>
+ * JWT 토큰을 생성하고 검증하는 클래스
+ *
+ * @author 허현준
+ * @version 1.0
+ * @since 2025-03-26
+ */
+
 @Component
 @RequiredArgsConstructor
 public class JWTUtil {

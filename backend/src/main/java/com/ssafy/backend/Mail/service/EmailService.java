@@ -10,6 +10,16 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+/**
+ * <pre>메일 서비스</pre>
+ * 
+ * 메일 전송을 담당하는 서비스
+ * 
+ * @author 허현준
+ * @version 1.0
+ * @since 2025-03-25
+ */
+
 @Slf4j
 @Service
 @RequiredArgsConstructor

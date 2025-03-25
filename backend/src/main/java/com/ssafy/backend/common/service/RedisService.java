@@ -6,8 +6,8 @@ import org.springframework.stereotype.Service;
 
 /**
  * <pre>Redis 서비스</pre>
- * Redis의 CRUD를 담당하는 서비스, 기본적으로 String key, Object value로 저장한다.
- * 추후, List, Set, Hash, ZSet 등의 다양한 데이터 타입을 저장할 수 있도록 확장 가능하다.
+ * Redis의 CRUD를 담당하는 서비스, 기본적으로 String key, Object value로 저장.
+ * 추후, List, Set, Hash, ZSet 등의 다양한 데이터 타입을 저장할 수 있도록 확장 가능.
  *
  * @author 허현준
  * @version 1.0
