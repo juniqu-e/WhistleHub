@@ -1,21 +1,29 @@
 package com.whistlehub.playlist.viewmodel
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.C
+import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
+import com.whistlehub.common.data.repository.TrackService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import javax.inject.Inject
 
 @HiltViewModel
 class TrackPlayViewModel @Inject constructor(
     val exoPlayer: ExoPlayer,
+    val trackService: TrackService,
 ) : ViewModel() {
 
     // 테스트용 트랙 리스트 (최종 API 연결 후 삭제)
@@ -120,20 +128,30 @@ class TrackPlayViewModel @Inject constructor(
     }
 
     fun playTrack(track: TrackResponse.GetTrackDetailResponse) {
+        viewModelScope.launch {
+            val trackData = trackService.playTrack(trackId = track.trackId.toString())
+
+            if (trackData != null) {
+                val mediaItem = MediaItem.fromUri(byteArrayToUri(this as Context, trackData)?: Uri.EMPTY )
+                exoPlayer.setMediaItem(mediaItem)
+                exoPlayer.prepare()
+                exoPlayer.play()
+
+                _currentTrack.value = track
+                _isPlaying.value = true
+
+                // 플레이어 트랙 리스트 업데이트
+                val existingIndex = _playerTrackList.value.indexOfFirst { it.trackId == track.trackId }
+                if (existingIndex == -1) {
+                    _playerTrackList.value = _playerTrackList.value + track
+                }
+            }
+        }
         val existingIndex = _playerTrackList.value.indexOfFirst { it.trackId == track.trackId }
 
         if (existingIndex == -1) { // 플레이어에 없는 경우 추가
             _playerTrackList.value = _playerTrackList.value + track
         }
-
-//        _currentTrack.value = track
-//        _playerPosition.value = 0L
-//        _trackDuration.value = exoPlayer.duration
-//        val mediaItem = MediaItem.fromUri(track.uri)
-//        exoPlayer.setMediaItem(mediaItem)
-//        exoPlayer.prepare()
-//        exoPlayer.play()
-//        _isPlaying.value = true
     }
 
     // 트랙 일시 정지
@@ -185,6 +203,24 @@ class TrackPlayViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         exoPlayer.release()
+    }
+}
+
+fun byteArrayToUri(context: Context, byteArray: ByteArray): Uri? {
+    // 임시 파일을 만들기 위한 파일 이름 지정
+    val file = File(context.cacheDir, "temp_file")
+
+    try {
+        // 파일에 ByteArray를 씁니다.
+        val fileOutputStream = FileOutputStream(file)
+        fileOutputStream.write(byteArray)
+        fileOutputStream.close()
+
+        // 파일의 Uri를 반환합니다.
+        return Uri.fromFile(file)
+    } catch (e: IOException) {
+        e.printStackTrace()
+        return null
     }
 }
 

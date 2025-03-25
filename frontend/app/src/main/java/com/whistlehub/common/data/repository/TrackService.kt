@@ -1,8 +1,5 @@
 package com.whistlehub.common.data.repository
 
-import android.net.http.HttpException
-import android.os.Build
-import androidx.annotation.RequiresExtension
 import com.whistlehub.common.data.remote.api.TrackApi
 import com.whistlehub.common.data.remote.dto.request.TrackRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
@@ -12,7 +9,6 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,7 +19,7 @@ import javax.inject.Singleton
  **/
 @Singleton
 class TrackService @Inject constructor(
-    private val trackApi: TrackApi, private val tokenRefresh: TokenRefresh
+    private val trackApi: TrackApi, private val tokenRefresh: TokenRefresh? = null
 ) : ApiRepository() {
     // 트랙 상세 조회
     suspend fun getTrackDetail(
@@ -47,24 +43,15 @@ class TrackService @Inject constructor(
     }
 
     // 트랙 재생 요청
-    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     suspend fun playTrack(
-        token: String,
+        token: String = "tempToken",
         trackId: String,
     ): ByteArray? {
-        return try {
-            val response = trackApi.playTrack(token, trackId) // API 호출
-            if (response.isSuccessful) {
-                response.body()?.bytes() // 성공하면 ByteArray 반환
-            } else {
-                null // 실패 시 null 반환
-            }
-        } catch (e: HttpException) {
-            e.printStackTrace()
-            null // HTTP 오류 발생 시 null
-        } catch (e: IOException) {
-            e.printStackTrace()
-            null // 네트워크 오류 발생 시 null
+        val response = trackApi.playTrack(token, trackId) // API 호출
+        return if (response.isSuccessful) {
+            response.body()?.bytes() // 성공하면 ByteArray 반환
+        } else {
+            null // 실패 시 null 반환
         }
     }
 
@@ -160,4 +147,6 @@ class TrackService @Inject constructor(
             trackId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
         return executeApiCall { trackApi.uploadTrackImage(token, trackIdBody, image) }
     }
+
+    companion object
 }

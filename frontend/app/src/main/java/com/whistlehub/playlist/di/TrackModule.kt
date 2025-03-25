@@ -2,6 +2,7 @@ package com.whistlehub.playlist.di
 
 import android.content.Context
 import androidx.media3.exoplayer.ExoPlayer
+import com.whistlehub.common.data.repository.TrackService
 import com.whistlehub.playlist.data.CommentRepository
 import com.whistlehub.playlist.data.CommentRepositoryImpl
 import com.whistlehub.playlist.viewmodel.TrackCommentViewModel
@@ -24,8 +25,10 @@ object TrackModule {
 
     @Provides
     @Singleton
-    fun provideTrackPlayViewModel(exoPlayer: ExoPlayer): TrackPlayViewModel {
-        return TrackPlayViewModel(exoPlayer)
+    fun provideTrackPlayViewModel(
+        exoPlayer: ExoPlayer, trackService: TrackService
+    ): TrackPlayViewModel {
+        return TrackPlayViewModel(exoPlayer, trackService)
     }
 
     @Provides
