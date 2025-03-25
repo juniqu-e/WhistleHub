@@ -194,6 +194,7 @@ public class AuthService {
         redisService.setKeyOnly(validateEmailRequestDto.getEmail() + "-validated");
     }
 
+    @Transactional
     public void resetPassword(ResetPasswordRequestDto resetPasswordRequestDto){
         Member member = memberRepository.findByLoginId(resetPasswordRequestDto.getLoginId());
 
