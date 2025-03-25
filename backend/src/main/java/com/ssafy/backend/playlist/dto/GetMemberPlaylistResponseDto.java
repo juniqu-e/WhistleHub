@@ -11,5 +11,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class GetMemberPlaylistResponseDto {
     private int playlistId;
+    private String name;
     private String imageUrl;
 }
