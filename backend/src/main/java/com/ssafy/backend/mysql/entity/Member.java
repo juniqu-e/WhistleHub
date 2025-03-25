@@ -5,6 +5,15 @@ import lombok.*;
 
 import java.time.Instant;
 
+/**
+ * <pre>회원 정보 엔티티</pre>
+ *
+ * 회원 정보를 저장하는 엔티티
+ *
+ * @since 2025. 3. 25.
+ * @version 1.1
+ */
+
 @Getter
 @Setter
 @Entity
@@ -41,7 +50,10 @@ public class Member extends Common{
     @Column(name = "enabled", nullable = false)
     private Boolean enabled = false;
 
-    @Column(name = "first_login", nullable = false)
-    private Boolean firstLogin = false;
+    @Column(name="birth", nullable = false)
+    private String birth;
+
+    @Column(name="gender", nullable = false)
+    private Character gender;
 
 }
