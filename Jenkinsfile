@@ -133,15 +133,6 @@ pipeline {
                         ssh -o StrictHostKeyChecking=no ${remoteServer} '
                             cd ${remoteDir}
                             docker compose -f docker-compose.db.yml up -d
-                            '
-                    """
-                }
-
-                sshagent (credentials: ['ssh']) {
-                    sh """
-                        echo "docker compose up"
-                        ssh -o StrictHostKeyChecking=no ${remoteServer} '
-                            cd ${remoteDir}
                             docker compose up -d --build
                             '
                     """
