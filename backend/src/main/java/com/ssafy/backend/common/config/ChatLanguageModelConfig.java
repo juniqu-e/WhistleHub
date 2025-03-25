@@ -10,14 +10,14 @@ import org.springframework.context.annotation.Configuration;
 public class ChatLanguageModelConfig {
 
     @Value("${GEMINI_AI_KEY}")
-    private String AiKey;
+    private String aiKey;
     @Value("${GEMINI_AI_MODEL_NAME}")
     private String modelName;
 
     @Bean
     public ChatLanguageModel chatLanguageModel() {
         return GoogleAiGeminiChatModel.builder()
-                .apiKey(AiKey) // API 키 설정
+                .apiKey(aiKey) // API 키 설정
                 .modelName(modelName) // 모델 이름 설정
                 .build();
     }
