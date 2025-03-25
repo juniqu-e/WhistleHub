@@ -1,6 +1,7 @@
 package com.whistlehub.workstation.view
 
 import android.app.Activity
+import android.util.Log
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -37,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -62,38 +64,14 @@ import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 fun WorkStationScreen(navController: NavController) {
     val activity = LocalActivity.current as? Activity
     val viewModel: WorkStationViewModel = hiltViewModel()
-    var tracks by remember {
-        mutableStateOf(
-            listOf(
-                Layer(
-                    id = 1,
-                    name = "DRUM",
-                    description = "ba 95 drum loop fever full",
-                    category = "DRUM"
-                ),
-                Layer(
-                    id = 2,
-                    name = "OTHERS",
-                    description = "css 90 full song water d#m 01",
-                    category = "OTHERS"
-                ),
-                Layer(
-                    id = 3,
-                    name = "BASS",
-                    description = "gbc bass 85 gorilla f#fm",
-                    category = "BASS"
-                ),
-                Layer(
-                    id = 4,
-                    name = "BASS",
-                    description = "bpm100 a bass20",
-                    category = "BASS"
-                ),
-            )
-        )
-    }
-    val horizontalScrollState = rememberScrollState()
+    val tracks by viewModel.tracks.collectAsState()
     val verticalScrollState = rememberScrollState()
+    val bottomBarActions = viewModel.bottomBarActions.copy(
+        onExitClicked = {
+            navController.popBackStack()
+            Log.d("Exit", "EXIT")
+        }
+    )
     // Immersive mode (fullscreen)
     LaunchedEffect(Unit) {
         activity?.window?.let { window ->
@@ -127,14 +105,13 @@ fun WorkStationScreen(navController: NavController) {
         ) {
             LayerPanel(
                 tracks = tracks,
-                onAddInstrument = {
-                    val newId = (tracks.maxOfOrNull { it.id } ?: 0) + 1
-                    tracks = tracks + Layer(newId, "$newId")
-                },
                 verticalScrollState = verticalScrollState,
                 modifier = Modifier.fillMaxWidth(),
-                onDeleteLayer = { layer ->
-                    tracks = tracks.filter { it.id != layer.id }
+                onAddInstrument = {
+                    viewModel.addLayer()
+                },
+                onDeleteLayer = {
+                    viewModel.deleteLayer(it)
                 },
                 onResetLayer = {
                     //믹싱 옵션 초기화
@@ -142,7 +119,7 @@ fun WorkStationScreen(navController: NavController) {
             )
         }
 
-        viewModel.bottomBarProvider.WorkStationBottomBar()
+        viewModel.bottomBarProvider.WorkStationBottomBar(bottomBarActions)
     }
 }
 

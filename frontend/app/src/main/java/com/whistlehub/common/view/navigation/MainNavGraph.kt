@@ -16,7 +16,7 @@ import com.whistlehub.common.view.login.LoginScreen
 fun MainNavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
     NavHost(
         navController = navController,
-        startDestination = "login",
+        startDestination = "main",
         modifier = modifier
     ) {
         //유저 인증(로그인)

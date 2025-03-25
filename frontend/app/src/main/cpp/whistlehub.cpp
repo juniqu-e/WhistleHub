@@ -5,12 +5,14 @@
 #define LOG_TAG "whistlehub"
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-extern "C" JNIEXPORT jint JNICALL
+extern "C" JNIEXPORT jint
+
+JNICALL
 Java_com_whistlehub_MainActivity_startAudioEngine(JNIEnv *env, jobject) {
     oboe::AudioStreamBuilder builder;
     builder.setPerformanceMode(oboe::PerformanceMode::LowLatency);
 
-    std::shared_ptr <oboe::AudioStream> stream;
+    std::shared_ptr<oboe::AudioStream> stream;
     oboe::Result result = builder.openStream(stream);
     if (result != oboe::Result::OK) {
         LOGE("Failed to open stream: %s", oboe::convertToText(result));
@@ -25,7 +27,9 @@ Java_com_whistlehub_MainActivity_startAudioEngine(JNIEnv *env, jobject) {
     return 0;
 }
 
-extern "C" JNIEXPORT jint JNICALL
+extern "C" JNIEXPORT jint
+
+JNICALL
 Java_com_whistlehub_MainActivity_stopAudioEngine(JNIEnv *env, jobject /* this */) {
     // 오디오 스트림 정지 및 종료 로직 구현
     return 0;
