@@ -52,7 +52,7 @@ dependencies {
     implementation group: 'net.bramp.ffmpeg', name: 'ffmpeg', version: '0.8.0'
 
     // mail
-    implementation 'org.springframework.boot:spring-boot-starter-mail'
+//    implementation 'org.springframework.boot:spring-boot-starter-mail'
 
 
     compileOnly 'org.projectlombok:lombok'
