@@ -91,7 +91,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
                 .payload(loginResponseDto)
                 .build()
                 .setResponseType(responseType);
-        
+
         // 응답 반환
         response.setStatus(responseType.getStatus().value());
         response.setContentType("application/json; charset=UTF-8");
@@ -106,7 +106,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
     //로그인 실패시
     @Override
-    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed){
+    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) {
         // 로그인 실패 응답 객체 생성
         ResponseType responseType = ResponseType.INVALID_CREDENTIALS;
         FilterApiResponse<?> apiResponse = FilterApiResponse.builder().build().setResponseType(responseType);
