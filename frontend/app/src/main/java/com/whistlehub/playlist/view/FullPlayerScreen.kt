@@ -210,7 +210,7 @@ fun TrackInfomation(modifier: Modifier = Modifier, trackPlayViewModel: TrackPlay
         )
         Text(
             modifier = Modifier.fillMaxWidth(),
-            text = currentTrack?.artist?.nickname ?: "Artist Name",
+            text = currentTrack?.artistInfo?.nickname ?: "Artist Name",
             style = Typography.bodyLarge,
             color = CustomColors().Grey200,
             textAlign = TextAlign.Center
@@ -314,7 +314,7 @@ fun TrackMenu(trackPlayViewModel: TrackPlayViewModel = hiltViewModel(), onReport
         )
         Text(
             modifier = Modifier.fillMaxWidth(),
-            text = currentTrack?.artist?.nickname ?: "Artist Name",
+            text = currentTrack?.artistInfo?.nickname ?: "Artist Name",
             style = Typography.bodyLarge,
             color = CustomColors().Mint500,
             textAlign = TextAlign.Center

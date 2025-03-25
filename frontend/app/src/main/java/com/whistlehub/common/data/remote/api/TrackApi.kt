@@ -5,8 +5,17 @@ import com.whistlehub.common.data.remote.dto.response.ApiResponse
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import okhttp3.ResponseBody
 import retrofit2.Response
-import retrofit2.http.*
+import retrofit2.http.Body
+import retrofit2.http.DELETE
+import retrofit2.http.GET
+import retrofit2.http.Header
+import retrofit2.http.Multipart
+import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Part
+import retrofit2.http.Query
 
 /**
 ----------------------
@@ -34,11 +43,12 @@ interface TrackApi {
         @Query("trackId") trackId: String
     ): Response<ApiResponse<Unit>>
     // 트랙 재생 요청
+    // 공통API 사용하지 않고 파일만 수신
     @GET("track/play")
     suspend fun playTrack(
         @Header("Authorization") token: String,
         @Query("trackId") trackId: String
-    ): Response<ApiResponse<String>>
+    ): Response<ResponseBody>
     // 트랙 재생 카운트
     @POST("track/play")
     suspend fun increasePlayCount(

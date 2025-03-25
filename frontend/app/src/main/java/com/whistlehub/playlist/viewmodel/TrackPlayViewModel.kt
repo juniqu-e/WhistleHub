@@ -1,35 +1,79 @@
 package com.whistlehub.playlist.viewmodel
 
-import android.annotation.SuppressLint
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.C
-import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import com.whistlehub.playlist.data.Track
-import com.whistlehub.playlist.data.TrackRepository
+import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @HiltViewModel
 class TrackPlayViewModel @Inject constructor(
     val exoPlayer: ExoPlayer,
-    private val trackRepository: TrackRepository
 ) : ViewModel() {
 
-    // 트랙 리스트
-    private val _trackList = MutableStateFlow<List<Track>>(emptyList())
-    val trackList: StateFlow<List<Track>> get() = _trackList
+    // 테스트용 트랙 리스트 (최종 API 연결 후 삭제)
+    private val _trackList = MutableStateFlow<List<TrackResponse.GetTrackDetailResponse>>(listOf(
+        TrackResponse.GetTrackDetailResponse(
+            trackId = 1,
+            title = "Sample Track 1",
+            description = "Description 1",
+            duration = 300,
+            imageUrl = "https://picsum.photos/200/300?random=1",
+            artistInfo = TrackResponse.ArtistInfo(1, "Artist 1", "https://picsum.photos/200/300?random=121"),
+            isLike = false,
+            importCount = 10,
+            likeCount = 5,
+            viewCount = 100,
+            createdAt = "2023-01-01",
+            sourceTrack = emptyList(),
+            importTrack = emptyList(),
+            tags = listOf("Pop", "Rock")
+        ),
+        TrackResponse.GetTrackDetailResponse(
+            trackId = 2,
+            title = "Sample Track 2",
+            description = "Description 2",
+            duration = 400,
+            imageUrl = "https://picsum.photos/200/300?random=2",
+            artistInfo = TrackResponse.ArtistInfo(2, "Artist 2", "https://picsum.photos/200/300?random=122"),
+            isLike = true,
+            importCount = 20,
+            likeCount = 10,
+            viewCount = 200,
+            createdAt = "2023-02-01",
+            sourceTrack = emptyList(),
+            importTrack = emptyList(),
+            tags = listOf("Jazz", "Blues")
+        ),
+        TrackResponse.GetTrackDetailResponse(
+            trackId = 3,
+            title = "Sample Track 3",
+            description = "Description 3",
+            duration = 500,
+            imageUrl = "https://picsum.photos/200/300?random=3",
+            artistInfo = TrackResponse.ArtistInfo(3, "Artist 3", "https://picsum.photos/200/300?random=123"),
+            isLike = false,
+            importCount = 30,
+            likeCount = 15,
+            viewCount = 300,
+            createdAt = "2023-03-01",
+            sourceTrack = emptyList(),
+            importTrack = emptyList(),
+            tags = listOf("Classical", "Orchestral")
+        ),
+    ))
+    val trackList: StateFlow<List<TrackResponse.GetTrackDetailResponse>> get() = _trackList
 
     // 현재 재생 중인 트랙
-    private val _currentTrack = MutableStateFlow<Track?>(null)
-    val currentTrack: StateFlow<Track?> get() = _currentTrack
+    private val _currentTrack = MutableStateFlow<TrackResponse.GetTrackDetailResponse?>(null)
+    val currentTrack: StateFlow<TrackResponse.GetTrackDetailResponse?> get() = _currentTrack
 
     // 재생 상태 (재생 중/일시 정지)
     private val _isPlaying = MutableStateFlow<Boolean>(false)
@@ -39,14 +83,9 @@ class TrackPlayViewModel @Inject constructor(
     private val _playerViewState = MutableStateFlow<PlayerViewState>(PlayerViewState.PLAYING)
     val playerViewState: StateFlow<PlayerViewState> get() = _playerViewState
 
-    // 트랙 목록 로드
-    fun loadTracks() {
-        _trackList.value = trackRepository.getTracks()
-    }
-
     // 플레이어 내부 트랙 리스트
-    private val _playerTrackList = MutableStateFlow<List<Track>>(emptyList())
-    val playerTrackList: MutableStateFlow<List<Track>> get() = _playerTrackList
+    private val _playerTrackList = MutableStateFlow<List<TrackResponse.GetTrackDetailResponse>>(emptyList())
+    val playerTrackList: MutableStateFlow<List<TrackResponse.GetTrackDetailResponse>> get() = _playerTrackList
 
     // 현재 트랙 위치
     private val _playerPosition = MutableStateFlow(0L)
@@ -80,21 +119,21 @@ class TrackPlayViewModel @Inject constructor(
         exoPlayer.seekTo(position)
     }
 
-    fun playTrack(track: Track) {
-        val existingIndex = _playerTrackList.value.indexOfFirst { it.id == track.id }
+    fun playTrack(track: TrackResponse.GetTrackDetailResponse) {
+        val existingIndex = _playerTrackList.value.indexOfFirst { it.trackId == track.trackId }
 
         if (existingIndex == -1) { // 플레이어에 없는 경우 추가
             _playerTrackList.value = _playerTrackList.value + track
         }
 
-        _currentTrack.value = track
-        _playerPosition.value = 0L
-        _trackDuration.value = exoPlayer.duration
-        val mediaItem = MediaItem.fromUri(track.uri)
-        exoPlayer.setMediaItem(mediaItem)
-        exoPlayer.prepare()
-        exoPlayer.play()
-        _isPlaying.value = true
+//        _currentTrack.value = track
+//        _playerPosition.value = 0L
+//        _trackDuration.value = exoPlayer.duration
+//        val mediaItem = MediaItem.fromUri(track.uri)
+//        exoPlayer.setMediaItem(mediaItem)
+//        exoPlayer.prepare()
+//        exoPlayer.play()
+//        _isPlaying.value = true
     }
 
     // 트랙 일시 정지
@@ -120,7 +159,7 @@ class TrackPlayViewModel @Inject constructor(
     }
 
     fun previousTrack() {
-        val currentIndex = _playerTrackList.value.indexOfFirst { it.id == _currentTrack.value?.id }
+        val currentIndex = _playerTrackList.value.indexOfFirst { it.trackId == _currentTrack.value?.trackId }
         if (currentIndex > 0) {
             playTrack(_playerTrackList.value[currentIndex - 1])
         } else {
@@ -130,7 +169,7 @@ class TrackPlayViewModel @Inject constructor(
     }
 
     fun nextTrack() {
-        val currentIndex = _playerTrackList.value.indexOfFirst { it.id == _currentTrack.value?.id }
+        val currentIndex = _playerTrackList.value.indexOfFirst { it.trackId == _currentTrack.value?.trackId }
         if (currentIndex != -1 && currentIndex < _playerTrackList.value.size - 1) {
             playTrack(_playerTrackList.value[currentIndex + 1])
         } else {
