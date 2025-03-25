@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.backend.auth.model.common.CustomUserDetails;
 import com.ssafy.backend.auth.model.response.LoginResponseDto;
 import com.ssafy.backend.common.FilterApiResponse;
-import com.ssafy.backend.common.config.JWTConfig;
 import com.ssafy.backend.common.error.ResponseType;
+import com.ssafy.backend.common.prop.JWTProp;
 import com.ssafy.backend.common.util.JWTUtil;
 import com.ssafy.backend.mysql.entity.Member;
 import jakarta.servlet.FilterChain;
@@ -27,13 +27,13 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
     private final AuthenticationManager authenticationManager;
     private final JWTUtil jwtUtil;
-    private final JWTConfig jwtConfig;
+    private final JWTProp jwtProp;
     private final ObjectMapper objectMapper;
 
-    public LoginFilter(AuthenticationManager authenticationManager, JWTUtil jwtUtil, JWTConfig jwtConfig) {
+    public LoginFilter(AuthenticationManager authenticationManager, JWTUtil jwtUtil, JWTProp jwtProp) {
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
-        this.jwtConfig = jwtConfig;
+        this.jwtProp = jwtProp;
         this.objectMapper = new ObjectMapper();
 
         // 로그인 요청 URL 설정
@@ -72,10 +72,10 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         HashMap<String, Object> claims = new HashMap<>();
         claims.put("loginId", loginId);
         claims.put("id", member.getId());
-        String accessToken = jwtUtil.createJwt(claims, jwtConfig.getAccessExpiration());
+        String accessToken = jwtUtil.createJwt(claims, jwtProp.getACCESS_TOKEN_EXPIRATION());
 
         claims.put("refresh", true);
-        String refreshToken = jwtUtil.createJwt(claims, jwtConfig.getRefreshExpiration());
+        String refreshToken = jwtUtil.createJwt(claims, jwtProp.getREFRESH_TOKEN_EXPIRATION());
 
         // 로그인 응답 객체 생성
         LoginResponseDto loginResponseDto = LoginResponseDto.builder()
