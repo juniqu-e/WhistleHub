@@ -33,6 +33,7 @@ import com.whistlehub.common.viewmodel.LoginState
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import com.whistlehub.common.view.theme.Typography
 
 
 @Composable
@@ -71,12 +72,10 @@ fun LoginScreen(
         }
     }
 
-    // 커스텀 색상 객체 생성
     val colors = CustomColors()
-
-    // 텍스트 스타일 정의
-    val textFieldStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
-    val placeholderStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White.copy(alpha = 0.7f))
+    val textFieldStyle = Typography.bodyMedium.copy(color = colors.Grey50)
+    val placeholderStyle = Typography.bodyMedium.copy(color = colors.Grey300)
+    val buttonTextStyle = Typography.titleMedium.copy(color = colors.Grey950)
 
     Box(
         modifier = Modifier
@@ -253,7 +252,7 @@ fun LoginScreen(
                                 } else {
                                     Text(
                                         text = "로그인",
-                                        style = MaterialTheme.typography.bodyLarge,
+                                        style = buttonTextStyle,
                                         modifier = Modifier.padding(vertical = 4.dp)
                                     )
                                 }
@@ -265,17 +264,16 @@ fun LoginScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 TextButton(onClick = {
-                                    Log.d("LoginScreen", "회원가입 버튼 클릭")
                                     onSignUpClick()
                                 }
                                 ) {
-                                    Text(text = "회원가입", color = Color.White)
+                                    Text(text = "회원가입", color = colors.Grey50)
                                 }
                                 Spacer(modifier = Modifier.width(20.dp))
-                                Text(text = "|", color = Color.White)
+                                Text(text = "|", color = colors.Grey50)
                                 Spacer(modifier = Modifier.width(20.dp))
                                 TextButton(onClick = onForgotPasswordClick) {
-                                    Text(text = "비밀번호 찾기", color = Color.White)
+                                    Text(text = "비밀번호 찾기", color = colors.Grey50)
                                 }
                             }
                         }

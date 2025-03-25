@@ -50,7 +50,7 @@ fun LabeledInputField(
                 .heightIn(min = 52.dp)
                 .drawBehind {
                     val strokeWidth = 1.dp.toPx()
-                    val offset = 2.dp.toPx() // 1픽셀 만큼 아래로 이동
+                    val offset = 4.dp.toPx() // 1픽셀 만큼 아래로 이동
                     val y = size.height - strokeWidth + offset
                     drawLine(
                         color = if (isFocused) colors.Mint500 else Color.White.copy(alpha = 0.7f),
@@ -97,12 +97,15 @@ fun LabeledInputField(
                 )
             }
         }
-        // 에러 메시지 영역 (항상 고정 높이)
+        // 에러 메시지 영역
         Box(modifier = Modifier.height(30.dp)) {
             if (!errorMessage.isNullOrEmpty()) {
+                val displayColor = if (errorMessage.contains("사용 가능한")) Color.Green
+                                    else MaterialTheme.colorScheme.error
+
                 Text(
                     text = errorMessage,
-                    color = MaterialTheme.colorScheme.error,
+                    color = displayColor,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.align(Alignment.CenterStart)
                 )
