@@ -3,7 +3,9 @@ package com.ssafy.backend.common.filter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.backend.auth.model.common.CustomUserDetails;
 import com.ssafy.backend.auth.model.response.LoginResponseDto;
+import com.ssafy.backend.common.FilterApiResponse;
 import com.ssafy.backend.common.config.JWTConfig;
+import com.ssafy.backend.common.error.ResponseType;
 import com.ssafy.backend.common.util.JWTUtil;
 import com.ssafy.backend.mysql.entity.Member;
 import jakarta.servlet.FilterChain;
@@ -33,9 +35,12 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         this.jwtUtil = jwtUtil;
         this.jwtConfig = jwtConfig;
         this.objectMapper = new ObjectMapper();
+
+        // 로그인 요청 URL 설정
         setFilterProcessesUrl("/api/auth/login");
     }
 
+    // 로그인 시도 로직
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
         try {
@@ -50,36 +55,18 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
             //token에 담은 검증을 위한 AuthenticationManager로 전달
             return authenticationManager.authenticate(authToken);
-        } catch (AuthenticationException e) {
-            // 인증 실패 시 401 상태 설정 및 JSON 응답 작성
-            try {
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                response.setContentType("application/json");
-                response.setCharacterEncoding("UTF-8");
-                response.getWriter().write("""
-                        {
-                            "message": "로그인에 실패했습니다."
-                        }
-                        """);
-            } catch (IOException ioException) {
-                // 에러 발생 시에도 로그를 최소화
-                log.warn("Failed to write authentication error response.");
-            }
-            // 로그 출력 생략
-            return null;
         } catch (IOException e) {
-            log.warn("Failed to parse authentication request body");
+            log.warn("Failed to parse authentication request body : attemptAuthentication", e);
             throw new RuntimeException("Invalid request");
         }
     }
 
     //로그인 성공시
     @Override
-    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) throws IOException {
-
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Member member = userDetails.getMember();
-//        System.out.println("member = " + member);
+
         String loginId = member.getLoginId();
         //JWT 토큰 생성
         HashMap<String, Object> claims = new HashMap<>();
@@ -90,6 +77,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         claims.put("refresh", true);
         String refreshToken = jwtUtil.createJwt(claims, jwtConfig.getRefreshExpiration());
 
+        // 로그인 응답 객체 생성
         LoginResponseDto loginResponseDto = LoginResponseDto.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -97,15 +85,41 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
                 .nickname(userDetails.getMember().getNickname())
                 .build();
 
-        response.setStatus(200);
+        ResponseType responseType = ResponseType.SUCCESS;
+
+        FilterApiResponse<LoginResponseDto> apiResponse = FilterApiResponse.<LoginResponseDto>builder()
+                .payload(loginResponseDto)
+                .build()
+                .setResponseType(responseType);
+
+        // 응답 반환
+        response.setStatus(responseType.getStatus().value());
         response.setContentType("application/json; charset=UTF-8");
         response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(objectMapper.writeValueAsString(loginResponseDto));
+        try {
+            response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
+        } catch (IOException e) {
+            log.warn("Failed to parse authentication request body : successfulAuthentication", e);
+            throw new RuntimeException(e);
+        }
     }
 
     //로그인 실패시
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) {
-        response.setStatus(401);
+        // 로그인 실패 응답 객체 생성
+        ResponseType responseType = ResponseType.INVALID_CREDENTIALS;
+        FilterApiResponse<?> apiResponse = FilterApiResponse.builder().build().setResponseType(responseType);
+
+        // 응답 반환
+        response.setStatus(responseType.getStatus().value());
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        try {
+            response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
+        } catch (IOException e) {
+            log.warn("Failed to parse authentication request body : unsuccessfulAuthentication", e);
+            throw new RuntimeException(e);
+        }
     }
 }

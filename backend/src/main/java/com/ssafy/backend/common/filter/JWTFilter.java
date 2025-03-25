@@ -1,13 +1,15 @@
 package com.ssafy.backend.common.filter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.backend.auth.model.common.CustomUserDetails;
+import com.ssafy.backend.common.FilterApiResponse;
+import com.ssafy.backend.common.error.ResponseType;
 import com.ssafy.backend.common.util.JWTUtil;
 import com.ssafy.backend.mysql.entity.Member;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -17,10 +19,15 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Slf4j
-@RequiredArgsConstructor
 public class JWTFilter extends OncePerRequestFilter {
 
     private final JWTUtil jwtUtil;
+    private final ObjectMapper objectMapper;
+
+    public JWTFilter(JWTUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
+        this.objectMapper = new ObjectMapper();
+    }
 
 
     @Override
@@ -40,17 +47,31 @@ public class JWTFilter extends OncePerRequestFilter {
         //Authorization 헤더 검증
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             log.warn("authorization null or not start with Bearer");
-            filterChain.doFilter(request, response);
+
+            //응답 객체 생성
+            setFilterResponse(response, ResponseType.INVALID_ACCESS_TOKEN);
 
             return;
         }
         //Bearer 부분 제거 후 순수 토큰만 획득
         String token = authorization.split(" ")[1];
 
+        // 토큰 검증
+        if(!jwtUtil.validateToken(token)){
+            log.warn("token is invalid");
+
+            //응답 객체 생성
+            setFilterResponse(response, ResponseType.INVALID_ACCESS_TOKEN);
+
+            return;
+        }
+
         //토큰 소멸 시간 검증
         if (jwtUtil.isExpired(token)) {
             log.warn("token is expired");
-            filterChain.doFilter(request, response);
+
+            //응답 객체 생성
+            setFilterResponse(response, ResponseType.EXPIRED_ACCESS_TOKEN);
 
             return;
         }
@@ -75,5 +96,20 @@ public class JWTFilter extends OncePerRequestFilter {
         SecurityContextHolder.getContext().setAuthentication(authToken);
 
         filterChain.doFilter(request, response);
+    }
+
+    private void setFilterResponse(HttpServletResponse response, ResponseType responseType){
+        FilterApiResponse<?> apiResponse= FilterApiResponse.builder().build().setResponseType(responseType);
+
+        //응답 객체를 JSON 형태로 변환하여 응답
+        response.setStatus(responseType.getStatus().value());
+        response.setContentType("application/json; charset=UTF-8");
+        response.setCharacterEncoding("UTF-8");
+        try {
+            response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
+        } catch (IOException e) {
+            log.warn("Failed to parse authentication request body : setFilterResponse", e);
+            throw new RuntimeException(e);
+        }
     }
 }

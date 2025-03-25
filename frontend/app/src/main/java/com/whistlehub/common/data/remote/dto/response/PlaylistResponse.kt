@@ -7,6 +7,10 @@ package com.whistlehub.common.data.remote.dto.response
  **/
 
 sealed class PlaylistResponse {
+    // 특정 멤버의 플레이리스트 목록 조회
+    data class GetMemberPlaylistsResponse(
+        val playlistId: Int, val name: String, val imageUrl: String
+    )
     // 플레이리스트 조회
     data class GetPlaylistResponse(
         val memberId: Int,

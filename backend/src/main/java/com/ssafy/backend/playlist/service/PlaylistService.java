@@ -217,6 +217,7 @@ public class PlaylistService {
                      GetMemberPlaylistResponseDto.builder()
                             .playlistId(playlist.getId())
                             .imageUrl(playlist.getImageUrl())
+                             .name(playlist.getName())
                             .build()
               );
        }

@@ -23,6 +23,12 @@ class PlaylistService @Inject constructor(
     private val playlistApi: PlaylistApi,
     private val tokenRefresh: TokenRefresh? = null
 ) : ApiRepository() {
+    // 특정 멤버의 플레이리스트 목록 조회
+    suspend fun getMemberPlaylists(
+        token: String, memberId: Int, page: Int, size: Int
+    ): ApiResponse<List<PlaylistResponse.GetMemberPlaylistsResponse>> {
+        return executeApiCall { playlistApi.getMemberPlaylists(token, memberId, page, size) }
+    }
     // 플레이리스트 조회
     suspend fun getPlaylists(
         token: String,
