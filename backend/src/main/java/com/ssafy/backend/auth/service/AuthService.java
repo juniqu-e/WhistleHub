@@ -60,8 +60,10 @@ public class AuthService {
         String nickname = registerRequestDto.getNickname();
         String email = registerRequestDto.getEmail();
         String password = registerRequestDto.getPassword();
+        String birth = registerRequestDto.getBirth();
+        Character gender = registerRequestDto.getGender();
 
-        // 중복 체크
+        // 중복 체크 loginId, nickname, email
         if (checkDuplicatedId(loginId))
             throw new DuplicateIdException();
         if (checkDuplicatedNickname(nickname))
@@ -176,6 +178,9 @@ public class AuthService {
         if (codeObject == null)
             throw new InvalidEmailAuthException();
 
+        if(redisService.hasKey(validateEmailRequestDto.getEmail() + "-validated"))
+            throw new AlreadyValidatedEmailException();
+
         // code가 일치하지 않으면 인증 실패
         String code = (String) codeObject;
         if (!code.equals(validateEmailRequestDto.getCode()))
@@ -184,8 +189,8 @@ public class AuthService {
         //코드와 이메일이 일치하면 인증 성공
         // redis에서 code 삭제
         redisService.delete(validateEmailRequestDto.getEmail());
-        // redis에 인증 완료된 이메일 저장
-        redisService.setKeyOnly(validateEmailRequestDto.getEmail() + "-validated", mailProp.getMAIL_CODE_EXPIRE_TIME());
+        // redis에 인증 완료된 이메일 저장 -> 중복 인증 방지, 가입 요청시 인증된 이메일인지 확인
+        redisService.setKeyOnly(validateEmailRequestDto.getEmail() + "-validated");
     }
 
     public void resetPassword(ResetPasswordRequestDto resetPasswordRequestDto){

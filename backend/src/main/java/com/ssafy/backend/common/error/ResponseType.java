@@ -42,6 +42,7 @@ public enum ResponseType {
     PLAYLIST_NOT_FOUND("PNF", HttpStatus.NOT_FOUND, "요청한 플레이리스트가 없습니다."),
 
     // HTTP Status 409
+    ALREADY_VALIDATED_EMAIL("AVE", HttpStatus.CONFLICT, "이미 인증된 이메일입니다."),
     DUPLICATE_NICKNAME("DNN", HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
     DUPLICATE_ID("DID", HttpStatus.CONFLICT, "이미 사용 중인 아이디입니다."),
     DUPLICATE_EMAIL("DEM", HttpStatus.CONFLICT, "이미 사용 중인 이메일입니다."),
