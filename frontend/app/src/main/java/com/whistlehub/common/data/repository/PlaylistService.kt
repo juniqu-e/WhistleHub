@@ -21,63 +21,57 @@ import javax.inject.Singleton
 @Singleton
 class PlaylistService @Inject constructor(
     private val playlistApi: PlaylistApi,
-    private val tokenRefresh: TokenRefresh? = null
 ) : ApiRepository() {
     // 특정 멤버의 플레이리스트 목록 조회
     suspend fun getMemberPlaylists(
-        token: String, memberId: Int, page: Int, size: Int
+        memberId: Int,
+        page: Int,
+        size: Int
     ): ApiResponse<List<PlaylistResponse.GetMemberPlaylistsResponse>> {
-        return executeApiCall { playlistApi.getMemberPlaylists(token, memberId, page, size) }
+        return executeApiCall { playlistApi.getMemberPlaylists(memberId, page, size) }
     }
     // 플레이리스트 조회
     suspend fun getPlaylists(
-        token: String,
         playlistId: Int
     ): ApiResponse<List<PlaylistResponse.GetPlaylistResponse>> {
-        return executeApiCall { playlistApi.getPlaylists(token, playlistId) }
+        return executeApiCall { playlistApi.getPlaylists(playlistId) }
     }
     // 플레이리스트 생성
     suspend fun createPlaylist(
-        token: String,
         request: PlaylistRequest.CreatePlaylistRequest
     ): ApiResponse<Int> {
-        return executeApiCall { playlistApi.createPlaylist(token, request) }
+        return executeApiCall { playlistApi.createPlaylist(request) }
     }
     // 플레이리스트 수정
     suspend fun updatePlaylist(
-        token: String,
         request: PlaylistRequest.UpdatePlaylistRequest
     ): ApiResponse<Unit> {
-        return executeApiCall { playlistApi.updatePlaylist(token, request) }
+        return executeApiCall { playlistApi.updatePlaylist(request) }
     }
     // 플레이리스트 삭제
     suspend fun deletePlaylist(
-        token: String,
         playlistId: Int
     ): ApiResponse<Unit> {
-        return executeApiCall { playlistApi.deletePlaylist(token, playlistId) }
+        return executeApiCall { playlistApi.deletePlaylist(playlistId) }
     }
     // 플레이리스트 내부 조회
     suspend fun getPlaylistTracks(
-        token: String,
         playlistId: Int
     ): ApiResponse<List<PlaylistResponse.PlaylistTrackResponse>> {
-        return executeApiCall { playlistApi.getPlaylistTracks(token, playlistId) }
+        return executeApiCall { playlistApi.getPlaylistTracks(playlistId) }
     }
     // 플레이리스트 내부 수정 (위치 이동, 삭제)
     suspend fun updatePlaylistTracks(
-        token: String,
         request: PlaylistRequest.UpdatePlaylistTrackRequest
     ): ApiResponse<Unit> {
-        return executeApiCall { playlistApi.updatePlaylistTracks(token, request) }
+        return executeApiCall { playlistApi.updatePlaylistTracks(request) }
     }
     // 플레이리스트 이미지 업로드
     suspend fun uploadPlaylistImage(
-        token: String,
         playlistId: Int,
         image: MultipartBody.Part
     ): ApiResponse<Unit> {
         val playlistIdBody: RequestBody = playlistId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
-        return executeApiCall { playlistApi.uploadPlaylistImage(token, playlistIdBody, image) }
+        return executeApiCall { playlistApi.uploadPlaylistImage(playlistIdBody, image) }
     }
 }
