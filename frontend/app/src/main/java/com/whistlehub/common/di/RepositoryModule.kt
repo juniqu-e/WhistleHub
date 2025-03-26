@@ -22,36 +22,36 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideAuthService(authApi: AuthApi, tokenRefresh: TokenRefresh): AuthService {
-        return AuthService(authApi, tokenRefresh)
+        return AuthService(authApi)
     }
 
     @Provides
     @Singleton
     fun provideProfileService(profileApi: ProfileApi, tokenRefresh: TokenRefresh): ProfileService {
-        return ProfileService(profileApi, tokenRefresh)
+        return ProfileService(profileApi)
     }
 
     @Provides
     @Singleton
     fun providePlaylistService(playlistApi: PlaylistApi, tokenRefresh: TokenRefresh): PlaylistService {
-        return PlaylistService(playlistApi, tokenRefresh)
+        return PlaylistService(playlistApi)
     }
 
     @Provides
     @Singleton
     fun provideTrackService(trackApi: TrackApi, tokenRefresh: TokenRefresh): TrackService {
-        return TrackService(trackApi, tokenRefresh)
+        return TrackService(trackApi)
     }
 
     @Provides
     @Singleton
     fun provideWorkstationService(workstationApi: WorkstationApi, tokenRefresh: TokenRefresh): WorkstationService {
-        return WorkstationService(workstationApi, tokenRefresh)
+        return WorkstationService(workstationApi)
     }
 
     @Provides
     @Singleton
     fun provideRankingService(rankingApi: RankingApi, tokenRefresh: TokenRefresh): RankingService {
-        return RankingService(rankingApi, tokenRefresh)
+        return RankingService(rankingApi)
     }
 }

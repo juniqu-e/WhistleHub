@@ -15,7 +15,6 @@ interface RankingApi {
     // 랭킹 조회
     @GET("ranking")
     suspend fun getRanking(
-        @Header("Authorization") token: String,
         @Query("rankingType") rankingType: String,
         @Query("period") period: String,
         @Query("tag") tag: String? = null
@@ -23,7 +22,6 @@ interface RankingApi {
 
     @GET("recommend")
     suspend fun getRecommendTrack(
-        @Header("Authorization") token: String,
         @Query("trackId") trackId: Int?
     ) :Response<ApiResponse<List<RankingResponse.RecommendTrackResponse>>>
 }
