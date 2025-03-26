@@ -47,7 +47,7 @@ public class RedisService {
      * @param key 저장할 값
      */
     public void setKeyOnly(String key) {
-        redisTemplate.opsForSet().add(key);
+        redisTemplate.opsForValue().set(key, key);
     }
 
     /**

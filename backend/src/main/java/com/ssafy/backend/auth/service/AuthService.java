@@ -102,7 +102,11 @@ public class AuthService {
             throw new DuplicateEmailException();
 
         //todo : 아이디, 비밀번호, 닉네임, 이메일, 생일, 성별 형식 체크
-        //todo : 이메일 인증 체크
+
+        if(!redisService.hasKey(email + "-validated")) // 이메일 검증이 완료되지 않았다면,
+            throw new EmailNotValidatedException();
+
+        redisService.delete(email + "-validated");
 
         // 새 회원 등록
         Member member = Member.builder()
@@ -237,7 +241,7 @@ public class AuthService {
         emailService.sendMail(emailMessage, true); // 내부적으로 메일발송에 실패했을때 예외를 던집니다.
         // redis에 저장
         // key : email, value : code
-        redisService.set(email, code, mailProp.getMAIL_CODE_LENGTH().intValue());
+        redisService.set(email, code, mailProp.getMAIL_CODE_EXPIRE_TIME().intValue());
     }
 
     /**

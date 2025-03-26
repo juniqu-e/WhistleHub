@@ -124,10 +124,17 @@ public class ControllerExceptionHandler {
                 .build();
     }
 
+    @ExceptionHandler(EmailNotValidatedException.class)
+    public ApiResponse<?> emailNotValidatedHandler(EmailNotValidatedException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.EMAIL_NOT_VALIDATED)
+                .build();
+    }
+
     @ExceptionHandler(InvalidEmailAuthException.class)
     public ApiResponse<?> invalidEmailCodeHandler(InvalidEmailAuthException e) {
         return new ApiResponse.builder<Object>()
-                .errorStatus(ResponseType.INVALID_EMAIL_AUTH)
+                .errorStatus(ResponseType.EMAIL_NOT_VALIDATED)
                 .build();
     }
 
