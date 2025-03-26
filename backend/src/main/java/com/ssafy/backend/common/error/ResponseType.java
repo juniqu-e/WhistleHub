@@ -41,6 +41,7 @@ public enum ResponseType {
     FOLLOWER_NOT_FOUND("FNF", HttpStatus.NOT_FOUND, "찾는 팔로워가 없습니다."),
     TRACK_NOT_FOUND("TNF", HttpStatus.NOT_FOUND, "요청한 트랙이 없습니다."),
     PLAYLIST_NOT_FOUND("PNF", HttpStatus.NOT_FOUND, "요청한 플레이리스트가 없습니다."),
+    LAYER_NOT_FOUND("LNF", HttpStatus.NOT_FOUND, "요청한 데이터가 없습니다."),
 
     // HTTP Status 409
     DUPLICATE_NICKNAME("DNN", HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
@@ -52,7 +53,8 @@ public enum ResponseType {
     DATABASE_ERROR("DBE", HttpStatus.INTERNAL_SERVER_ERROR, "데이터베이스 오류입니다."),
     SERVER_ERROR("SER", HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류입니다."),
     EMAIL_SEND_FAILED("ESF", HttpStatus.INTERNAL_SERVER_ERROR, "이메일 발송에 실패하였습니다."),
-    IMAGE_UPLOAD_FAILED("IUF", HttpStatus.INTERNAL_SERVER_ERROR, "이미지를 업로드하는데 실패했습니다.");
+    IMAGE_UPLOAD_FAILED("IUF", HttpStatus.INTERNAL_SERVER_ERROR, "이미지를 업로드하는데 실패했습니다."),
+    ;
 
     private final String code;
     private final HttpStatus status;

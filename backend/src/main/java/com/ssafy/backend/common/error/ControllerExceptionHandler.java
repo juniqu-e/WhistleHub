@@ -119,6 +119,19 @@ public class ControllerExceptionHandler {
                 .build();
     }
 
+    @ExceptionHandler(TrackNotFoundException.class)
+    public ApiResponse<?> trackNotFoundHandler(TrackNotFoundException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.TRACK_NOT_FOUND)
+                .build();
+    }
+    @ExceptionHandler(NotFoundLayerException.class)
+    public ApiResponse<?> layerNotFoundHandler(NotFoundLayerException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.LAYER_NOT_FOUND)
+                .build();
+    }
+
     // 이외의 정의되지 않은 서버 에러처리
     @ExceptionHandler(Exception.class)
     public ApiResponse<?> serverErrorHandler(Exception e) {
