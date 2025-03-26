@@ -18,6 +18,18 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * <pre>JWT 토큰 검증 필터</pre>
+ * JWT 토큰을 검증하는 필터
+ *
+ * @author 허현준
+ * @version 1.0
+ * @see JWTUtil
+ * @see FilterApiResponse
+ * @see Member
+ * @since 2025-03-20
+ */
+
 @Slf4j
 public class JWTFilter extends OncePerRequestFilter {
 
@@ -28,7 +40,6 @@ public class JWTFilter extends OncePerRequestFilter {
         this.jwtUtil = jwtUtil;
         this.objectMapper = new ObjectMapper();
     }
-
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -42,7 +53,7 @@ public class JWTFilter extends OncePerRequestFilter {
 
 
         //request에서 Authorization 헤더를 찾음
-        String authorization= request.getHeader("Authorization");
+        String authorization = request.getHeader("Authorization");
 
         //Authorization 헤더 검증
         if (authorization == null || !authorization.startsWith("Bearer ")) {
@@ -57,7 +68,7 @@ public class JWTFilter extends OncePerRequestFilter {
         String token = authorization.split(" ")[1];
 
         // 토큰 검증
-        if(!jwtUtil.validateToken(token)){
+        if (!jwtUtil.validateToken(token)) {
             log.warn("token is invalid");
 
             //응답 객체 생성
@@ -77,8 +88,8 @@ public class JWTFilter extends OncePerRequestFilter {
         }
 
         //토큰에서 username과 role 획득
-        String loginId = jwtUtil.getKey(token,"loginId");
-        Integer id = Integer.parseInt(jwtUtil.getKey(token,"id"));
+        String loginId = jwtUtil.getKey(token, "loginId");
+        Integer id = Integer.parseInt(jwtUtil.getKey(token, "id"));
 
         //userEntity를 생성하여 값 set
         Member member = Member.builder()
@@ -98,8 +109,8 @@ public class JWTFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private void setFilterResponse(HttpServletResponse response, ResponseType responseType){
-        FilterApiResponse<?> apiResponse= FilterApiResponse.builder().build().setResponseType(responseType);
+    private void setFilterResponse(HttpServletResponse response, ResponseType responseType) {
+        FilterApiResponse<?> apiResponse = FilterApiResponse.builder().build().setResponseType(responseType);
 
         //응답 객체를 JSON 형태로 변환하여 응답
         response.setStatus(responseType.getStatus().value());

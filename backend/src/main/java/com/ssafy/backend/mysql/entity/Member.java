@@ -48,12 +48,11 @@ public class Member extends Common{
     private String profileText;
 
     @Column(name = "enabled", nullable = false)
-    private Boolean enabled = false;
+    private Boolean enabled;
 
     @Column(name="birth", nullable = false,  length = 20)
     private String birth;
 
     @Column(name="gender", nullable = false)
     private Character gender;
-
 }

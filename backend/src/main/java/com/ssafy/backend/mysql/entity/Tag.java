@@ -18,6 +18,4 @@ public class Tag extends Common{
 
     @Column(name = "name")
     private String name;
-
-
 }

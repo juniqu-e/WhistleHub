@@ -1,7 +1,11 @@
 package com.ssafy.backend.auth.controller;
 
+import com.ssafy.backend.auth.model.common.TagDto;
+import java.util.List;
 import com.ssafy.backend.auth.model.request.RefreshRequestDto;
 import com.ssafy.backend.auth.model.request.RegisterRequestDto;
+import com.ssafy.backend.auth.model.request.ResetPasswordRequestDto;
+import com.ssafy.backend.auth.model.request.ValidateEmailRequestDto;
 import com.ssafy.backend.auth.model.response.RefreshResponseDto;
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.ApiResponse;
@@ -9,6 +13,17 @@ import jakarta.websocket.server.PathParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
+/**
+ * <pre>
+ * 회원 인증 관련 API 요청을 처리합니다.
+ * </pre>
+ *
+ * @see com.ssafy.backend.auth.service.AuthService
+ * @author 허현준
+ * @version 1.0
+ * @since 2025-03-26
+ */
 
 @RequestMapping("/api/auth")
 @RestController
@@ -92,6 +107,58 @@ public class AuthController {
         RefreshResponseDto result = authService.refresh(refreshToken);
 
         return new ApiResponse.builder<RefreshResponseDto>()
+                .payload(result)
+                .build();
+    }
+
+    /**
+     * 이메일 인증 요청
+     * 가입시 이메일 인증코드 발송
+     * @param email 이메일
+     */
+    @GetMapping("/email")
+    public ApiResponse<?> validateEmailRequest(@PathParam("email") String email) {
+        authService.validateEmailRequest(email);
+
+        return new ApiResponse.builder<>()
+                .build();
+    }
+
+    /**
+     * 이메일 인증 확인
+     *
+     * @param validateEmailRequestDto 이메일, 인증코드
+     */
+    @PostMapping("/validate/email")
+    public ApiResponse<?> validateEmail(@RequestBody ValidateEmailRequestDto validateEmailRequestDto) {
+        authService.validateEmail(validateEmailRequestDto);
+
+        return new ApiResponse.builder<>()
+                .build();
+    }
+
+    /**
+     * 비밀번호 찾기
+     *
+     * @param resetPasswordRequestDto 이메일, 아이디
+     */
+    @PostMapping("/reset/password")
+    public ApiResponse<?> resetPassword(@RequestBody ResetPasswordRequestDto resetPasswordRequestDto) {
+        authService.resetPassword(resetPasswordRequestDto);
+
+        return new ApiResponse.builder<>()
+                .build();
+    }
+
+    /**
+     * tag 목록 조회
+     * @return tag 목록
+     */
+    @GetMapping("/tag")
+    public ApiResponse<?> getTagList() {
+        List<TagDto> result = authService.getTagList();
+
+        return new ApiResponse.builder<>()
                 .payload(result)
                 .build();
     }
