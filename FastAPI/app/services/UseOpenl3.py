@@ -142,73 +142,6 @@ class OpenL3Service:
         # 임베딩 저장 (track_id 전달)
         return self.store_embedding(embedding, track_id)
     
-    def find_similar_by_id(self, query_id, limit=5):
-        """
-        ID로 유사한 오디오 임베딩 검색
-        
-        Args:
-            query_id: 검색 기준 ID
-            limit: 반환할 결과 수
-            
-        Returns:
-            list: 유사한 임베딩 목록 (ID와 유사도 거리)
-        """
-        try:
-            # 컬렉션 항목 수 확인
-            count = self.collection.num_entities
-            print(f"컬렉션 항목 수: {count}")
-            
-            if count <= 1:
-                print("컬렉션에 충분한 데이터가 없습니다.")
-                return []
-            
-            # ID로 임베딩 검색
-            result = self.collection.query(
-                expr=f'id == {query_id}',
-                output_fields=["embedding"],
-                limit=1,
-            )
-            
-            if not result:
-                print(f"ID {query_id}에 해당하는 임베딩을 찾을 수 없습니다.")
-                return []
-            
-            search_embedding = result[0]['embedding']
-            print(f"임베딩을 찾았습니다. 크기: {len(search_embedding)}")
-            
-            # 유사성 검색 시 자기 자신 제외
-            search_params = {
-                "metric_type": "L2",
-                "params": {"nprobe": 32}  # 검색 범위 확장
-            }
-            
-            search_results = self.collection.search(
-                data=[search_embedding],
-                anns_field="embedding",
-                param=search_params,
-                limit=limit + 1,  # 자기 자신이 포함될 수 있으므로 limit보다 1개 더 요청
-                output_fields=[],
-                expr=f"id != {query_id}",  # 자기 자신 제외
-            )
-            
-            # 결과 처리
-            similar_embeddings = []
-            if search_results and len(search_results) > 0:
-                for hit in search_results[0]:
-                    similar_embeddings.append({
-                        "id": hit.id,
-                        "distance": hit.distance,
-                    })
-                print(f"검색된 유사 임베딩 수: {len(similar_embeddings)}")
-            else:
-                print("유사한 임베딩을 찾지 못했습니다.")
-            
-            return similar_embeddings[:limit]  # limit 개수만큼 반환
-        
-        except Exception as e:
-            print(f"유사 임베딩 검색 중 오류 발생: {e}")
-            return []
-    
     def find_similar_by_track_id(self, track_id, limit=5):
         """
         외부 트랙 ID로 유사한 곡 검색 (유사도 순으로 상위 n개 반환)
@@ -332,71 +265,6 @@ class OpenL3Service:
         
         return similar_embeddings
     
-    def get_embedding_by_id(self, id):
-        """
-        ID로 임베딩 벡터 조회
-        
-        Args:
-            id: 조회할 임베딩 ID
-            
-        Returns:
-            embedding: 임베딩 벡터 (없으면 None)
-        """
-        result = self.collection.query(
-            expr=f'id == {id}',
-            output_fields=["embedding"],
-            limit=1,
-        )
-        
-        if not result:
-            return None
-            
-        return np.array(result[0]['embedding'])
-    
-    def get_embedding_by_track_id(self, track_id):
-        """
-        외부 트랙 ID로 임베딩 벡터 조회
-        
-        Args:
-            track_id: 조회할 외부 트랙 ID
-        
-        Returns:
-            embedding: 임베딩 벡터 (없으면 None)
-            milvus_id: Milvus 내부 ID
-        """
-        result = self.collection.query(
-            expr=f'track_id == {track_id}',
-            output_fields=["embedding", "id"],
-            limit=1,
-        )
-        
-        if not result:
-            return None, None
-            
-        return np.array(result[0]['embedding']), result[0]['id']
-    
-    def batch_process_audio_files(self, file_paths):
-        """
-        여러 오디오 파일을 일괄 처리하여 Milvus에 저장
-        
-        Args:
-            file_paths: 처리할 오디오 파일 경로 리스트
-            
-        Returns:
-            dict: 파일 경로를 키로, 저장된 ID를 값으로 하는 딕셔너리
-        """
-        results = {}
-        
-        for file_path in file_paths:
-            if not os.path.exists(file_path):
-                print(f"File not found: {file_path}")
-                continue
-                
-            id = self.process_audio_file(file_path)
-            results[file_path] = id
-            
-        return results
-
 # 사용 예시
 if __name__ == "__main__":
     # 서비스 인스턴스 생성
@@ -414,4 +282,3 @@ if __name__ == "__main__":
             print("유사한 임베딩:")
             for item in similar:
                 print(f"- ID: {item['id']}, 거리: {item['distance']}")
-
