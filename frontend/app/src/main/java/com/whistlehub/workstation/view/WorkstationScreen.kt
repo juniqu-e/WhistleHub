@@ -33,6 +33,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -60,6 +61,7 @@ import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.workstation.data.Layer
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkStationScreen(navController: NavController) {
     val activity = LocalActivity.current as? Activity
@@ -72,6 +74,7 @@ fun WorkStationScreen(navController: NavController) {
             Log.d("Exit", "EXIT")
         }
     )
+    val selectedLayerId = remember { mutableStateOf<Int?>(null) }
     // Immersive mode (fullscreen)
     LaunchedEffect(Unit) {
         activity?.window?.let { window ->
@@ -115,11 +118,54 @@ fun WorkStationScreen(navController: NavController) {
                 },
                 onResetLayer = {
                     //믹싱 옵션 초기화
+                },
+                onBeatAdjustment = { layer ->
+//                    beatAdjustmentLayer = layer
+                    selectedLayerId.value = layer.id
                 }
             )
         }
 
         viewModel.bottomBarProvider.WorkStationBottomBar(bottomBarActions)
+        val selectedLayer = tracks.firstOrNull { it.id == selectedLayerId.value }
+        selectedLayer?.let { layer ->
+            ModalBottomSheet(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.displayCutout)
+                    .padding(horizontal = 16.dp),
+                onDismissRequest = { selectedLayerId.value = null }
+            ) {
+                BeatAdjustmentPanel(
+                    layer = layer,
+                    onDismiss = { selectedLayerId.value = null },
+                    onGridClick = { index ->
+                        viewModel.toggleBeat(layer.id, index)
+                    },
+                    onAutoRepeatApply = { start, interval ->
+                        viewModel.applyPatternAutoRepeat(selectedLayer.id, start, interval)
+                    }
+                )
+            }
+        }
+//        // 박자 조정 바텀시트 표시
+//        if (beatAdjustmentLayer != null) {
+//            ModalBottomSheet(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .windowInsetsPadding(WindowInsets.displayCutout)
+//                    .padding(horizontal = 16.dp),
+//                onDismissRequest = { beatAdjustmentLayer = null }
+//            ) {
+//                BeatAdjustmentPanel(
+//                    layer = beatAdjustmentLayer!!,
+//                    onDismiss = { beatAdjustmentLayer = null },
+//                    onGridClick = { index ->
+//                        viewModel.toggleBeat(beatAdjustmentLayer!!.id, index)
+//                    }
+//                )
+//            }
+//        }
     }
 }
 
@@ -129,6 +175,7 @@ fun LayerPanel(
     onAddInstrument: () -> Unit,
     onDeleteLayer: (Layer) -> Unit,
     onResetLayer: (Layer) -> Unit,
+    onBeatAdjustment: (Layer) -> Unit,
     verticalScrollState: ScrollState,
     modifier: Modifier
 ) {
@@ -147,6 +194,7 @@ fun LayerPanel(
                     .height(80.dp),
                 onDelete = onDeleteLayer,
                 onReset = onResetLayer,
+                onBeatAdjustment = onBeatAdjustment,
             )
             Spacer(modifier = Modifier.heightIn(8.dp))
         }
@@ -175,7 +223,8 @@ fun LayerItem(
     layer: Layer,
     modifier: Modifier,
     onDelete: (Layer) -> Unit,
-    onReset: (Layer) -> Unit
+    onReset: (Layer) -> Unit,
+    onBeatAdjustment: (Layer) -> Unit,
 ) {
     val bgColor = getTrackColor(layer)
     val textColor = if (bgColor.luminance() > 0.5f) Color.Black else Color.White
@@ -258,6 +307,14 @@ fun LayerItem(
                     )
                     //초기화 이벤트
                     DropdownMenuItem(
+                        text = { Text("박자 조정") },
+                        onClick = {
+                            menuExpanded = false
+                            onBeatAdjustment(layer)
+                        }
+                    )
+                    //초기화 이벤트
+                    DropdownMenuItem(
                         text = { Text("믹싱 초기화") },
                         onClick = {
                             menuExpanded = false
@@ -268,8 +325,6 @@ fun LayerItem(
             }
         }
     }
-
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

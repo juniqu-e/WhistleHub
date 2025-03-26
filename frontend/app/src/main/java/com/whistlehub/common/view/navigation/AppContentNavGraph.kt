@@ -1,5 +1,6 @@
 package com.whistlehub.common.view.navigation
 
+import DAWScreen
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -36,6 +37,7 @@ fun AppContentNavGraph(
         }
         composable(route = Screen.DAW.route) {
             WorkStationScreen(navController = navController)
+//            DAWScreen()
         }
         composable(route = Screen.PlayList.route) {
             PlayListScreen()
