@@ -19,6 +19,7 @@ services:
       - FastAPI_log:/FastAPI/log
     networks:
       - app_network
+      - nginx_net
 
   # CeleryWorker:
   #   build:
