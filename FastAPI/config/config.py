@@ -7,6 +7,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+MILVUS_HOST = os.getenv("MILVUS_HOST")
+MILVUS_PORT = os.getenv("MILVUS_PORT")
+COLLECTION_NAME = os.getenv("COLLECTION_NAME")
+EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIM"))
 FAST_API_HOST = os.getenv("FAST_API_HOST")
 FAST_API_PORT = int(os.getenv("FAST_API_PORT"))
 API_BASE_URL = os.getenv("API_BASE_URL")
