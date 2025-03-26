@@ -3,6 +3,7 @@ package com.ssafy.backend.auth.service;
 import com.ssafy.backend.Mail.model.common.EmailMessage;
 import com.ssafy.backend.Mail.service.EmailService;
 import com.ssafy.backend.auth.model.common.CustomUserDetails;
+import com.ssafy.backend.auth.model.common.TagDto;
 import com.ssafy.backend.auth.model.request.RefreshRequestDto;
 import com.ssafy.backend.auth.model.request.RegisterRequestDto;
 import com.ssafy.backend.auth.model.request.ResetPasswordRequestDto;
@@ -13,9 +14,13 @@ import com.ssafy.backend.common.prop.JWTProp;
 import com.ssafy.backend.common.prop.MailProp;
 import com.ssafy.backend.common.service.RedisService;
 import com.ssafy.backend.common.util.JWTUtil;
+import com.ssafy.backend.graph.model.entity.type.WeightType;
+import com.ssafy.backend.graph.repository.MemberNodeRepository;
 import com.ssafy.backend.graph.service.DataCollectingService;
 import com.ssafy.backend.mysql.entity.Member;
+import com.ssafy.backend.mysql.entity.Tag;
 import com.ssafy.backend.mysql.repository.MemberRepository;
+import com.ssafy.backend.mysql.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -24,6 +29,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -50,7 +57,7 @@ public class AuthService {
     private final RedisService redisService;
     private final MailProp mailProp;
     private final JWTProp jwtProp;
-
+    private final TagRepository tagRepository;
     /**
      * 현재 요청의 jwt 토큰으로 로그인한 회원 정보를 반환합니다.
      *
@@ -82,6 +89,9 @@ public class AuthService {
         String password = registerRequestDto.getPassword();
         String birth = registerRequestDto.getBirth();
         Character gender = registerRequestDto.getGender();
+        List<Integer> tagIdList = registerRequestDto.getTagList();
+        List<Tag> tagList = tagRepository.findAllById(tagIdList);
+
 
         // 중복 체크 loginId, nickname, email
         if (checkDuplicatedId(loginId))
@@ -109,6 +119,14 @@ public class AuthService {
 
         // 그래프 DB에도 추가
         dataCollectingService.createMember(member.getId());
+
+
+        // 태그 추가
+        for(Tag tag : tagList) {
+            log.info("(member: {}) 가 (tag : {}, {})를 선호합니다.",member.getId(), tag.getId(), tag.getName());
+            // todo : 태그 선호 관계 추가
+            // dataCollectingService.viewTag(member.getId(), tag.getId(), WeightType.LIKE);
+        }
 
         return member.getId();
     }
@@ -278,6 +296,20 @@ public class AuthService {
                 .build();
 
         emailService.sendMail(emailMessage, true); // 내부적으로 메일발송에 실패했을때 예외를 던집니다.
+    }
+
+    public List<TagDto> getTagList() {
+        List<Tag> tagList = tagRepository.findAll();
+        List<TagDto> tagDtoList = new LinkedList<>();
+        for(Tag tag : tagList) {
+            TagDto tagDto = TagDto.builder()
+                    .id(tag.getId())
+                    .name(tag.getName())
+                    .build();
+            tagDtoList.add(tagDto);
+        }
+
+        return tagDtoList;
     }
 
     /**

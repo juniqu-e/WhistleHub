@@ -1,5 +1,7 @@
 package com.ssafy.backend.auth.controller;
 
+import com.ssafy.backend.auth.model.common.TagDto;
+import java.util.List;
 import com.ssafy.backend.auth.model.request.RefreshRequestDto;
 import com.ssafy.backend.auth.model.request.RegisterRequestDto;
 import com.ssafy.backend.auth.model.request.ResetPasswordRequestDto;
@@ -145,6 +147,19 @@ public class AuthController {
         authService.resetPassword(resetPasswordRequestDto);
 
         return new ApiResponse.builder<>()
+                .build();
+    }
+
+    /**
+     * tag 목록 조회
+     * @return tag 목록
+     */
+    @GetMapping("/tag")
+    public ApiResponse<?> getTagList() {
+        List<TagDto> result = authService.getTagList();
+
+        return new ApiResponse.builder<>()
+                .payload(result)
                 .build();
     }
 }

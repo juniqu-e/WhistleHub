@@ -3,6 +3,8 @@ package com.ssafy.backend.auth.model.request;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
+import java.util.List;
+
 /**
  * <pre>회원가입 요청 dto</pre>
  *
@@ -28,4 +30,6 @@ public class RegisterRequestDto {
     private String birth;
     @NotBlank
     private Character gender;
+    @NotBlank
+    private List<Integer> tagList;
 }

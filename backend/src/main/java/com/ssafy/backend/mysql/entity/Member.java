@@ -55,5 +55,4 @@ public class Member extends Common{
 
     @Column(name="gender", nullable = false)
     private Character gender;
-
 }
