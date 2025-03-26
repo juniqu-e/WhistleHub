@@ -118,7 +118,9 @@ pipeline {
                         ssh -o StrictHostKeyChecking=no ${remoteServer} '
                             cd ${remoteDir} && \
                             docker compose down && \
-                            docker compose  --profile deploy up --build -d
+                            docker compose --profile fastapi build && \
+                            docker compose --profile backend build && \
+                            docker compose --profile deploy up -d
                             '
                     """
                 }
