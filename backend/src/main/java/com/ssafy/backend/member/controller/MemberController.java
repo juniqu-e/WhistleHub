@@ -1,12 +1,17 @@
 package com.ssafy.backend.member.controller;
 
 import com.ssafy.backend.common.ApiResponse;
+import com.ssafy.backend.member.model.common.MemberInfo;
 import com.ssafy.backend.member.model.request.UpdateMemberRequestDto;
 import com.ssafy.backend.member.model.request.UpdatePasswordRequestDto;
 import com.ssafy.backend.member.model.response.MemberDetailResponseDto;
 import com.ssafy.backend.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RequestMapping("/api/member")
 @RestController
@@ -83,16 +88,17 @@ public class MemberController {
      *
      * @param query 검색어 -> 닉네임 검색
      * @param page  페이지 번호
-     * @param orderBy 정렬 기준
+     * @param size  페이지 사이즈
      * @return 검색 결과
      */
     @GetMapping("/search")
     public ApiResponse<?> searchMember(@RequestParam(value = "query") String query,
-                                       @RequestParam(value = "page", required = false, defaultValue = "1") Integer page,
-                                       @RequestParam(value = "orderBy", required = false, defaultValue = "id") String orderBy) {
-
+                                       @RequestParam(value = "page") Integer page,
+                                       @RequestParam(value = "size") Integer size) {
+        List<MemberInfo> result = memberService.searchMember(query, PageRequest.of(page,size, Sort.by(Sort.Order.asc("nickname"))));
+        
         return new ApiResponse.builder<Object>()
-                .payload(null)
+                .payload(result)
                 .build();
     }
 

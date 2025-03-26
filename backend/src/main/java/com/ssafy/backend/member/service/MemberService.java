@@ -4,6 +4,7 @@ import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.common.error.exception.InvalidOldPasswordException;
 import com.ssafy.backend.common.error.exception.NotFoundMemberException;
+import com.ssafy.backend.member.model.common.MemberInfo;
 import com.ssafy.backend.member.model.request.UpdateMemberRequestDto;
 import com.ssafy.backend.member.model.request.UpdatePasswordRequestDto;
 import com.ssafy.backend.member.model.response.MemberDetailResponseDto;
@@ -11,9 +12,13 @@ import com.ssafy.backend.mysql.entity.Member;
 import com.ssafy.backend.mysql.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.LinkedList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -79,5 +84,20 @@ public class MemberService {
         memberRepository.save(member);
     }
 
-    
+    public List<MemberInfo> searchMember(String query, PageRequest pageRequest) {
+        // 회원 검색
+        List<Member> memberList = memberRepository.findByNicknameContaining(query, pageRequest);
+        List<MemberInfo> memberInfoList = new LinkedList<>();
+        for (Member member : memberList) {
+            MemberInfo memberInfo = MemberInfo.builder()
+                    .memberId(member.getId())
+                    .nickname(member.getNickname())
+                    .profileImg(member.getProfileImage())
+                    .build();
+
+            memberInfoList.add(memberInfo);
+        }
+
+        return memberInfoList;
+    }
 }
