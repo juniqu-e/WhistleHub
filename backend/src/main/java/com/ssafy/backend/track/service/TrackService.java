@@ -13,6 +13,9 @@ import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
 import com.ssafy.backend.track.dto.response.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.annotation.Order;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -86,16 +89,9 @@ public class TrackService {
         member.setId(m.getId());
         // 1. 트랙 생성
         Track track = Track.builder()
-                .title(trackUploadRequestDto.getTitle())
-                .description(trackUploadRequestDto.getDescription())
-                .member(member)
-                .blocked(false)
-                .duration(trackUploadRequestDto.getDuration())
-                .visibility(trackUploadRequestDto.isVisibility())
-                .enabled(true)
-                .importCount(0)
-                .viewCount(0)
-                .likeCount(0)
+                .title(trackUploadRequestDto.getTitle()).description(trackUploadRequestDto.getDescription())
+                .member(member).blocked(false).duration(trackUploadRequestDto.getDuration()).visibility(trackUploadRequestDto.isVisibility())
+                .enabled(true).importCount(0).viewCount(0).likeCount(0)
                 // 1-1. 트랙 이미지 업로드(이미지 null 검사 처리)
                 .imageUrl(trackUploadRequestDto.getTrackImg() != null ? s3Service.uploadFile(trackUploadRequestDto.getTrackImg(), S3Service.IMAGE) : null)
                 // 1-2. 트랙 음성 업로드
@@ -373,5 +369,25 @@ public class TrackService {
                 .detail(detail)
                 .build();
         reportRepository.save(report);
+    }
+
+    @Transactional
+    public List<TrackSearchInfoDto> searchTrack(String keyword, int page, int size, String orderBy) {
+        if(orderBy.equalsIgnoreCase("ASC") || orderBy.equalsIgnoreCase("DESC")) {
+            log.warn("잘못된 방식의 정렬 파라미터");
+            throw new RuntimeException("");
+        }
+        List<Track> tracks = trackRepository.findAllByTitleContains(keyword, PageRequest.of(size, page, Sort.by(orderBy.toUpperCase())));
+        List<TrackSearchInfoDto> result = new ArrayList<>();
+        for(Track track : tracks) {
+            TrackSearchInfoDto.builder()
+                    .title(track.getTitle())
+                    .trackId(track.getId())
+                    .nickname(track.getMember().getNickname())
+                    .imageUrl(track.getImageUrl())
+                    .duration(track.getDuration())
+                    .build();
+        }
+        return result;
     }
 }
