@@ -1,6 +1,9 @@
 package com.ssafy.backend.track.service;
 
 import com.ssafy.backend.auth.service.AuthService;
+import com.ssafy.backend.common.error.exception.MissingParameterException;
+import com.ssafy.backend.common.error.exception.NotFoundLayerException;
+import com.ssafy.backend.common.error.exception.TrackNotFoundException;
 import com.ssafy.backend.common.service.S3Service;
 import com.ssafy.backend.common.util.S3FileKeyExtractor;
 import com.ssafy.backend.graph.model.entity.type.WeightType;
@@ -13,6 +16,9 @@ import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
 import com.ssafy.backend.track.dto.response.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.annotation.Order;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,7 +63,7 @@ public class TrackService {
         Track track = trackRepository.findById(trackId).orElseThrow(
                 () -> {
                     log.warn("Track id {} not found", trackId);
-                    return new RuntimeException("Track not found"); //TODO: 커스텀 예외 만들기
+                    return new TrackNotFoundException("Track not found"); //TODO: 커스텀 예외 만들기
                 }
         );
         return s3Service.downloadFile(S3FileKeyExtractor.extractS3FileKey(track.getSoundUrl()));
@@ -67,7 +73,7 @@ public class TrackService {
         Layer layer = layerRepository.findById(layerId).orElseThrow(
                 () -> {
                     log.warn("Layer id {} not found", layerId);
-                    return new RuntimeException("Layer not found");
+                    return new NotFoundLayerException();
                 }
         );
         return s3Service.downloadFile(S3FileKeyExtractor.extractS3FileKey(layer.getLayerFile().getSoundUrl()));
@@ -86,16 +92,9 @@ public class TrackService {
         member.setId(m.getId());
         // 1. 트랙 생성
         Track track = Track.builder()
-                .title(trackUploadRequestDto.getTitle())
-                .description(trackUploadRequestDto.getDescription())
-                .member(member)
-                .blocked(false)
-                .duration(trackUploadRequestDto.getDuration())
-                .visibility(trackUploadRequestDto.isVisibility())
-                .enabled(true)
-                .importCount(0)
-                .viewCount(0)
-                .likeCount(0)
+                .title(trackUploadRequestDto.getTitle()).description(trackUploadRequestDto.getDescription())
+                .member(member).blocked(false).duration(trackUploadRequestDto.getDuration()).visibility(trackUploadRequestDto.isVisibility())
+                .enabled(true).importCount(0).viewCount(0).likeCount(0)
                 // 1-1. 트랙 이미지 업로드(이미지 null 검사 처리)
                 .imageUrl(trackUploadRequestDto.getTrackImg() != null ? s3Service.uploadFile(trackUploadRequestDto.getTrackImg(), S3Service.IMAGE) : null)
                 // 1-2. 트랙 음성 업로드
@@ -155,7 +154,7 @@ public class TrackService {
         Track track = trackRepository.findById(trackId).orElseThrow(
                 () -> {
                     log.warn("{}번 트랙은 존재하지 않음", trackId);
-                    return new RuntimeException("Track not found"); // TODO: 커스텀 예외로 교체
+                    return new TrackNotFoundException("Track not found"); // TODO: 커스텀 예외로 교체
                 });
         // visibility - public 여부 true -> 본인만 볼 수 있음
         // block - 정지 여부 true -> 본인만 볼 수 있음
@@ -163,13 +162,13 @@ public class TrackService {
         if (track.getBlocked() || track.getVisibility()) {
             if (track.getMember().getId() != memberId) {
                 log.info("{}번 트랙은 회원이 조회할 수 없는 데이터", memberId);
-                throw new RuntimeException(); // TODO: 커스텀으로 교체
+                throw new TrackNotFoundException(""); // TODO: 커스텀으로 교체
             }
         }
 
         if (!track.getEnabled()) {
             log.info("{}번 회원이 삭제된 트랙({})을 조회", memberId, track.getId());
-            throw new RuntimeException(); // TODO: 커스텀으로 교체
+            throw new TrackNotFoundException(""); // TODO: 커스텀으로 교체
         }
 
         // 조회수 증가
@@ -233,12 +232,12 @@ public class TrackService {
         Track track = trackRepository.findById(trackUpdateRequestDto.getTrackId()).orElseThrow(
                 () -> {
                     log.warn("{} 트랙은 없는 트랙", trackUpdateRequestDto.getTrackId());
-                    return new RuntimeException();
+                    return new TrackNotFoundException("");
                 }
         );
         if (track.getMember().getId() != memberId) {
             log.info("본인({})의 트랙({})이 아닐 때 조회 요청", memberId, track.getId());
-            throw new RuntimeException("");
+            throw new TrackNotFoundException("");
         }
         track.setTitle(trackUpdateRequestDto.getTitle());
         track.setDescription(trackUpdateRequestDto.getDescription());
@@ -269,12 +268,12 @@ public class TrackService {
         Track track = trackRepository.findById(trackId).orElseThrow(
                 () -> {
                     log.warn("{} 트랙은 없는 트랙", trackId);
-                    return new RuntimeException();
+                    return new TrackNotFoundException("");
                 }
         );
         if (track.getMember().getId() != member.getId()) {
             log.info("본인({})의 트랙({})이 아닐 때 삭제 요청", member.getId(), track.getId());
-            throw new RuntimeException("");
+            throw new TrackNotFoundException("");
         } else if (!track.getEnabled()) {
             log.info("트랙({})은 이미 삭제 처리 됨", track.getId());
             return;
@@ -309,7 +308,7 @@ public class TrackService {
         Track track = trackRepository.findById(trackId).orElseThrow(
                 () -> {
                     log.warn("트랙({})은 없는 트랙에 대한 요청", trackId);
-                    return new RuntimeException();
+                    return new TrackNotFoundException("");
                 }
         );
         // 트랙에 Like 정보 반영
@@ -336,7 +335,7 @@ public class TrackService {
         Track track = trackRepository.findById(trackId).orElseThrow(
                 () -> {
                     log.warn("트랙({})은 없는 트랙에 대한 요청", trackId);
-                    return new RuntimeException();
+                    return new TrackNotFoundException("");
                 }
         );
         // 트랙에 Like 정보 반영
@@ -348,7 +347,7 @@ public class TrackService {
         Like like = likeRepository.findByTrackIdAndMemberId(trackId, member.getId()).orElseThrow(
                 () -> {
                     log.warn("없는 관계 조회");
-                    return new RuntimeException();
+                    return new TrackNotFoundException("");
                 }
         );
         likeRepository.delete(like);
@@ -362,7 +361,7 @@ public class TrackService {
         Track track = trackRepository.findById(trackId).orElseThrow(
                 () -> {
                     log.warn("트랙({})은 없는 트랙에 대한 요청", trackId);
-                    return new RuntimeException();
+                    return new TrackNotFoundException("");
                 }
         );
 
@@ -373,5 +372,25 @@ public class TrackService {
                 .detail(detail)
                 .build();
         reportRepository.save(report);
+    }
+
+    @Transactional
+    public List<TrackSearchInfoDto> searchTrack(String keyword, int page, int size, String orderBy) {
+        if(orderBy.equalsIgnoreCase("ASC") && orderBy.equalsIgnoreCase("DESC")) {
+            log.warn("잘못된 방식의 정렬 파라미터");
+            throw new MissingParameterException();
+        }
+        List<Track> tracks = trackRepository.findAllByTitleContains(keyword, PageRequest.of(size, page, Sort.by(orderBy.toUpperCase())));
+        List<TrackSearchInfoDto> result = new ArrayList<>();
+        for(Track track : tracks) {
+            TrackSearchInfoDto.builder()
+                    .title(track.getTitle())
+                    .trackId(track.getId())
+                    .nickname(track.getMember().getNickname())
+                    .imageUrl(track.getImageUrl())
+                    .duration(track.getDuration())
+                    .build();
+        }
+        return result;
     }
 }
