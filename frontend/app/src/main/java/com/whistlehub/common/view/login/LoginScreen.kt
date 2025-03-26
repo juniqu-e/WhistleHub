@@ -1,5 +1,6 @@
 package com.whistlehub.common.view.login
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -24,10 +25,15 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.whistlehub.R
 import com.whistlehub.common.viewmodel.LoginViewModel
 import com.whistlehub.common.viewmodel.LoginState
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import com.whistlehub.common.view.theme.Typography
 
 
 @Composable
@@ -37,6 +43,9 @@ fun LoginScreen(
     onForgotPasswordClick: () -> Unit = {},
     viewModel: LoginViewModel = hiltViewModel()
 ) {
+    // 키보드 자동으로 올라오게 하기
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     // 아이디/비밀번호 상태 관리
     var userId by remember { mutableStateOf("") }
     var userPassword by remember { mutableStateOf("") }
@@ -63,14 +72,16 @@ fun LoginScreen(
         }
     }
 
-    // 커스텀 색상 객체 생성
     val colors = CustomColors()
+    val textFieldStyle = Typography.bodyMedium.copy(color = colors.Grey50)
+    val placeholderStyle = Typography.bodyMedium.copy(color = colors.Grey300)
+    val buttonTextStyle = Typography.titleMedium.copy(color = colors.Grey950)
 
-    // 텍스트 스타일 정의
-    val textFieldStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
-    val placeholderStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White.copy(alpha = 0.7f))
-
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding()
+    ) {
         // 배경 이미지
         Image(
             painter = painterResource(id = R.drawable.login_background),
@@ -133,7 +144,7 @@ fun LoginScreen(
                                         val strokeWidth = 1.dp.toPx()
                                         val y = size.height
                                         drawLine(
-                                            color = if (isUserIdFocused) Color.White else Color.White.copy(alpha = 0.7f),
+                                            color = if (isUserIdFocused) colors.Mint500 else colors.Grey50,
                                             start = Offset(0f, y),
                                             end = Offset(size.width, y),
                                             strokeWidth = strokeWidth
@@ -144,10 +155,16 @@ fun LoginScreen(
                                     value = userId,
                                     onValueChange = { userId = it },
                                     textStyle = textFieldStyle,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .align(Alignment.CenterStart)
-                                        .onFocusChanged { isUserIdFocused = it.isFocused },
+                                        .onFocusChanged { focusState ->
+                                            isUserIdFocused = focusState.isFocused
+                                            if (focusState.isFocused) {
+                                                keyboardController?.show()
+                                            }
+                                        },
                                     singleLine = true,
                                     interactionSource = remember { MutableInteractionSource() },
                                     decorationBox = { innerTextField ->
@@ -172,7 +189,7 @@ fun LoginScreen(
                                         val strokeWidth = 1.dp.toPx()
                                         val y = size.height
                                         drawLine(
-                                            color = if (isPasswordFocused) Color.White else Color.White.copy(alpha = 0.7f),
+                                            color = if (isPasswordFocused) colors.Mint500 else colors.Grey50,
                                             start = Offset(0f, y),
                                             end = Offset(size.width, y),
                                             strokeWidth = strokeWidth
@@ -188,7 +205,12 @@ fun LoginScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .align(Alignment.CenterStart)
-                                        .onFocusChanged { isPasswordFocused = it.isFocused },
+                                        .onFocusChanged { focusState ->
+                                            isPasswordFocused = focusState.isFocused
+                                            if (focusState.isFocused) {
+                                                keyboardController?.show()
+                                            }
+                                        },
                                     singleLine = true,
                                     interactionSource = remember { MutableInteractionSource() },
                                     decorationBox = { innerTextField ->
@@ -230,7 +252,7 @@ fun LoginScreen(
                                 } else {
                                     Text(
                                         text = "로그인",
-                                        style = MaterialTheme.typography.bodyLarge,
+                                        style = buttonTextStyle,
                                         modifier = Modifier.padding(vertical = 4.dp)
                                     )
                                 }
@@ -241,14 +263,17 @@ fun LoginScreen(
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                TextButton(onClick = onSignUpClick) {
-                                    Text(text = "회원가입", color = Color.White)
+                                TextButton(onClick = {
+                                    onSignUpClick()
+                                }
+                                ) {
+                                    Text(text = "회원가입", color = colors.Grey50)
                                 }
                                 Spacer(modifier = Modifier.width(20.dp))
-                                Text(text = "|", color = Color.White)
+                                Text(text = "|", color = colors.Grey50)
                                 Spacer(modifier = Modifier.width(20.dp))
                                 TextButton(onClick = onForgotPasswordClick) {
-                                    Text(text = "비밀번호 찾기", color = Color.White)
+                                    Text(text = "비밀번호 찾기", color = colors.Grey50)
                                 }
                             }
                         }
@@ -258,13 +283,3 @@ fun LoginScreen(
         }
     }
 }
-
-
-@Preview(showBackground = true, device = "spec:width=360dp,height=740dp")
-@Composable
-fun LoginScreenPhonePreview() {
-    WhistleHubTheme {
-        LoginScreen()
-    }
-}
-

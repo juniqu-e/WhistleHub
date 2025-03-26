@@ -11,7 +11,7 @@ object ValidationUtils {
 
     // 비밀번호: 8-64자, 최소 하나의 숫자, 하나의 영문 대문자, 하나의 영문 소문자, 하나의 특수문자 포함
     fun isValidPassword(password: String): Boolean {
-        val regex = Regex("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#\$%^&*()_+\\-=[\\]{};':\"\\\\|,.<>/?]).{8,64}$")
+        val regex = Regex("""^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#\$%^&*()_+\-=\[\]{};':"\\|,.<>/?]).{8,64}$""")
         return regex.matches(password)
     }
 
@@ -21,7 +21,7 @@ object ValidationUtils {
         return regex.matches(email)
     }
 
-    // 닉네임: 2-20자, 한글 및 영어만 허용
+    // 닉네임: 2-20자, 한글 및 영어만 허용ㅅ
     fun isValidNickname(nickname: String): Boolean {
         val regex = Regex("^[가-힣A-Za-z]{2,20}$")
         return regex.matches(nickname)

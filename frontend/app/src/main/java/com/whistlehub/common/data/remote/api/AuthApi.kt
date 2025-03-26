@@ -52,7 +52,7 @@ interface AuthApi {
     @POST("auth/login")
     suspend fun login(
         @Body request: AuthRequest.LoginRequest
-    ): Response<AuthResponse.LoginResponse>
+    ): Response<ApiResponse<AuthResponse.LoginResponse>>
     // 토큰 갱신
     @POST("auth/refresh")
     suspend fun updateToken(
