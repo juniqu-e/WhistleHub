@@ -1,7 +1,7 @@
 package com.ssafy.backend.auth.service;
 
-import com.ssafy.backend.Mail.model.common.EmailMessage;
-import com.ssafy.backend.Mail.service.EmailService;
+import com.ssafy.backend.mail.model.common.EmailMessage;
+import com.ssafy.backend.mail.service.EmailService;
 import com.ssafy.backend.auth.model.common.CustomUserDetails;
 import com.ssafy.backend.auth.model.common.TagDto;
 import com.ssafy.backend.auth.model.request.RefreshRequestDto;
@@ -14,8 +14,6 @@ import com.ssafy.backend.common.prop.JWTProp;
 import com.ssafy.backend.common.prop.MailProp;
 import com.ssafy.backend.common.service.RedisService;
 import com.ssafy.backend.common.util.JWTUtil;
-import com.ssafy.backend.graph.model.entity.type.WeightType;
-import com.ssafy.backend.graph.repository.MemberNodeRepository;
 import com.ssafy.backend.graph.service.DataCollectingService;
 import com.ssafy.backend.mysql.entity.Member;
 import com.ssafy.backend.mysql.entity.Tag;
