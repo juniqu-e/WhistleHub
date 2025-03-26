@@ -33,9 +33,6 @@ fun HomeScreen(paddingValues: PaddingValues) {
     // ViewModel 초기화
     val trackPlayViewModel = hiltViewModel<TrackPlayViewModel>()
 
-    // 트랙 로드
-    trackPlayViewModel.loadTracks()
-
     // 트랙 리스트 UI
     val trackList = trackPlayViewModel.trackList.collectAsState(initial = emptyList())
 

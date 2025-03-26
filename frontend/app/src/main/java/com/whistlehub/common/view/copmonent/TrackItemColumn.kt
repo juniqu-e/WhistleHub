@@ -16,13 +16,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
+import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
-import com.whistlehub.playlist.data.Track
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 
 @Composable
-fun TrackItemColumn(track: Track, trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
+fun TrackItemColumn(
+    track: TrackResponse.GetTrackDetailResponse,
+    trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
+) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -48,7 +51,7 @@ fun TrackItemColumn(track: Track, trackPlayViewModel: TrackPlayViewModel = hiltV
             modifier = Modifier
         )
         Text(
-            text = track.artist.nickname,
+            text = track.artistInfo.nickname,
             style = Typography.bodyMedium,
             color = CustomColors().Mint500,
             maxLines = 1,
