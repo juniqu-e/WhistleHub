@@ -11,16 +11,17 @@ from pymilvus import (
     Collection,
     utility
 )
-
-dotenv.load_dotenv()
+import config
 
 class OpenL3Service:
-    def __init__(self, milvus_host="milvus-standalone", milvus_port="19530", collection_name="music_embeddings"):
+    def __init__(self):
+        self.milvus_host=config.MILVUS_HOST
+        self.milvus_port=config.MILVUS_PORT
+        self.collection_name=config.COLLECTION_NAME
         self.EMBEDDING_DIM = 512
-        self.COLLECTION_NAME = collection_name
         
         # Milvus 연결 설정
-        connections.connect(host=milvus_host, port=milvus_port)
+        connections.connect(host=self.milvus_host, port=self.milvus_port)
         
         # 컬렉션 존재 확인 및 생성
         self._init_collection()
