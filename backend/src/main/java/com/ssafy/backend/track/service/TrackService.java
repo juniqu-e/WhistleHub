@@ -376,7 +376,7 @@ public class TrackService {
 
     @Transactional
     public List<TrackSearchInfoDto> searchTrack(String keyword, int page, int size, String orderBy) {
-        if(orderBy.equalsIgnoreCase("ASC") || orderBy.equalsIgnoreCase("DESC")) {
+        if(orderBy.equalsIgnoreCase("ASC") && orderBy.equalsIgnoreCase("DESC")) {
             log.warn("잘못된 방식의 정렬 파라미터");
             throw new MissingParameterException();
         }
