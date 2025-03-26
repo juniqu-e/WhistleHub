@@ -11,6 +11,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.data.repository.TrackService
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +23,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TrackPlayViewModel @Inject constructor(
+    @ApplicationContext val context: Context,
     val exoPlayer: ExoPlayer,
     val trackService: TrackService,
 ) : ViewModel() {
@@ -132,7 +134,7 @@ class TrackPlayViewModel @Inject constructor(
             val trackData = trackService.playTrack(trackId = track.trackId.toString())
 
             if (trackData != null) {
-                val mediaItem = MediaItem.fromUri(byteArrayToUri(this as Context, trackData)?: Uri.EMPTY )
+                val mediaItem = MediaItem.fromUri(byteArrayToUri(context, trackData) ?: Uri.EMPTY)
                 exoPlayer.setMediaItem(mediaItem)
                 exoPlayer.prepare()
                 exoPlayer.play()
