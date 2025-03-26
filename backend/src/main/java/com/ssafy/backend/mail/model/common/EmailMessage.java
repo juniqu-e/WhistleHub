@@ -1,4 +1,4 @@
-package com.ssafy.backend.Mail.model.common;
+package com.ssafy.backend.mail.model.common;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
