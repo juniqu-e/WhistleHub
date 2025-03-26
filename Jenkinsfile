@@ -111,29 +111,14 @@ pipeline {
         }
 
         
-        stage('docker compose down') {
+        stage('docker compose down && up') {
           steps {        
                 sshagent (credentials: ['ssh']) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ${remoteServer} '
                             cd ${remoteDir} && \
                             docker compose down && \
-                            docker compose -f docker-compose.db.yml down
-                            '
-                    """
-                }
-            }
-        }
-
-        stage('docker compose up') {
-          steps {        
-                sshagent (credentials: ['ssh']) {
-                    sh """
-                        echo "docker compose db up"
-                        ssh -o StrictHostKeyChecking=no ${remoteServer} '
-                            cd ${remoteDir} && \
-                            docker compose -f docker-compose.db.yml up -d --build && \
-                            docker compose up -d --build
+                            docker compose  --profile deploy up --build -d
                             '
                     """
                 }
