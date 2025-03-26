@@ -1,7 +1,10 @@
 package com.ssafy.backend.member.controller;
 
 import com.ssafy.backend.common.ApiResponse;
-import com.ssafy.backend.member.model.MemberDetailResponseDto;
+import com.ssafy.backend.member.model.request.UpdateMemberRequestDto;
+import com.ssafy.backend.member.model.request.UpdatePasswordRequestDto;
+import com.ssafy.backend.member.model.response.MemberDetailResponseDto;
+import com.ssafy.backend.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,42 +12,41 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 public class MemberController {
+    private final MemberService memberService;
     /**
-     * todo: 회원 정보 조회
+     *  회원 정보 조회
      *
      * @param memberId 회원 아이디 없는 경우, 자기 자신의 정보 조회
      * @return 회원의 정보
      */
     @GetMapping("/")
     public ApiResponse<?> getMember(@RequestParam(value = "memberId", required = false) Integer memberId) {
-        MemberDetailResponseDto result;
+        MemberDetailResponseDto result = memberService.getMember(memberId);
         return new ApiResponse.builder<Object>()
-                .payload(null)
+                .payload(result)
                 .build();
     }
 
     /**
-     * todo: 회원 정보 수정
+     *  회원 정보 수정
      *
-     * @param nickname, profileText
-     * @return
+     * @param updateMemberRequestDto nickname, profileText 수정할 정보
      */
     @PutMapping("/")
-    public ApiResponse<?> updateMember() {
-
+    public ApiResponse<?> updateMember(UpdateMemberRequestDto updateMemberRequestDto) {
+        memberService.updateMember(updateMemberRequestDto);
         return new ApiResponse.builder<Object>()
                 .payload(null)
                 .build();
     }
 
     /**
-     * todo: 회원 탈퇴
+     *  회원 탈퇴
      *
-     * @return
      */
     @DeleteMapping("/")
     public ApiResponse<?> deleteMember() {
-
+        memberService.deleteMember();
         return new ApiResponse.builder<Object>()
                 .payload(null)
                 .build();
@@ -64,13 +66,13 @@ public class MemberController {
     }
 
     /**
-     * todo: 비밀번호 변경
+     * 비밀번호 변경
      *
      * @return
      */
     @PutMapping("/password")
-    public ApiResponse<?> updatePassword() {
-
+    public ApiResponse<?> updatePassword(UpdatePasswordRequestDto updatePasswordRequestDto) {
+        memberService.updatePassword(updatePasswordRequestDto);
         return new ApiResponse.builder<Object>()
                 .payload(null)
                 .build();

@@ -96,6 +96,20 @@ public class ControllerExceptionHandler {
                 .build();
     }
 
+    @ExceptionHandler(InvalidNewPasswordException.class)
+    public ApiResponse<?> invalidNewPasswordHandler(InvalidNewPasswordException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.INVALID_NEW_PASSWORD)
+                .build();
+    }
+
+    @ExceptionHandler(InvalidOldPasswordException.class)
+    public ApiResponse<?> invalidOldPasswordHandler(InvalidOldPasswordException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.INVALID_OLD_PASSWORD)
+                .build();
+    }
+
     @ExceptionHandler(ExpiredAccessTokenException.class)
     public ApiResponse<?> expiredAccessTokenHandler(ExpiredAccessTokenException e) {
         return new ApiResponse.builder<Object>()

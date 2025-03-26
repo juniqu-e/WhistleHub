@@ -13,7 +13,7 @@ public enum ResponseType {
     INVALID_EMAIL_AUTH("IEA", HttpStatus.BAD_REQUEST, "이메일 인증 코드가 올바르지 않습니다."),
     NOT_MATCH_ID_AND_EMAIL("NMIE", HttpStatus.BAD_REQUEST, "아이디 또는 이메일이 일치하지 않습니다."),
     INVALID_OLD_PASSWORD("IOP", HttpStatus.BAD_REQUEST, "기존 비밀번호가 올바르지 않습니다."),
-    INVALID_NEW_PASSWORD_LENGTH("INPL", HttpStatus.BAD_REQUEST, "새로운 비밀번호의 길이가 너무 짧거나 깁니다."),
+    INVALID_NEW_PASSWORD("INP", HttpStatus.BAD_REQUEST, "새로운 비밀번호의 형식이 맞지 않습니다."),
     UNREADABLE_IMAGE("URI", HttpStatus.BAD_REQUEST, "이미지를 읽을 수 없습니다."),
     NOT_FOLLOWING("NF", HttpStatus.BAD_REQUEST, "팔로우 취소를 요청했으나, 기존에 팔로우 관계가 아닙니다."),
     ALREADY_FOLLOWING("AF", HttpStatus.CONFLICT, "팔로우 추가를 요청했으나, 이미 팔로우 관계입니다."),
