@@ -1,5 +1,6 @@
 package com.whistlehub.common.viewmodel
 
+import androidx.compose.runtime.Composable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.whistlehub.common.data.remote.dto.request.AuthRequest
@@ -125,6 +126,24 @@ class SignUpViewModel @Inject constructor(
         }
     }
 
+    // 태그 목록 API 호출
+    fun getTagList(onResult: (List<AuthResponse.TagResponse>) -> Unit) {
+        viewModelScope.launch {
+            _signUpState.value = SignUpState.Loading
+            try {
+                val response = authService.getTagList()
+                if (response.code == "SU") {
+                    onResult(response.payload ?: emptyList())
+                    _signUpState.value = SignUpState.Idle
+                } else {
+                    _signUpState.value = SignUpState.Error(response.message ?: "태그 목록 요청에 실패했습니다.")
+                }
+            } catch (e: Exception) {
+                _signUpState.value = SignUpState.Error("예외 발생: ${e.message}")
+            }
+        }
+    }
+
     // 회원가입 API 호출
     fun register(
         loginId: String,
@@ -133,13 +152,13 @@ class SignUpViewModel @Inject constructor(
         nickname: String,
         birth: String,
         gender: Char,
-        tags: List<String>,
+        tags: List<Int>,
         onSuccess: () -> Unit
     ) {
         viewModelScope.launch {
             _signUpState.value = SignUpState.Loading
             try {
-                val request = AuthRequest.RegisterRequest(loginId, password, email, nickname, birth, gender, tags)
+                val request = AuthRequest.RegisterRequest(loginId, password, email, nickname, gender, birth, tags)
                 val response = authService.register(request)
                 if (response.code == "SU" && response.payload != null) {
                     _signUpState.value = SignUpState.Success("회원가입에 성공했습니다.")
