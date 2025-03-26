@@ -25,6 +25,7 @@ def shutdown_event():
 
 add_exception_handler(app)
 app.include_router(routers.test_router)
+app.include_router(routers.track_router)
 
 if __name__ == "__main__":
     uvicorn.run(

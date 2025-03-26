@@ -1,5 +1,6 @@
 package com.whistlehub.common.data.repository
 
+import android.util.Log
 import com.whistlehub.common.data.remote.api.AuthApi
 import com.whistlehub.common.data.remote.dto.request.AuthRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
@@ -17,13 +18,17 @@ import javax.inject.Singleton
 @Singleton
 class AuthService @Inject constructor(
     private val authApi: AuthApi,
-    private val tokenRefresh: TokenRefresh? = null
 ) : ApiRepository() {
     // 회원 가입
     suspend fun register(
         request: AuthRequest.RegisterRequest
     ): ApiResponse<AuthResponse.RegisterResponse> {
         return executeApiCall { authApi.register(request) }
+    }
+    // 태그 목록
+    suspend fun getTagList(
+    ): ApiResponse<List<AuthResponse.TagResponse>> {
+        return executeApiCall { authApi.getTagList() }
     }
     // 아이디 중복 검사
     suspend fun checkDuplicateId(
@@ -47,6 +52,7 @@ class AuthService @Inject constructor(
     suspend fun sendEmailVerification(
         email: String
     ): ApiResponse<Unit> {
+        Log.d("AuthService", "sendEmailVerification: $email")
         return executeApiCall { authApi.sendEmailVerification(email) }
     }
     // 이메일 인증 코드 확인

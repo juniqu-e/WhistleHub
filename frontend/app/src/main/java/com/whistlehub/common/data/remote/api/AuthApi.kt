@@ -18,6 +18,10 @@ interface AuthApi {
     suspend fun register(
         @Body request: AuthRequest.RegisterRequest
     ): Response<ApiResponse<AuthResponse.RegisterResponse>>
+    // 태그 목록 요청
+    @GET("auth/tag")
+    suspend fun getTagList(
+    ): Response<ApiResponse<List<AuthResponse.TagResponse>>>
     // 아이디 중복 검사
     @GET("auth/duplicated/id")
     suspend fun checkDuplicateId(

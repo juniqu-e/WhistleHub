@@ -12,6 +12,11 @@ sealed class AuthResponse {
         val refreshToken: String,
         val accessToken: String
     )
+    // 태그 목록
+    data class TagResponse(
+        val id: Int,
+        val name: String
+    )
     // 로그인
     data class LoginResponse(
         val refreshToken: String,

@@ -83,6 +83,30 @@ public class DataCollectingService {
         memberNodeRepository.save(member);
     }
 
+    /**
+     * 회원이 태그를 조회하면 가중치 증가
+     * @param memberId 조회하는 회원 id
+     * @param tagId 조회되는 태그 id
+     * @param weightType 가중치 타입
+     */
+    public void viewTag(int memberId, int tagId, WeightType weightType){
+        // 회원과 태그 조회
+        MemberNode member = memberNodeRepository.findByMemberId(memberId)
+                .orElseThrow(() -> {
+                    log.warn("Member with id {} not found", memberId);
+                    return new EntityNotFoundException("Member not found");
+                });
+        TagNode tag = tagNodeRepository.findByTagId(tagId)
+                .orElseThrow(() -> {
+                    log.warn("Tag with id {} not found", tagId);
+                    return new EntityNotFoundException("Tag not found");
+                });
+        // viewTag 메소드 호출
+        member.viewTag(tag, weightType);
+
+        memberNodeRepository.save(member);
+    }
+
 
     /**
      * <pre>트랙 생성을 위한 메서드</pre>

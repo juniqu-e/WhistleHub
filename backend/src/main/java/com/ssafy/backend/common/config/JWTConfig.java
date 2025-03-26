@@ -10,17 +10,19 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * <pre>JWT 설정 파일</pre>
+ * 
+ * @author 허현준
+ * @version 1.0
+ * @since 2025-03-20
+ */
+
 @Getter
 @Configuration
 public class JWTConfig {
     @Value("${JWT_SECRET}")
     private String secret;
-
-    @Value("${JWT_ACCESS_EXPIRATION}")
-    private Long accessExpiration;
-
-    @Value("${JWT_REFRESH_EXPIRATION}")
-    private Long refreshExpiration;
 
     @Bean
     public SecretKey secretKey() {
