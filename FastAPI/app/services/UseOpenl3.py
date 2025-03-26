@@ -18,7 +18,7 @@ class OpenL3Service:
         self.milvus_host=config.MILVUS_HOST
         self.milvus_port=config.MILVUS_PORT
         self.collection_name=config.COLLECTION_NAME
-        self.EMBEDDING_DIM = 512
+        self.embedding_dim = config.EMBEDDING_DIM
         
         # Milvus 연결 설정
         connections.connect(host=self.milvus_host, port=self.milvus_port)
@@ -31,12 +31,12 @@ class OpenL3Service:
         fields = [
             FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),
             FieldSchema(name="track_id", dtype=DataType.INT64),  # 외부에서 받은 트랙 ID를 저장할 필드
-            FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=self.EMBEDDING_DIM),
+            FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=self.embedding_dim),
         ]
         schema = CollectionSchema(fields, description="Music embeddings")
         
-        if not utility.has_collection(self.COLLECTION_NAME):
-            self.collection = Collection(name=self.COLLECTION_NAME, schema=schema)
+        if not utility.has_collection(self.collection_name):
+            self.collection = Collection(name=self.collection_name, schema=schema)
             # 인덱스 생성
             index_params = {
                 "metric_type": "L2",
@@ -44,10 +44,10 @@ class OpenL3Service:
                 "params": {"nlist": 1024},
             }
             self.collection.create_index(field_name="embedding", index_params=index_params)
-            print(f"Collection '{self.COLLECTION_NAME}' created.")
+            print(f"Collection '{self.collection_name}' created.")
         else:
-            self.collection = Collection(name=self.COLLECTION_NAME)
-            print(f"Collection '{self.COLLECTION_NAME}' loaded.")
+            self.collection = Collection(name=self.collection_name)
+            print(f"Collection '{self.collection_name}' loaded.")
             
         self.collection.load()  # 메모리에 로드
     
@@ -71,7 +71,7 @@ class OpenL3Service:
                 sr,
                 input_repr="mel256",
                 content_type="music",
-                embedding_size=self.EMBEDDING_DIM,
+                embedding_size=self.embedding_dim,
             )
             
             # 평균 임베딩 계산
