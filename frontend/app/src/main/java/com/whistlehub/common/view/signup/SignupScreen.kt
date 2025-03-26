@@ -39,7 +39,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(
-    onSignUpSuccess: () -> Unit = {}, // 회원가입 성공 시 호출
+    onNext: (String, String, String, String, Char, String) -> Unit = { _, _, _, _, _, _ ->}, // 정보 입력시 태그선택 화면으로 이동
     onLoginClick: () -> Unit = {}, // 로그인 페이지로 이동
     viewModel: SignUpViewModel = hiltViewModel()
 ) {
@@ -58,14 +58,12 @@ fun SignUpScreen(
     var nickname by remember { mutableStateOf("") }
     var nicknameError by remember { mutableStateOf<String?>(null) }
 
-    var gender by remember { mutableStateOf("남성") }
+    var genderKorean by remember { mutableStateOf("남성") }
 
     var birthYear by remember { mutableStateOf("") }
     var birthMonth by remember { mutableStateOf("") }
     var birthDay by remember { mutableStateOf("") }
     var birthError by remember { mutableStateOf<String?>(null) }
-
-    var tags by remember { mutableStateOf<List<String>>(emptyList()) }
 
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -148,21 +146,22 @@ fun SignUpScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color(0xFF1C1C1C))
             .imePadding()
     ) {
-        // 배경 이미지
-        Image(
-            painter = painterResource(id = R.drawable.login_background),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
-        // 반투명 오버레이
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.7f))
-        )
+//        // 배경 이미지
+//        Image(
+//            painter = painterResource(id = R.drawable.login_background),
+//            contentDescription = null,
+//            modifier = Modifier.fillMaxSize(),
+//            contentScale = ContentScale.Crop
+//        )
+//        // 반투명 오버레이
+//        Box(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .background(Color.Black.copy(alpha = 0.7f))
+//        )
         // 스크롤 가능한 컨테이너
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -400,8 +399,8 @@ fun SignUpScreen(
 
                         // ── 성별 입력 (RadioButton) ──
                         GenderSelection(
-                            selectedGender = gender,
-                            onGenderSelected = { inputGender -> gender = inputGender },
+                            selectedGender = genderKorean,
+                            onGenderSelected = { inputGender -> genderKorean = inputGender },
                             labelStyle = labelStyle,
                             optionTextStyle = textFieldStyle,
                             colors = colors
@@ -459,11 +458,9 @@ fun SignUpScreen(
                                     verificationCodeError == "인증 성공" // Todo: 인증 성공시 메세지
                                 ) {
                                     // gender가 "남성"이면 'M', "여성"이면 'F'로 변환
-                                    val gender = if (gender == "남성") 'M' else 'F'
+                                    val gender = if (genderKorean == "남성") 'M' else 'F'
                                     val birth = "$birthYear-$birthMonth-$birthDay"
-                                    viewModel.register(userId, password, email, nickname, birth, gender, tags) {
-                                        onSignUpSuccess()
-                                    }
+                                    onNext(userId, password, email, nickname, gender, birth)
                                 } else {
                                     errorMessage = "입력값을 확인하세요."
                                 }
@@ -473,7 +470,7 @@ fun SignUpScreen(
                             shape = MaterialTheme.shapes.medium
                         ) {
                             Text(
-                                text = "회원가입",
+                                text = "다음",
                                 style = buttonTextStyle,
                                 modifier = Modifier.padding(vertical = 4.dp)
                             )
@@ -506,6 +503,6 @@ fun SignUpScreen(
 @Composable
 fun SignUpScreenInteractivePreview() {
     WhistleHubTheme {
-        SignUpScreen()
+        SignUpScreen(onNext = { _, _, _, _, _, _ -> })
     }
 }

@@ -14,32 +14,47 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.whistlehub.common.data.remote.dto.response.AuthResponse
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
+import com.whistlehub.common.viewmodel.SignUpViewModel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun TagSelectionScreen(
-    modifier: Modifier = Modifier,
-    allTags: List<String> = listOf(
-        "ROCK", "POP", "JAZZ", "EDM", "HIPHOP", "CLASSIC"
-    ),
-    onStartClick: (List<String>) -> Unit = {}
+fun SelectTagsScreen(
+    userId: String,
+    password: String,
+    email: String,
+    nickname: String,
+    gender: Char,
+    birth: String,
+    onStartClick: (List<Int>) -> Unit = {}
 ) {
-    // 선택된 태그 저장
-    val selectedTags = remember { mutableStateListOf<String>() }
-
     val colors = CustomColors()
+    val viewModel: SignUpViewModel = hiltViewModel()
+    var apiTags by remember { mutableStateOf<List<AuthResponse.TagResponse>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // 3개 이상 선택 여부에 따라 버튼 활성/비활성
+    LaunchedEffect(Unit) {
+        viewModel.getTagList { tagResponseList ->
+            apiTags = tagResponseList.map { AuthResponse.TagResponse(it.id, it.name)}
+            isLoading = false
+        }
+    }
+    // 사용자가 선택한 태그 저장
+    val selectedTags = remember { mutableStateListOf<Int>() }
+
+    // 3개 이상 선택 여부에 따라 시작 버튼 활성/비활성
     val isStartEnabled = selectedTags.size >= 3
 
     // 전체 배경
     Box(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF1C1C1C)) // 짙은 배경색
-            .padding(16.dp)
+            .background(Color(0xFF1C1C1C))
+            .padding(30.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -47,7 +62,7 @@ fun TagSelectionScreen(
         ) {
             // 상단 안내 문구
             Text(
-                text = "3개 이상의 취향 태그를 선택해 주세요:",
+                text = "3개 이상의 취향 태그를 선택해 주세요",
                 style = Typography.titleMedium.copy(color = Color.White),
                 textAlign = TextAlign.Center
             )
@@ -83,25 +98,27 @@ fun TagSelectionScreen(
                     }
             ) {
                 FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 20.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    allTags.forEach { tag ->
+                    apiTags.forEach { tag ->
                         FilterChip(
-                            selected = selectedTags.contains(tag),
+                            selected = selectedTags.contains(tag.id),
                             onClick = {
-                                if (selectedTags.contains(tag)) {
-                                    selectedTags.remove(tag)
+                                if (selectedTags.contains(tag.id)) {
+                                    selectedTags.remove(tag.id)
                                 } else {
-                                    selectedTags.add(tag)
+                                    selectedTags.add(tag.id)
                                 }
                             },
                             label = {
                                 Text(
-                                    text = tag,
+                                    text = tag.name,
                                     style = Typography.labelLarge.copy(
-                                        color = if (selectedTags.contains(tag))
+                                        color = if (selectedTags.contains(tag.id))
                                             colors.Grey950
                                         else
                                             Color.White
@@ -114,8 +131,8 @@ fun TagSelectionScreen(
                             ),
                             border = FilterChipDefaults.filterChipBorder(
                                 enabled = true,
-                                selected = selectedTags.contains(tag),
-                                borderColor = if (selectedTags.contains(tag))
+                                selected = selectedTags.contains(tag.id),
+                                borderColor = if (selectedTags.contains(tag.id))
                                     colors.Mint500
                                 else
                                     Color.Gray,
@@ -128,7 +145,19 @@ fun TagSelectionScreen(
 
             // 하단 버튼
             Button(
-                onClick = { onStartClick(selectedTags.toList()) },
+                onClick = {
+                    viewModel.register(
+                        loginId = userId,
+                        password = password,
+                        email = email,
+                        nickname = nickname,
+                        gender = gender,
+                        birth = birth,
+                        tags = selectedTags.toList()
+                    ) {
+                        onStartClick(selectedTags)
+                    }
+                },
                 enabled = isStartEnabled,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -150,5 +179,12 @@ fun TagSelectionScreen(
 @Composable
 @Preview(showBackground = true, widthDp = 360, heightDp = 800)
 fun TagSelectionScreenPreview() {
-    TagSelectionScreen()
+    SelectTagsScreen(
+        userId = "testUser",
+        password = "password",
+        email = "test@example.com",
+        nickname = "tester",
+        gender = 'M',
+        birth = "1990-01-01"
+    )
 }

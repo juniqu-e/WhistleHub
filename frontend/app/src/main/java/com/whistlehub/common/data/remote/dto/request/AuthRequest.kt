@@ -13,9 +13,9 @@ sealed class AuthRequest {
         val password: String,
         val email: String,
         val nickname: String,
-        val birth: String,
         val gender: Char,
-        val tags: List<String>
+        val birth: String,
+        val tags: List<Int>
     )
     // 이메일 인증 코드 확인
     data class ValidateEmailRequest(
