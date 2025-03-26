@@ -65,6 +65,9 @@ fun SignUpScreen(
     var birthDay by remember { mutableStateOf("") }
     var birthError by remember { mutableStateOf<String?>(null) }
 
+    var tags by remember { mutableStateOf<List<String>>(emptyList()) }
+
+
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     var verificationCode by remember { mutableStateOf("") }
