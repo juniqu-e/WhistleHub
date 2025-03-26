@@ -116,8 +116,9 @@ pipeline {
                 sshagent (credentials: ['ssh']) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ${remoteServer} '
-                            cd ${remoteDir}
-                            docker compose down
+                            cd ${remoteDir} && \
+                            docker compose down && \
+                            docker compose -f docker-compose.db.yml down
                             '
                     """
                 }
@@ -130,7 +131,8 @@ pipeline {
                     sh """
                         echo "docker compose db up"
                         ssh -o StrictHostKeyChecking=no ${remoteServer} '
-                            cd ${remoteDir}
+                            cd ${remoteDir} && \
+                            docker compose -f docker-compose.db.yml up -d --build && \
                             docker compose up -d --build
                             '
                     """
