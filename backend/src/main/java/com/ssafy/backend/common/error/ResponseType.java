@@ -11,7 +11,6 @@ public enum ResponseType {
     // HTTP Status 400
     NOT_FOUND_PAGE("NFP", HttpStatus.BAD_REQUEST, "페이지를 찾을 수 없습니다."),
     INVALID_EMAIL_AUTH("IEA", HttpStatus.BAD_REQUEST, "이메일 인증 코드가 올바르지 않습니다."),
-    EXPIRED_EMAIL_AUTH("EEA", HttpStatus.BAD_REQUEST, "이메일 인증 코드가 만료되었습니다."),
     NOT_MATCH_ID_AND_EMAIL("NMIE", HttpStatus.BAD_REQUEST, "아이디 또는 이메일이 일치하지 않습니다."),
     INVALID_OLD_PASSWORD("IOP", HttpStatus.BAD_REQUEST, "기존 비밀번호가 올바르지 않습니다."),
     INVALID_NEW_PASSWORD_LENGTH("INPL", HttpStatus.BAD_REQUEST, "새로운 비밀번호의 길이가 너무 짧거나 깁니다."),
@@ -43,6 +42,7 @@ public enum ResponseType {
     PLAYLIST_NOT_FOUND("PNF", HttpStatus.NOT_FOUND, "요청한 플레이리스트가 없습니다."),
 
     // HTTP Status 409
+    ALREADY_VALIDATED_EMAIL("AVE", HttpStatus.CONFLICT, "이미 인증된 이메일입니다."),
     DUPLICATE_NICKNAME("DNN", HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
     DUPLICATE_ID("DID", HttpStatus.CONFLICT, "이미 사용 중인 아이디입니다."),
     DUPLICATE_EMAIL("DEM", HttpStatus.CONFLICT, "이미 사용 중인 이메일입니다."),

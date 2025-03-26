@@ -43,9 +43,9 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val request = AuthRequest.LoginRequest(loginId, password)
-                val loginResponse = authService.login(request)
-                if (loginResponse != null) {
-                    tokenManager.saveTokens(loginResponse.accessToken, loginResponse.refreshToken)
+                val response = authService.login(request).payload
+                if (response != null) {
+                    tokenManager.saveTokens(response.accessToken, response.refreshToken)
                     _loginState.value = LoginState.Success
                 } else {
                     _loginState.value = LoginState.Error("로그인 실패")

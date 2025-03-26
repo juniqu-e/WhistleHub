@@ -1,5 +1,6 @@
 package com.whistlehub.common.data.repository
 
+import android.util.Log
 import com.whistlehub.common.data.remote.api.AuthApi
 import com.whistlehub.common.data.remote.dto.request.AuthRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
@@ -25,6 +26,11 @@ class AuthService @Inject constructor(
     ): ApiResponse<AuthResponse.RegisterResponse> {
         return executeApiCall { authApi.register(request) }
     }
+    // 태그 목록
+    suspend fun getTagList(
+    ): ApiResponse<List<AuthResponse.TagResponse>> {
+        return executeApiCall { authApi.getTagList() }
+    }
     // 아이디 중복 검사
     suspend fun checkDuplicateId(
         loginId: String
@@ -47,6 +53,7 @@ class AuthService @Inject constructor(
     suspend fun sendEmailVerification(
         email: String
     ): ApiResponse<Unit> {
+        Log.d("AuthService", "sendEmailVerification: $email")
         return executeApiCall { authApi.sendEmailVerification(email) }
     }
     // 이메일 인증 코드 확인
@@ -62,17 +69,11 @@ class AuthService @Inject constructor(
         return executeApiCall { authApi.resetPassword(request) }
     }
     // 로그인
-    // 공통 ApiResponse 를 사용하지 않고 단일 Json 객체만 반환하므로
-    suspend fun login(request: AuthRequest.LoginRequest): AuthResponse.LoginResponse? {
-        val response = authApi.login(request)
-        return if (response.isSuccessful) {
-            response.body()
-        } else {
-            null // 에러 처리 로직 추가 가능
-        }
+    suspend fun login(
+        request: AuthRequest.LoginRequest
+    ): ApiResponse<AuthResponse.LoginResponse> {
+        return executeApiCall { authApi.login(request) }
     }
-
-
     // 토큰 갱신
     suspend fun updateToken(
         request: AuthRequest.UpdateTokenRequest

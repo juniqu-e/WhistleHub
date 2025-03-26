@@ -68,7 +68,7 @@ public class MemberNode {
         connectedTags.forEach(tag -> viewTag(tag, weightType));
     }
 
-    private void viewTag(TagNode tag, WeightType weightType) {
+    public void viewTag(TagNode tag, WeightType weightType) {
         WeightCount weightCount = preferredTagNodes.stream()
                 .filter(wc -> wc.getTag().getTagId() == tag.getTagId())
                 .findFirst()

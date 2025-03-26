@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * <pre>토큰 재발급 요청 dto</pre>
+ * <pre>이메일 인증 요청 dto</pre>
  *
  * @author 허현준
  * @version 1.0
@@ -18,7 +18,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class RefreshRequestDto {
+public class ValidateEmailRequestDto {
     @NotBlank
-    private String refreshToken;
+    private String email;
+    @NotBlank
+    private String code;
 }

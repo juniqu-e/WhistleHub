@@ -18,7 +18,7 @@ import java.util.Optional;
 public interface TagNodeRepository extends Neo4jRepository<TagNode, Integer> {
     Optional<TagNode> findByTagId(@Param("tagId") int tagId);
 
-    @Query("MERGE (t:Tag {tagId: $tagId, name: $name}) RETURN t")
+    @Query("MERGE (t:Tag {tagId: $tagId}) RETURN t")
     void upsertTag(int tagId, String name);
 
     // 트랙에 연결된 모든 태그 노드를 조회하는 메소드

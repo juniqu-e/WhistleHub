@@ -34,7 +34,7 @@ abstract class ApiRepository {
                 // 응답이 실패(HTTP 2xx가 아닌 경우)하면, 실패 코드("ERR")와 함께 해당 HTTP 상태 코드를 메시지에 포함시켜 ApiResponse를 반환합니다.
                 return ApiResponse(
                     code = "ERR",
-                    message = "API call failed with code: ${response.code()}",
+                    message = "서버로 요청이 실패했습니다: ${response.code()}",
                     payload = null
                 )
             }

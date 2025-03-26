@@ -22,22 +22,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.whistlehub.R
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.common.view.theme.WhistleHubTheme
+import com.whistlehub.common.viewmodel.SignUpViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(
-    onSignUpSuccess: () -> Unit = {}, // 회원가입 성공 시 호출
-    onLoginClick: () -> Unit = {} // 로그인 페이지로 이동
+    onNext: (String, String, String, String, Char, String) -> Unit = { _, _, _, _, _, _ ->}, // 정보 입력시 태그선택 화면으로 이동
+    onLoginClick: () -> Unit = {}, // 로그인 페이지로 이동
+    viewModel: SignUpViewModel = hiltViewModel()
 ) {
     // 입력 상태 변수 및 에러 변수
     var userId by remember { mutableStateOf("") }
@@ -54,14 +58,19 @@ fun SignUpScreen(
     var nickname by remember { mutableStateOf("") }
     var nicknameError by remember { mutableStateOf<String?>(null) }
 
-    var gender by remember { mutableStateOf("남성") }
+    var genderKorean by remember { mutableStateOf("남성") }
 
     var birthYear by remember { mutableStateOf("") }
     var birthMonth by remember { mutableStateOf("") }
     var birthDay by remember { mutableStateOf("") }
     var birthError by remember { mutableStateOf<String?>(null) }
 
+
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    var verificationCode by remember { mutableStateOf("") }
+    var verificationCodeError by remember { mutableStateOf<String?>(null) }
+    var showVerificationInput by remember { mutableStateOf(false) }
 
     // 포커스 상태 변수
     var isUserIdFocused by remember { mutableStateOf(false) }
@@ -71,29 +80,88 @@ fun SignUpScreen(
     var isNicknameFocused by remember { mutableStateOf(false) }
 
     val colors = CustomColors()
-    val textFieldStyle = Typography.bodySmall.copy(color = colors.Grey50)
-    val placeholderStyle = Typography.bodySmall.copy(color = colors.Grey300)
-    val buttonTextStyle = Typography.titleSmall.copy(color = colors.Grey950)
-    val labelStyle = Typography.labelLarge.copy(color = colors.Grey50)
+    val textFieldStyle = Typography.bodyMedium.copy(color = colors.Grey50)
+    val placeholderStyle = Typography.bodyMedium.copy(color = colors.Grey300)
+    val buttonTextStyle = Typography.titleMedium.copy(color = colors.Grey950)
+    val labelStyle = Typography.bodyLarge.copy(color = colors.Grey50)
 
-    // 코루틴 스코프
-    val coroutineScope = rememberCoroutineScope()
+    // ViewModel의 상태 관찰
+    val signUpState by viewModel.signUpState.collectAsState()
+
+    // 아이디 실시간 중복 체크
+    LaunchedEffect(userId) {
+        if (userId.isEmpty() || !ValidationUtils.isValidUserId(userId)) {
+            return@LaunchedEffect
+        }
+        val currentUserIdError = userIdError
+        if (currentUserIdError != null && !currentUserIdError.contains("사용 가능한")) {
+            return@LaunchedEffect
+        }
+        kotlinx.coroutines.delay(500)
+        viewModel.checkDuplicateId(userId) { isDuplicate ->
+            userIdError = if (isDuplicate)
+                "이미 사용 중인 아이디입니다."
+            else
+                "사용 가능한 아이디입니다."
+        }
+    }
+
+// 이메일 실시간 중복 체크
+    LaunchedEffect(email) {
+        if (email.isEmpty() || !ValidationUtils.isValidEmail(email)) {
+            return@LaunchedEffect
+        }
+        val currentEmailError = emailError
+        if (currentEmailError != null && !currentEmailError.contains("사용 가능한")) {
+            return@LaunchedEffect
+        }
+        kotlinx.coroutines.delay(500)
+        viewModel.checkDuplicateEmail(email) { isDuplicate ->
+            emailError = if (isDuplicate)
+                "이미 사용 중인 이메일입니다."
+            else
+                "사용 가능한 이메일입니다."
+        }
+    }
+
+// 닉네임 실시간 중복 체크
+    LaunchedEffect(nickname) {
+        if (nickname.isEmpty() || !ValidationUtils.isValidNickname(nickname)) {
+            return@LaunchedEffect
+        }
+        val currentNicknameError = nicknameError
+        if (currentNicknameError != null && !currentNicknameError.contains("사용 가능한")) {
+            return@LaunchedEffect
+        }
+        kotlinx.coroutines.delay(500)
+        viewModel.checkDuplicateNickname(nickname) { isDuplicate ->
+            nicknameError = if (isDuplicate)
+                "이미 사용 중인 닉네임입니다."
+            else
+                "사용 가능한 닉네임입니다."
+        }
+    }
 
     // 최상위 레이아웃
-    Box(modifier = Modifier.fillMaxSize()) {
-        // 배경 이미지
-        Image(
-            painter = painterResource(id = R.drawable.login_background),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
-        // 반투명 오버레이
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.7f))
-        )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF1C1C1C))
+            .imePadding()
+    ) {
+//        // 배경 이미지
+//        Image(
+//            painter = painterResource(id = R.drawable.login_background),
+//            contentDescription = null,
+//            modifier = Modifier.fillMaxSize(),
+//            contentScale = ContentScale.Crop
+//        )
+//        // 반투명 오버레이
+//        Box(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .background(Color.Black.copy(alpha = 0.7f))
+//        )
         // 스크롤 가능한 컨테이너
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -137,7 +205,7 @@ fun SignUpScreen(
                                 onValueChange = { input ->
                                     userId = input
                                     userIdError = if (input.isNotEmpty() && !ValidationUtils.isValidUserId(input)) {
-                                        "아이디는 4-20자의 영어 대소문자와 숫자로 구성되어야 합니다."
+                                        "아이디는 4-20자의 대소문자와 숫자로 구성해야 합니다."
                                     } else null
                                 },
                                 placeholder = "아이디를 입력하세요",
@@ -149,25 +217,6 @@ fun SignUpScreen(
                                 errorMessage = userIdError,
                                 modifier = Modifier.weight(1f)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Button(
-                                onClick = {
-                                    coroutineScope.launch {
-                                        // TODO: 아이디 중복 확인 API 호출 추가
-                                    }
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = colors.Mint500),
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
-                                shape = RoundedCornerShape(5.dp),
-                                modifier = Modifier
-                                    .wrapContentWidth()
-                                    .height(24.dp)
-                            ) {
-                                Text(
-                                    text = "중복 확인",
-                                    style = textFieldStyle.copy(color = colors.Grey950)
-                                )
-                            }
                         }
 
                         // ── 비밀번호 입력 ──
@@ -177,7 +226,7 @@ fun SignUpScreen(
                             onValueChange = { input ->
                                 password = input
                                 passwordError = if (input.isNotEmpty() && !ValidationUtils.isValidPassword(input)) {
-                                    "비밀번호는 8-64자이며, 숫자, 영문 대/소문자, 특수문자를 포함해야 합니다."
+                                    "비밀번호는 8-64자이며, 숫자, 대소문자, 특수문자를 포함해야 합니다."
                                 } else null
                             },
                             placeholder = "비밀번호를 입력하세요",
@@ -239,21 +288,87 @@ fun SignUpScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             Button(
                                 onClick = {
-                                    coroutineScope.launch {
-                                        // TODO: 이메일 중복 확인 API 호출 추가
+                                    // 이메일이 유효할 때만 코드 전송 API 호출
+                                    if (email.isEmpty() || !ValidationUtils.isValidEmail(email)) {
+                                        emailError = "유효한 이메일 형식이 아닙니다."
+                                    } else {
+                                        viewModel.sendEmailVerification(email) { message ->
+                                            emailError = message
+                                            // 성공 메시지일 경우 인증 코드 입력 필드 표시
+                                            if (message.contains("전송되었습니다")) {
+                                                showVerificationInput = true
+                                            }
+                                        }
                                     }
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = colors.Mint500),
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                                 shape = RoundedCornerShape(5.dp),
                                 modifier = Modifier
                                     .wrapContentWidth()
-                                    .height(24.dp)
+                                    .height(32.dp)
                             ) {
                                 Text(
-                                    text = "중복 확인",
-                                    style = textFieldStyle.copy(color = colors.Grey950)
+                                    text = "이메일 인증",
+                                    style = Typography.labelLarge.copy(
+                                        color = colors.Grey950,
+                                        fontWeight = FontWeight.Bold
+                                    )
+
                                 )
+                            }
+                        }
+                        // ── 인증 코드 입력 및 확인 ──
+                        if (showVerificationInput) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                LabeledInputField(
+                                    label = "코드 입력",
+                                    value = verificationCode,
+                                    onValueChange = { input ->
+                                        verificationCode = input
+                                    },
+                                    placeholder = "인증 코드를 입력하세요",
+                                    labelStyle = labelStyle,
+                                    textStyle = textFieldStyle,
+                                    placeholderStyle = placeholderStyle,
+                                    isFocused = false,
+                                    onFocusChange = {},
+                                    errorMessage = verificationCodeError,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Button(
+                                    onClick = {
+                                        // 여기에 이메일 인증 코드 확인 API 호출을 추가합니다.
+                                        viewModel.validateEmailCode(
+                                            email,
+                                            verificationCode
+                                        ) { isValid ->
+                                            verificationCodeError = if (isValid)
+                                                "인증 성공"
+                                            else
+                                                "인증 코드가 일치하지 않습니다."
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = colors.Mint500),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                                    shape = RoundedCornerShape(5.dp),
+                                    modifier = Modifier
+                                        .wrapContentWidth()
+                                        .height(32.dp)
+                                ) {
+                                    Text(
+                                        text = "코드 확인",
+                                        style = Typography.labelLarge.copy(
+                                            color = colors.Grey950,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    )
+                                }
                             }
                         }
 
@@ -280,31 +395,12 @@ fun SignUpScreen(
                                 errorMessage = nicknameError,
                                 modifier = Modifier.weight(1f)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Button(
-                                onClick = {
-                                    coroutineScope.launch {
-                                        // TODO: 닉네임 중복 확인 API 호출 추가
-                                    }
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = colors.Mint500),
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
-                                shape = RoundedCornerShape(5.dp),
-                                modifier = Modifier
-                                    .wrapContentWidth()
-                                    .height(24.dp)
-                            ) {
-                                Text(
-                                    text = "중복 확인",
-                                    style = textFieldStyle.copy(color = colors.Grey950)
-                                )
-                            }
                         }
 
                         // ── 성별 입력 (RadioButton) ──
                         GenderSelection(
-                            selectedGender = gender,
-                            onGenderSelected = { inputGender -> gender = inputGender },
+                            selectedGender = genderKorean,
+                            onGenderSelected = { inputGender -> genderKorean = inputGender },
                             labelStyle = labelStyle,
                             optionTextStyle = textFieldStyle,
                             colors = colors
@@ -358,9 +454,13 @@ fun SignUpScreen(
                                     nickname.isNotEmpty() &&
                                     birthYear.isNotEmpty() &&
                                     birthMonth.isNotEmpty() &&
-                                    birthDay.isNotEmpty()
+                                    birthDay.isNotEmpty() &&
+                                    verificationCodeError == "인증 성공" // Todo: 인증 성공시 메세지
                                 ) {
-                                    onSignUpSuccess()
+                                    // gender가 "남성"이면 'M', "여성"이면 'F'로 변환
+                                    val gender = if (genderKorean == "남성") 'M' else 'F'
+                                    val birth = "$birthYear-$birthMonth-$birthDay"
+                                    onNext(userId, password, email, nickname, gender, birth)
                                 } else {
                                     errorMessage = "입력값을 확인하세요."
                                 }
@@ -370,7 +470,7 @@ fun SignUpScreen(
                             shape = MaterialTheme.shapes.medium
                         ) {
                             Text(
-                                text = "회원가입",
+                                text = "다음",
                                 style = buttonTextStyle,
                                 modifier = Modifier.padding(vertical = 4.dp)
                             )
@@ -403,6 +503,6 @@ fun SignUpScreen(
 @Composable
 fun SignUpScreenInteractivePreview() {
     WhistleHubTheme {
-        SignUpScreen()
+        SignUpScreen(onNext = { _, _, _, _, _, _ -> })
     }
 }

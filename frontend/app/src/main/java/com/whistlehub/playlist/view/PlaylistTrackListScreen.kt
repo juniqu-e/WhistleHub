@@ -121,7 +121,7 @@ fun PlaylistTrackListScreen(
                         color = CustomColors().Grey200
                     )
                 }
-                if (currentTrack?.id == track.trackInfo.trackId.toString() && isPlaying) {
+                if (currentTrack?.trackId == track.trackInfo.trackId && isPlaying) {
                 // Add current track specific UI here
                 IconButton({trackPlayViewModel.pauseTrack()}) {
                     Icon(Icons.Filled.Pause, contentDescription = "Pause", tint = CustomColors().Mint500)
@@ -145,8 +145,4 @@ fun PlaylistTrackListScreen(
             }
         }
     }
-}
-
-enum class TrackType {
-    MYLIST, RECOMMENDED, MYTRACKS, LIKES
 }

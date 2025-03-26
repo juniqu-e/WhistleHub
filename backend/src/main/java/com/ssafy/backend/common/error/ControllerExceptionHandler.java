@@ -3,10 +3,8 @@ package com.ssafy.backend.common.error;
 import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.common.error.exception.*;
 import jakarta.persistence.EntityNotFoundException;
-import org.apache.coyote.BadRequestException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.client.HttpClientErrorException;
 
 /**
  * <pre>예외 전역처리</pre>
@@ -116,6 +114,34 @@ public class ControllerExceptionHandler {
     public ApiResponse<?> expiredRefreshTokenHandler(ExpiredRefreshTokenException e) {
         return new ApiResponse.builder<Object>()
                 .errorStatus(ResponseType.EXPIRED_REFRESH_TOKEN)
+                .build();
+    }
+
+    @ExceptionHandler(EmailSendFailedException.class)
+    public ApiResponse<?> emailSendFailedHandler(EmailSendFailedException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.EMAIL_SEND_FAILED)
+                .build();
+    }
+
+    @ExceptionHandler(InvalidEmailAuthException.class)
+    public ApiResponse<?> invalidEmailCodeHandler(InvalidEmailAuthException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.INVALID_EMAIL_AUTH)
+                .build();
+    }
+
+    @ExceptionHandler(NotMatchIdAndEmailException.class)
+    public ApiResponse<?> notMatchIdAndEmailHandler(NotMatchIdAndEmailException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.NOT_MATCH_ID_AND_EMAIL)
+                .build();
+    }
+
+    @ExceptionHandler(AlreadyValidatedEmailException.class)
+    public ApiResponse<?> alreadyValidatedEmailHandler(AlreadyValidatedEmailException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.ALREADY_VALIDATED_EMAIL)
                 .build();
     }
 
