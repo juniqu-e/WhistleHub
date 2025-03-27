@@ -57,37 +57,6 @@ object NetworkModule {
     }
 
     /**
-     * AuthApi 전용 OkHttpClient는 AuthInterceptor를 적용하지 않습니다.
-     * 따라서 AuthApi 관련 요청에는 액세스 토큰 헤더가 추가되지 않습니다.
-     */
-    @Provides
-    @Singleton
-    fun provideAuthOkHttpClient(): OkHttpClient {
-        val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        }
-        return OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor)
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
-            .build()
-    }
-
-    /**
-     * 일반 API 호출을 위한 Retrofit 인스턴스
-     */
-    @Provides
-    @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl("https://j12c104.p.ssafy.io/api/")
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
-
-    /**
      * 인증 전용 Retrofit 인스턴스: AuthApi 호출 시 사용되는 Retrofit 인스턴스
      */
     @Provides
