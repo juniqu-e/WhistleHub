@@ -2,6 +2,7 @@ package com.whistlehub.workstation.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.whistlehub.common.util.AudioEngineBridge
 import com.whistlehub.workstation.data.BottomBarActions
 import com.whistlehub.workstation.data.Layer
 import com.whistlehub.workstation.data.PatternBlock
@@ -135,6 +136,10 @@ class WorkStationViewModel @Inject constructor(
         }
     }
 
+    fun audioEngineTest() {
+        AudioEngineBridge.startAudioEngine()
+    }
+
     //    fun toggleBeat(layerId: Int, index: Int) {
 //        _tracks.value = _tracks.value.map { layer ->
 //            if (layer.id == layerId) {
@@ -187,7 +192,10 @@ class WorkStationViewModel @Inject constructor(
 //        }
 //    }
     val bottomBarActions = BottomBarActions(
-        onPlayedClicked = { playAllLayers(_tracks.value) },
+        onPlayedClicked = {
+            playAllLayers(_tracks.value)
+            audioEngineTest()
+        },
         onTrackSavedClicked = {},
         onTrackUploadClicked = {},
         onTrackDownloadClicked = {},
