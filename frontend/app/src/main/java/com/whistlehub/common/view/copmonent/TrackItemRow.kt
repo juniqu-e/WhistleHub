@@ -72,7 +72,7 @@ fun TrackItemRow(track: TrackResponse.GetTrackDetailResponse, style: TrackItemSt
                 color = CustomColors().Grey50
             )
             Text(
-                track.artistInfo.nickname,
+                track.artistInfo?.nickname ?: "Unknown Artist",
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = Typography.bodyMedium,
