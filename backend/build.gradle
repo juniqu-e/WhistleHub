@@ -54,19 +54,21 @@ dependencies {
     // mail
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 
+    // LangChain4j
+    implementation 'dev.langchain4j:langchain4j-google-ai-gemini:1.0.0-beta2'
+    implementation 'dev.langchain4j:langchain4j-neo4j:1.0.0-beta2'
 
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'com.mysql:mysql-connector-j'
     annotationProcessor 'org.projectlombok:lombok'
+
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'io.projectreactor:reactor-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-    // LangChain4j
-    implementation 'dev.langchain4j:langchain4j-google-ai-gemini:1.0.0-beta2'
-    implementation 'dev.langchain4j:langchain4j-neo4j:1.0.0-beta2'
 }
 
 tasks.named('test') {

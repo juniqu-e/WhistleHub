@@ -38,6 +38,7 @@ public enum ResponseType {
     NOT_FOUND_MEMBER("NFM", HttpStatus.NOT_FOUND, "찾는 회원이 없습니다."),
     TRACK_NOT_FOUND("TNF", HttpStatus.NOT_FOUND, "요청한 트랙이 없습니다."),
     PLAYLIST_NOT_FOUND("PNF", HttpStatus.NOT_FOUND, "요청한 플레이리스트가 없습니다."),
+    LAYER_NOT_FOUND("LNF", HttpStatus.NOT_FOUND, "요청한 데이터가 없습니다."),
 
     // HTTP Status 409
     ALREADY_VALIDATED_EMAIL("AVE", HttpStatus.CONFLICT, "이미 인증된 이메일입니다."),

@@ -108,7 +108,7 @@ fun PlayListScreen(navController: NavHostController, playlistViewModel: Playlist
                 .fillMaxWidth()
                 .clickable {
                     // 플레이리스트 클릭 시 트랙 목록 받아옴
-                    // TODO("플레이리스트 클릭 시 트랙 목록 받아오기")
+                    playlistViewModel.getPlaylistInfo(playlist.playlistId)
                     playlistViewModel.getPlaylistTrack(playlist.playlistId)
                     navController.navigate(Screen.PlayListTrackList.route)
                 },

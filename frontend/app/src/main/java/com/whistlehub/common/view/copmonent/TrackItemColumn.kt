@@ -51,7 +51,7 @@ fun TrackItemColumn(
             modifier = Modifier
         )
         Text(
-            text = track.artistInfo.nickname,
+            text = track.artistInfo?.nickname ?: "Unknown Artist",
             style = Typography.bodyMedium,
             color = CustomColors().Mint500,
             maxLines = 1,

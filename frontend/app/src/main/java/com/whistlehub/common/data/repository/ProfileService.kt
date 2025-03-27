@@ -58,9 +58,8 @@ class ProfileService @Inject constructor(
         query: String,
         page: Int,
         size: Int,
-        orderby: String
     ): ApiResponse<List<ProfileResponse.SearchProfileResponse>> {
-        return executeApiCall { profileApi.searchProfile(query, page, size, orderby) }
+        return executeApiCall { profileApi.searchProfile(query, page, size) }
     }
     // 멤버의 플레이리스트 조회 (memberId가 생략 된 경우 AccessToken의 memberId 조회)
     suspend fun getMemberPlaylists(

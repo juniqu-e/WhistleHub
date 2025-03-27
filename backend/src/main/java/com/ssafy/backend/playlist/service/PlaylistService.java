@@ -58,31 +58,37 @@ public class PlaylistService {
     public int createPlaylist(String name, String description, MultipartFile image, int[] trackIds) {
         Playlist playlist = new Playlist();
         playlist.setName(name);
-        playlist.setDescription(description);
 
         //멤버 정보 추가
         playlist.setMember(authService.getMember());
 
+        // 설명이 null이 아닐 때만 추가
+        if(description != null && !description.isEmpty()) {
+            playlist.setDescription(description);
+        }
+
         // 이미지 저장 -> S3
-        String imageUrl = s3Service.uploadFile(image, S3Service.IMAGE);
-        playlist.setImageUrl(imageUrl);
+        if(image != null && !image.isEmpty()) {
+            String imageUrl = s3Service.uploadFile(image, S3Service.IMAGE);
+            playlist.setImageUrl(imageUrl);
+        }
 
         int playlistId = playlistRepository.save(playlist).getId();
 
         // 트랙 저장 -> TrackRepository
         try {
-            int order = 1;
-            for (int trackId : trackIds) {
-                PlaylistTrack playlistTrack = new PlaylistTrack();
-                playlistTrack.setPlaylist(playlist);
-                playlistTrack.setTrack(trackRepository.findById(trackId).orElseThrow());
-                playlistTrack.setPlayOrder(order++);
-                playlistTrackRepository.save(playlistTrack);
+            if (trackIds != null && trackIds.length > 0) {
+                int order = 1;
+                for (int trackId : trackIds) {
+                    PlaylistTrack playlistTrack = new PlaylistTrack();
+                    playlistTrack.setPlaylist(playlist);
+                    playlistTrack.setTrack(trackRepository.findById(trackId).orElseThrow());
+                    playlistTrack.setPlayOrder(order++);
+                    playlistTrackRepository.save(playlistTrack);
+                }
             }
         } catch (Exception e) {
             log.warn("플레이리스트 생성 중 오류 발생: {}", e.getMessage());
-            //만들었던 트랙 삭제
-            playlistRepository.deleteById(playlistId);
             throw new NotFoundPlaylistException();
         }
         return playlistId;
@@ -173,7 +179,13 @@ public class PlaylistService {
                     return new NotFoundPlaylistException();
                 }
         );
-        playlist.setImageUrl(requestDto.getImage());
+
+        if(playlist.getImageUrl() == null || playlist.getImageUrl().isEmpty()) {
+            playlist.setImageUrl(s3Service.uploadFile(requestDto.getImage(), S3Service.IMAGE));
+        }else {
+            playlist.setImageUrl(s3Service.updateFile(playlist.getImageUrl(), requestDto.getImage(), S3Service.IMAGE));
+        }
+
         playlistRepository.save(playlist);
     }
 

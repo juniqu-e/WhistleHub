@@ -20,13 +20,14 @@ interface PlaylistApi {
     suspend fun getMemberPlaylists(
         @Query("memberId") memberId: Int,
         @Query("page") page: Int,
-        @Query("size") size: Int
+        @Query("size") size: Int,
+        @Query("orderby") orderby: String
     ): Response<ApiResponse<List<PlaylistResponse.GetMemberPlaylistsResponse>>>
     // 플레이리스트 조회
     @GET("playlist")
     suspend fun getPlaylists(
         @Query("playlistId") playlistId: Int
-    ): Response<ApiResponse<List<PlaylistResponse.GetPlaylistResponse>>>
+    ): Response<ApiResponse<PlaylistResponse.GetPlaylistResponse>>
     // 플레이리스트 생성
     @POST("playlist")
     suspend fun createPlaylist(
