@@ -99,7 +99,7 @@ public class PlaylistController {
 
     // 플레이리스트 사진 업로드
     @PostMapping("/image")
-    public ApiResponse<?> uploadImage(@RequestBody UploadPlaylistImageRequestDto requestDto) {
+    public ApiResponse<?> uploadImage(UploadPlaylistImageRequestDto requestDto) {
         playlistService.uploadImage(requestDto);
         return new ApiResponse.builder<Object>()
                 .payload(null)

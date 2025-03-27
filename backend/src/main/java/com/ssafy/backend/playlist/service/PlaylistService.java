@@ -173,7 +173,13 @@ public class PlaylistService {
                     return new NotFoundPlaylistException();
                 }
         );
-        playlist.setImageUrl(requestDto.getImage());
+
+        if(playlist.getImageUrl() == null || playlist.getImageUrl().isEmpty()) {
+            playlist.setImageUrl(s3Service.uploadFile(requestDto.getImage(), S3Service.IMAGE));
+        }else {
+            playlist.setImageUrl(s3Service.updateFile(playlist.getImageUrl(), requestDto.getImage(), S3Service.IMAGE));
+        }
+
         playlistRepository.save(playlist);
     }
 
