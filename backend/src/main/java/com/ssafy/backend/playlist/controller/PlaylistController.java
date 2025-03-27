@@ -97,14 +97,14 @@ public class PlaylistController {
                 .build();
     }
 
-    // 플레이리스트 사진 업로드
-    @PostMapping("/image")
-    public ApiResponse<?> uploadImage(UploadPlaylistImageRequestDto requestDto) {
-        playlistService.uploadImage(requestDto);
-        return new ApiResponse.builder<Object>()
-                .payload(null)
-                .build();
-    }
+// 플레이리스트 사진 업로드
+@PostMapping(value = "/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+public ApiResponse<?> uploadImage(UploadPlaylistImageRequestDto requestDto) {
+    playlistService.uploadImage(requestDto);
+    return new ApiResponse.builder<Object>()
+            .payload(null)
+            .build();
+}
 
     // 플레이리스트에 트랙 추가
     @PostMapping("/track")
