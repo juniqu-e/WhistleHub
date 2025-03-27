@@ -1,8 +1,7 @@
 package com.ssafy.backend.track.dto.response;
 
+import com.ssafy.backend.member.model.common.MemberInfo;
 import lombok.*;
-
-import java.util.List;
 
 @Getter
 @Setter

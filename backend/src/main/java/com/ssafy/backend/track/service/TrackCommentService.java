@@ -8,7 +8,7 @@ import com.ssafy.backend.mysql.repository.CommentRepository;
 import com.ssafy.backend.mysql.repository.MemberRepository;
 import com.ssafy.backend.mysql.repository.TrackRepository;
 import com.ssafy.backend.track.dto.response.CommentResponseDto;
-import com.ssafy.backend.track.dto.response.MemberInfo;
+import com.ssafy.backend.member.model.common.MemberInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

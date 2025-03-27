@@ -2,6 +2,8 @@ package com.ssafy.backend.mysql.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.Where;
 
 import java.time.Instant;
 
@@ -22,6 +24,7 @@ import java.time.Instant;
 @AllArgsConstructor
 @ToString
 @Table(name = "member")
+@SQLRestriction("enabled = true")
 public class Member extends Common{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
