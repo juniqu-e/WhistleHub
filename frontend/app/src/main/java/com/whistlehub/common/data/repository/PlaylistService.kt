@@ -4,7 +4,6 @@ import com.whistlehub.common.data.remote.api.PlaylistApi
 import com.whistlehub.common.data.remote.dto.request.PlaylistRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
 import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
-import com.whistlehub.common.util.TokenRefresh
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -25,15 +24,14 @@ class PlaylistService @Inject constructor(
     // 특정 멤버의 플레이리스트 목록 조회
     suspend fun getMemberPlaylists(
         memberId: Int,
-        page: Int,
-        size: Int
+        page: Int, size: Int, orderby: String = "ASC"
     ): ApiResponse<List<PlaylistResponse.GetMemberPlaylistsResponse>> {
-        return executeApiCall { playlistApi.getMemberPlaylists(memberId, page, size) }
+        return executeApiCall { playlistApi.getMemberPlaylists(memberId, page, size, orderby) }
     }
     // 플레이리스트 조회
     suspend fun getPlaylists(
         playlistId: Int
-    ): ApiResponse<List<PlaylistResponse.GetPlaylistResponse>> {
+    ): ApiResponse<PlaylistResponse.GetPlaylistResponse> {
         return executeApiCall { playlistApi.getPlaylists(playlistId) }
     }
     // 플레이리스트 생성

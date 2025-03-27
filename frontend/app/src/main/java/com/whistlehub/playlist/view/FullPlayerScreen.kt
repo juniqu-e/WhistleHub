@@ -326,7 +326,7 @@ fun TrackMenu(trackPlayViewModel: TrackPlayViewModel = hiltViewModel(), onReport
             color = CustomColors().Grey200,
             textAlign = TextAlign.Center
         )
-        if (currentTrack?.tags!!.isNotEmpty()) {
+        if (currentTrack?.tags?.isNotEmpty() == true) {
             FlowRow(Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)) {
                 currentTrack?.tags?.forEach { tag ->
