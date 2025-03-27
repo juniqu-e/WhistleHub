@@ -2,6 +2,7 @@ package com.whistlehub.playlist.viewmodel
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.C
@@ -12,10 +13,14 @@ import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.data.repository.TrackService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -29,56 +34,7 @@ class TrackPlayViewModel @Inject constructor(
 ) : ViewModel() {
 
     // 테스트용 트랙 리스트 (최종 API 연결 후 삭제)
-    private val _trackList = MutableStateFlow<List<TrackResponse.GetTrackDetailResponse>>(listOf(
-        TrackResponse.GetTrackDetailResponse(
-            trackId = 1,
-            title = "Sample Track 1",
-            description = "Description 1",
-            duration = 300,
-            imageUrl = "https://picsum.photos/200/300?random=1",
-            artistInfo = TrackResponse.ArtistInfo(1, "Artist 1", "https://picsum.photos/200/300?random=121"),
-            isLike = false,
-            importCount = 10,
-            likeCount = 5,
-            viewCount = 100,
-            createdAt = "2023-01-01",
-            sourceTrack = emptyList(),
-            importTrack = emptyList(),
-            tags = listOf("Pop", "Rock")
-        ),
-        TrackResponse.GetTrackDetailResponse(
-            trackId = 2,
-            title = "Sample Track 2",
-            description = "Description 2",
-            duration = 400,
-            imageUrl = "https://picsum.photos/200/300?random=2",
-            artistInfo = TrackResponse.ArtistInfo(2, "Artist 2", "https://picsum.photos/200/300?random=122"),
-            isLike = true,
-            importCount = 20,
-            likeCount = 10,
-            viewCount = 200,
-            createdAt = "2023-02-01",
-            sourceTrack = emptyList(),
-            importTrack = emptyList(),
-            tags = listOf("Jazz", "Blues")
-        ),
-        TrackResponse.GetTrackDetailResponse(
-            trackId = 3,
-            title = "Sample Track 3",
-            description = "Description 3",
-            duration = 500,
-            imageUrl = "https://picsum.photos/200/300?random=3",
-            artistInfo = TrackResponse.ArtistInfo(3, "Artist 3", "https://picsum.photos/200/300?random=123"),
-            isLike = false,
-            importCount = 30,
-            likeCount = 15,
-            viewCount = 300,
-            createdAt = "2023-03-01",
-            sourceTrack = emptyList(),
-            importTrack = emptyList(),
-            tags = listOf("Classical", "Orchestral")
-        ),
-    ))
+    private val _trackList = MutableStateFlow<List<TrackResponse.GetTrackDetailResponse>>(emptyList())
     val trackList: StateFlow<List<TrackResponse.GetTrackDetailResponse>> get() = _trackList
 
     // 현재 재생 중인 트랙
@@ -106,6 +62,25 @@ class TrackPlayViewModel @Inject constructor(
     val trackDuration: StateFlow<Long> get() = _trackDuration
 
     init {
+        // 트랙 리스트 추가
+        viewModelScope.launch (Dispatchers.IO) {
+            val trackRequests = (1 until 7).map { trackId ->
+                async {
+                    val resopnse = trackService.getTrackDetail(trackId.toString())
+                    Log.d("TrackPlayViewModel", "트랙 ID: $trackId")
+                    Log.d("TrackPlayViewModel", "트랙 응답: $resopnse")
+                    resopnse
+                } // 병렬 요청
+            }
+
+            val trackResults = trackRequests.awaitAll().mapNotNull { it.payload } // 모든 요청 완료 후 리스트 생성
+
+            withContext(Dispatchers.Main) {
+                _trackList.emit(trackResults)
+            }
+            Log.d("TrackPlayViewModel", "트랙 리스트: $trackResults")
+            Log.d("TrackPlayViewModel", "갱신된 리스트: ${_trackList.value}")
+        }
     // ExoPlayer 이벤트 리스너 추가
         exoPlayer.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
