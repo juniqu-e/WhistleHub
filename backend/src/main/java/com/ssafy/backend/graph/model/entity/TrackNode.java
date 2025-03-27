@@ -1,11 +1,7 @@
 package com.ssafy.backend.graph.model.entity;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.springframework.data.neo4j.core.schema.Id;
-import org.springframework.data.neo4j.core.schema.Node;
-import org.springframework.data.neo4j.core.schema.Relationship;
+import lombok.*;
+import org.springframework.data.neo4j.core.schema.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -18,23 +14,20 @@ import java.util.Set;
  * @since 2025-03-12
  */
 
+import org.springframework.data.neo4j.core.schema.Id;
+import org.springframework.data.neo4j.core.schema.Node;
+import org.springframework.data.neo4j.core.schema.GeneratedValue;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+
 @Node("Track")
 @Getter
 @Setter
-//@NoArgsConstructor
+@AllArgsConstructor
+@NoArgsConstructor
 public class TrackNode {
     @Id
-    private int trackId;
-
-    @Relationship(type = "HAS_TAG", direction = Relationship.Direction.OUTGOING)
-    private Set<TagNode> tagNodes = new HashSet<>();
-
-    public TrackNode(int trackId){
-        this.trackId = trackId;
-    }
-
-    public void addTag(TagNode tagNode) {
-        tagNodes.add(tagNode);
-    }
+    private Integer id;
 }
 

@@ -3,9 +3,14 @@ package com.ssafy.backend.graph.model.entity.relationship;
 import com.ssafy.backend.graph.model.entity.TrackNode;
 import com.ssafy.backend.graph.model.entity.type.WeightType;
 import lombok.Getter;
+import org.springframework.data.neo4j.core.schema.Relationship;
 import org.springframework.data.neo4j.core.schema.RelationshipId;
 import org.springframework.data.neo4j.core.schema.RelationshipProperties;
 import org.springframework.data.neo4j.core.schema.TargetNode;
+import org.springframework.data.neo4j.core.schema.Id;
+import org.springframework.data.neo4j.core.schema.GeneratedValue;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
 
 /*
     @RelationshipProperties 어노테이션: 이 클래스가 관계의 속성을 나타냄을 지정
@@ -21,26 +26,22 @@ import org.springframework.data.neo4j.core.schema.TargetNode;
  * @version 1.0
  * @since 2025-03-12
  */
+
+
 @RelationshipProperties
 @Getter
-public class ViewCount {
+@Setter
+public class LikeRelationship {
     @RelationshipId
     private Long id;
 
-    private int viewCount;
+    private Double weight;
 
     @TargetNode
-    private final TrackNode track;
+    private TrackNode trackNode;
 
-    public ViewCount(TrackNode track, int viewCount) {
-        this.track = track;
-        this.viewCount = viewCount;
-    }
-
-    /**
-     * 관계에서 트랙 조회수를 증가시키는 메소드
-     */
-    public void incrementCount(WeightType weightType) {
-        this.viewCount += weightType.getValue();
+    public LikeRelationship(TrackNode trackNode, Double weight) {
+        this.trackNode = trackNode;
+        this.weight = weight;
     }
 }

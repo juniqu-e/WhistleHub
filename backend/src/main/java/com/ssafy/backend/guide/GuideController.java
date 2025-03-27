@@ -99,7 +99,12 @@ public class GuideController {
     }
     @GetMapping("/create/track/{id}")
     public String createTrack(@PathVariable int id) throws Exception {
-        dataCollectingService.createTrack(id, Arrays.asList(1,2, 3, 4));
+        dataCollectingService.createTrack(id, Arrays.asList(1,3,4,7));
+        return "";
+    }
+    @GetMapping("/create/tag/{id}")
+    public String createTag(@PathVariable int id) throws Exception {
+        dataCollectingService.createTag(id);
         return "";
     }
 
@@ -115,10 +120,21 @@ public class GuideController {
         return "";
     }
 
-    @GetMapping("/create/dummy")
-    public String createDummy() throws Exception {
-        generator.gerating();
+    @GetMapping("/sim/{track1}/{track2}")
+    public String createDummy(@PathVariable int track1, @PathVariable int track2) throws Exception {
+        dataCollectingService.createTrackSimilarity(track1, track2);
         return "";
     }
 
+    @GetMapping("/follow/{member1}/{member2}")
+    public String follow(@PathVariable int member1, @PathVariable int member2) throws Exception {
+        dataCollectingService.followMember(member1, member2);
+        return "";
+    }
+
+    @GetMapping("/write/{member}/{track}")
+    public String write(@PathVariable int member, @PathVariable int track) throws Exception {
+        dataCollectingService.writeTrack(member, track);
+        return "";
+    }
 }
