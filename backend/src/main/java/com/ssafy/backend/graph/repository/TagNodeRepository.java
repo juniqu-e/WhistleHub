@@ -4,6 +4,7 @@ import com.ssafy.backend.graph.model.entity.TagNode;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,8 +16,9 @@ import java.util.Optional;
  * @version 1.0
  * @since 2025-03-12
  */
+@Repository
 public interface TagNodeRepository extends Neo4jRepository<TagNode, Integer> {
-    Optional<TagNode> findByTagId(@Param("tagId") int tagId);
+//    Optional<TagNode> findByTagId(@Param("tagId") int tagId);
 
     @Query("MERGE (t:Tag {tagId: $tagId}) RETURN t")
     void upsertTag(int tagId, String name);

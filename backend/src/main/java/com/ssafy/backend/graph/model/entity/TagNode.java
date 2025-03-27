@@ -1,11 +1,12 @@
 package com.ssafy.backend.graph.model.entity;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
-import org.springframework.data.neo4j.core.schema.Property;
+import org.springframework.data.neo4j.core.schema.GeneratedValue;
 
 /**
  * <pre>Tag 노드</pre>
@@ -15,17 +16,15 @@ import org.springframework.data.neo4j.core.schema.Property;
  * @since 2025-03-12
  */
 
+
+
 @Node("Tag")
 @Getter
 @Setter
+@AllArgsConstructor
 @NoArgsConstructor
 public class TagNode {
     @Id
-    private int tagId;
-
-    public TagNode(int tagId) {
-        this.tagId = tagId;
-    }
-
+    private Integer id;
 }
 

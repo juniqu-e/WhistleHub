@@ -20,9 +20,9 @@ import java.util.List;
 public class RecommendationService {
     final private MemberNodeRepository memberNodeRepository;
 
-    public void get3DepthUserNodes(String username){
-        List<MemberNode> userNodes = memberNodeRepository.findUserNetworkByName(username);
-    }
+//    public void get3DepthUserNodes(String username){
+//        List<MemberNode> userNodes = memberNodeRepository.findUserNetworkByName(username);
+//    }
 
 }
 
