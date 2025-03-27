@@ -1,5 +1,6 @@
 package com.ssafy.backend.member.model.request;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,6 +20,8 @@ import org.springframework.web.multipart.MultipartFile;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UploadProfileImageRequestDto {
+    @NotBlank
     private Integer memberId;
+    @NotBlank
     private MultipartFile image;
 }

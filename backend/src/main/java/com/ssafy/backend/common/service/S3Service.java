@@ -53,6 +53,8 @@ public class S3Service {
      * @param file   업로드 할 파일
      * @param folder 업로드할 폴더
      * @return 업로드 경로 문자열
+     *  todo: image, music 파일 크기 제한
+     *  todo: image, music 파일 확장자 제한
      */
     public String uploadFile(MultipartFile file, String folder) {
         String filenameExtension = StringUtils.getFilenameExtension(file.getOriginalFilename());

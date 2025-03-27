@@ -105,11 +105,11 @@ public class MemberService {
     public void updatePassword(UpdatePasswordRequestDto updatePasswordRequestDto) {
         // 비밀번호 변경
         Member member = authService.getMember();
-        String oldPassword = passwordEncoder.encode(updatePasswordRequestDto.getOldPassword());
-        if (!member.getPassword().equals(oldPassword))
+        String oldPassword = updatePasswordRequestDto.getOldPassword();
+        if (!passwordEncoder.matches(oldPassword, member.getPassword()))
             throw new InvalidOldPasswordException();
 
-        // todo: 새로운 비밀번호 입력 검증 로직 추가
+        // todo: 새로운 비밀번호 입력 검증 로직 추가 new, old가 같다거나, new의 형식이 맞지 않거나
 
         String newPassword = passwordEncoder.encode(updatePasswordRequestDto.getNewPassword());
         member.setPassword(newPassword);

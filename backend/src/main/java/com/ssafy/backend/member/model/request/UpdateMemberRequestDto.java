@@ -1,5 +1,6 @@
 package com.ssafy.backend.member.model.request;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,8 +19,9 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
 public class UpdateMemberRequestDto {
+    @NotBlank
     private String nickname;
+    @NotBlank
     private String profileText;
 }
