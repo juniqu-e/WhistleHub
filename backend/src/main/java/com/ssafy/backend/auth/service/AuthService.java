@@ -56,6 +56,7 @@ public class AuthService {
     private final MailProp mailProp;
     private final JWTProp jwtProp;
     private final TagRepository tagRepository;
+
     /**
      * 현재 요청의 jwt 토큰으로 로그인한 회원 정보를 반환합니다.
      *
@@ -66,11 +67,18 @@ public class AuthService {
 
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        return memberRepository.findById(customUserDetails.getMember().getId())
+        Member member = memberRepository.findById(customUserDetails.getMember().getId())
                 .orElseThrow(() -> {
                     log.warn("해당하는 회원이 존재하지 않습니다.");
                     return new NotFoundMemberException();
                 });
+
+        if (!member.getEnabled()) {
+            log.warn("탈퇴한 회원입니다.");
+            throw new NotFoundMemberException();
+        }
+
+        return member;
     }
 
     /**
@@ -101,10 +109,10 @@ public class AuthService {
 
         //todo : 아이디, 비밀번호, 닉네임, 이메일, 생일, 성별 형식 체크
 
-        if(!redisService.hasKey(email + "-validated")) // 이메일 검증이 완료되지 않았다면,
-            throw new EmailNotValidatedException();
-
-        redisService.delete(email + "-validated");
+//        if(!redisService.hasKey(email + "-validated")) // 이메일 검증이 완료되지 않았다면,
+//            throw new EmailNotValidatedException();
+//
+//        redisService.delete(email + "-validated");
 
         // 새 회원 등록
         Member member = Member.builder()
@@ -124,8 +132,8 @@ public class AuthService {
 
 
         // 태그 추가
-        for(Tag tag : tagList) {
-            log.info("(member: {}) 가 (tag : {}, {})를 선호합니다.",member.getId(), tag.getId(), tag.getName());
+        for (Tag tag : tagList) {
+            log.info("(member: {}) 가 (tag : {}, {})를 선호합니다.", member.getId(), tag.getId(), tag.getName());
             // todo : 태그 선호 관계 추가
             // dataCollectingService.viewTag(member.getId(), tag.getId(), WeightType.LIKE);
         }
@@ -303,7 +311,7 @@ public class AuthService {
     public List<TagDto> getTagList() {
         List<Tag> tagList = tagRepository.findAll();
         List<TagDto> tagDtoList = new LinkedList<>();
-        for(Tag tag : tagList) {
+        for (Tag tag : tagList) {
             TagDto tagDto = TagDto.builder()
                     .id(tag.getId())
                     .name(tag.getName())

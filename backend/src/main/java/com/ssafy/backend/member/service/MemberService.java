@@ -2,17 +2,17 @@ package com.ssafy.backend.member.service;
 
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.ApiResponse;
-import com.ssafy.backend.common.error.exception.FileUploadFailedException;
-import com.ssafy.backend.common.error.exception.InvalidOldPasswordException;
-import com.ssafy.backend.common.error.exception.NotFoundMemberException;
-import com.ssafy.backend.common.error.exception.NotPermittedException;
+import com.ssafy.backend.common.error.exception.*;
 import com.ssafy.backend.common.service.S3Service;
 import com.ssafy.backend.member.model.common.MemberInfo;
+import com.ssafy.backend.member.model.request.RequestFollowRequestDto;
 import com.ssafy.backend.member.model.request.UpdateMemberRequestDto;
 import com.ssafy.backend.member.model.request.UpdatePasswordRequestDto;
 import com.ssafy.backend.member.model.request.UploadProfileImageRequestDto;
 import com.ssafy.backend.member.model.response.MemberDetailResponseDto;
+import com.ssafy.backend.mysql.entity.Follow;
 import com.ssafy.backend.mysql.entity.Member;
+import com.ssafy.backend.mysql.repository.FollowRepository;
 import com.ssafy.backend.mysql.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +33,7 @@ public class MemberService {
     private final S3Service s3Service;
     private final AuthService authService;
     private final PasswordEncoder passwordEncoder;
+    private final FollowRepository followRepository;
 
     public MemberDetailResponseDto getMember(Integer memberId) {
         // 회원 정보 조회
@@ -40,7 +41,7 @@ public class MemberService {
         if (memberId == null) {
             member = authService.getMember();
         } else {
-            memberRepository.findById(memberId)
+            member = memberRepository.findById(memberId)
                     .orElseThrow(() -> {
                         log.warn("해당하는 회원이 없습니다. memberId : {}", memberId);
                         return new NotFoundMemberException();
@@ -131,5 +132,40 @@ public class MemberService {
         }
 
         return memberInfoList;
+    }
+
+    public List<MemberInfo> getFollower(Integer memberId){
+           
+    }
+
+
+    public void followMember(RequestFollowRequestDto requestFollowRequestDto) {
+        Member member = authService.getMember();
+        boolean followRequest = requestFollowRequestDto.getFollow();
+
+        Member targetMember = memberRepository.findById(requestFollowRequestDto.getMemberId())
+                .orElseThrow(() -> {
+                    log.warn("해당하는 회원이 없습니다. memberId : {}", requestFollowRequestDto.getMemberId());
+                    return new NotFoundMemberException();
+                });
+
+        if(followRequest){ // 팔로우 신청 요청인경우,
+            if(followRepository.findByFromMemberIdAndToMemberId(member.getId(), targetMember.getId()).isPresent()){
+                log.warn("이미 팔로우 신청한 회원입니다. memberId : {}", requestFollowRequestDto.getMemberId());
+                throw new DuplicateFollowRequestException();
+            }
+            Follow follow = new Follow();
+            follow.setFromMember(member);
+            follow.setToMember(targetMember);
+
+            followRepository.save(follow);
+        }else{ // 팔로우 취소 요청인 경우,
+            if(followRepository.findByFromMemberIdAndToMemberId(member.getId(), targetMember.getId()).isEmpty()){
+                log.warn("팔로우 신청하지 않은 회원입니다. memberId : {}", requestFollowRequestDto.getMemberId());
+                throw new DuplicateFollowRequestException();
+            }
+
+            followRepository.deleteByFromMemberIdAndToMemberId(member.getId(), targetMember.getId());
+        }
     }
 }

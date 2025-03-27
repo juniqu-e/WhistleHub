@@ -15,13 +15,11 @@ public enum ResponseType {
     INVALID_OLD_PASSWORD("IOP", HttpStatus.BAD_REQUEST, "기존 비밀번호가 올바르지 않습니다."),
     INVALID_NEW_PASSWORD("INP", HttpStatus.BAD_REQUEST, "새로운 비밀번호의 형식이 맞지 않습니다."),
     UNREADABLE_FILE("URF", HttpStatus.BAD_REQUEST, "파일을 읽을 수 없습니다."),
-    NOT_FOLLOWING("NF", HttpStatus.BAD_REQUEST, "팔로우 취소를 요청했으나, 기존에 팔로우 관계가 아닙니다."),
-    ALREADY_FOLLOWING("AF", HttpStatus.CONFLICT, "팔로우 추가를 요청했으나, 이미 팔로우 관계입니다."),
+    DUPLICATE_FOLLOW_REQUEST("DFR", HttpStatus.BAD_REQUEST, "팔로우 취소를 요청했으나, 기존에 팔로우 관계가 아닙니다."),
     INVALID_ORDER("IO", HttpStatus.BAD_REQUEST, "order 옵션이 잘못되었습니다."),
 
     // 필수 값 누락
     PARAMETER_REQUIRED("PR", HttpStatus.BAD_REQUEST, "필수 값이 누락되었습니다."),
-
     PLAYLIST_TITLE_REQUIRED("PTR", HttpStatus.BAD_REQUEST, "플레이리스트 제목이 없습니다."),
 
     // HTTP Status 401
@@ -38,7 +36,6 @@ public enum ResponseType {
     // HTTP Status 404
     NOT_FOUND("NF", HttpStatus.NOT_FOUND, "해당 리소스를 찾을 수 없습니다."),
     NOT_FOUND_MEMBER("NFM", HttpStatus.NOT_FOUND, "찾는 회원이 없습니다."),
-    FOLLOWER_NOT_FOUND("FNF", HttpStatus.NOT_FOUND, "찾는 팔로워가 없습니다."),
     TRACK_NOT_FOUND("TNF", HttpStatus.NOT_FOUND, "요청한 트랙이 없습니다."),
     PLAYLIST_NOT_FOUND("PNF", HttpStatus.NOT_FOUND, "요청한 플레이리스트가 없습니다."),
 

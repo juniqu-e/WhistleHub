@@ -8,6 +8,7 @@ import com.ssafy.backend.member.model.request.UploadProfileImageRequestDto;
 import com.ssafy.backend.member.model.response.MemberDetailResponseDto;
 import com.ssafy.backend.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ import java.util.List;
 @RequestMapping("/api/member")
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 public class MemberController {
     private final MemberService memberService;
     /**
@@ -25,7 +27,7 @@ public class MemberController {
      * @param memberId 회원 아이디 없는 경우, 자기 자신의 정보 조회
      * @return 회원의 정보
      */
-    @GetMapping("/")
+    @GetMapping()
     public ApiResponse<?> getMember(@RequestParam(value = "memberId", required = false) Integer memberId) {
         MemberDetailResponseDto result = memberService.getMember(memberId);
 
@@ -39,8 +41,8 @@ public class MemberController {
      *
      * @param updateMemberRequestDto nickname, profileText 수정할 정보
      */
-    @PutMapping("/")
-    public ApiResponse<?> updateMember(UpdateMemberRequestDto updateMemberRequestDto) {
+    @PutMapping()
+    public ApiResponse<?> updateMember(@RequestBody UpdateMemberRequestDto updateMemberRequestDto) {
         memberService.updateMember(updateMemberRequestDto);
 
         return new ApiResponse.builder<Object>()
@@ -52,7 +54,7 @@ public class MemberController {
      *  회원 탈퇴
      *
      */
-    @DeleteMapping("/")
+    @DeleteMapping()
     public ApiResponse<?> deleteMember() {
         memberService.deleteMember();
 
@@ -81,7 +83,8 @@ public class MemberController {
      * @return 비밀번호 변경 결과
      */
     @PutMapping("/password")
-    public ApiResponse<?> updatePassword(UpdatePasswordRequestDto updatePasswordRequestDto) {
+    public ApiResponse<?> updatePassword(@RequestBody UpdatePasswordRequestDto updatePasswordRequestDto) {
+        log.debug("updatePasswordRequestDto: {}", updatePasswordRequestDto);
         memberService.updatePassword(updatePasswordRequestDto);
 
         return new ApiResponse.builder<Object>()
