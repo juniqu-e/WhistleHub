@@ -29,7 +29,7 @@ public class MemberController {
      * @return 회원의 정보
      */
     @GetMapping()
-    public ApiResponse<?> getMember(@RequestParam(value = "memberId", required = false) Integer memberId) {
+    public ApiResponse<?> getMember(@RequestParam(value = "memberId") Integer memberId) {
         MemberDetailResponseDto result = memberService.getMember(memberId);
 
         return new ApiResponse.builder<MemberDetailResponseDto>()
@@ -103,8 +103,8 @@ public class MemberController {
      */
     @GetMapping("/search")
     public ApiResponse<?> searchMember(@RequestParam(value = "query") String query,
-                                       @RequestParam(value = "page") Integer page,
-                                       @RequestParam(value = "size") Integer size) {
+                                       @RequestParam(value = "page", defaultValue = "0") Integer page,
+                                       @RequestParam(value = "size", defaultValue = "10") Integer size) {
         List<MemberInfo> result = memberService.searchMember(query, PageRequest.of(page,size, Sort.by(Sort.Order.asc("nickname"))));
         
         return new ApiResponse.builder<List<MemberInfo>>()
@@ -134,7 +134,7 @@ public class MemberController {
      * @return 팔로워 목록
      */
     @GetMapping("/follower")
-    public ApiResponse<?> getFollower(@RequestParam(value = "memberId", required = false) Integer memberId,
+    public ApiResponse<?> getFollower(@RequestParam(value = "memberId") Integer memberId,
                                       @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
                                       @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
         List<MemberInfo> result = memberService.getFollower(memberId, PageRequest.of(page, size));
@@ -151,9 +151,10 @@ public class MemberController {
      * @return 팔로잉 목록
      */
     @GetMapping("/following")
-    public ApiResponse<?> getFollowing(@RequestParam(value = "memberId", required = false) Integer memberId,
-                                       @RequestParam(value = "page", required = false, defaultValue = "0") Integer page) {
-        List<MemberInfo> result = memberService.getFollowing(memberId, PageRequest.of(page, 10));
+    public ApiResponse<?> getFollowing(@RequestParam(value = "memberId") Integer memberId,
+                                       @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
+                                       @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
+        List<MemberInfo> result = memberService.getFollowing(memberId, PageRequest.of(page, size));
         return new ApiResponse.builder<List<MemberInfo>>()
                 .payload(result)
                 .build();

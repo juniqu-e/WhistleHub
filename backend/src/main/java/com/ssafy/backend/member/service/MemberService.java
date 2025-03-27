@@ -37,16 +37,12 @@ public class MemberService {
 
     public MemberDetailResponseDto getMember(Integer memberId) {
         // 회원 정보 조회
-        Member member = null;
-        if (memberId == null) {
-            member = authService.getMember();
-        } else {
-            member = memberRepository.findById(memberId)
+        Member member = memberRepository.findById(memberId)
                     .orElseThrow(() -> {
                         log.warn("해당하는 회원이 없습니다. memberId : {}", memberId);
                         return new NotFoundMemberException();
                     });
-        }
+
 
         return MemberDetailResponseDto.builder()
                 .nickname(member.getNickname())
@@ -165,16 +161,12 @@ public class MemberService {
 
     public List<MemberInfo> getFollowing(Integer memberId, PageRequest pageRequest) {
         // 회원의 팔로잉 목록 가져오기
-        Member member = null;
-        if (memberId == null) {
-            member = authService.getMember();
-        } else {
-            member = memberRepository.findById(memberId)
+        Member member =  memberRepository.findById(memberId)
                     .orElseThrow(() -> {
                         log.warn("해당하는 회원이 없습니다. memberId : {}", memberId);
                         return new NotFoundMemberException();
                     });
-        }
+
 
         List<Follow> followingList = followRepository.findByFromMemberId(member.getId(), pageRequest);
         List<MemberInfo> followingInfoList = new LinkedList<>();
