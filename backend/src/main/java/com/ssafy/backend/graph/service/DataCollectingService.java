@@ -28,10 +28,10 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class DataCollectingService {
+    private final NodeService nodeService;
+    private final RelationshipService relationshipService;
     private final TrackNodeRepository trackNodeRepository;
     private final MemberNodeRepository memberNodeRepository;
-    private final TagNodeRepository tagNodeRepository;
-    private final RelationshipRepository relationshipRepository;
 
     /**
      * 회원가입 시 작성, 멤버 노드 생성
@@ -40,8 +40,7 @@ public class DataCollectingService {
      */
     @Transactional
     public void createMember(Integer memberId) {
-        MemberNode memberNode = new MemberNode(memberId);
-        memberNodeRepository.save(memberNode);
+        nodeService.createMemberNode(memberId);
     }
 
     /**
@@ -51,8 +50,7 @@ public class DataCollectingService {
      */
     @Transactional
     public void createTag(Integer tagId) {
-        TagNode tagNode = new TagNode(tagId);
-        tagNodeRepository.save(tagNode);
+        nodeService.createTagNode(tagId);
     }
 
     /**
@@ -65,12 +63,12 @@ public class DataCollectingService {
     @Transactional
     public void createTrack(Integer trackId, List<Integer> tagIds) {
         // 트랙 노드 생성
-        TrackNode trackNode = new TrackNode(trackId);
-        trackNodeRepository.save(trackNode);
+        nodeService.createTrackNode(trackId);
         System.out.println("트랙 생성");
+
         // 태그와의 관계 생성
         for (Integer tagId : tagIds) {
-            relationshipRepository.createHaveRelationship(trackId, tagId);
+            relationshipService.createHaveRelationship(trackId, tagId);
         }
     }
 
@@ -84,26 +82,18 @@ public class DataCollectingService {
     @Transactional
     public void viewTrack(Integer memberId, Integer trackId, WeightType weightType) {
         // 회원과 트랙 존재 확인
-        if (!memberNodeRepository.existsById(memberId)) {
-            log.warn("Member with id {} not found", memberId);
-            throw new EntityNotFoundException("Member not found");
-        }
-
-        if (!trackNodeRepository.existsById(trackId)) {
-            log.warn("Track with id {} not found", trackId);
-            throw new EntityNotFoundException("Track not found");
-        }
+        validateMemberAndTrack(memberId, trackId);
 
         // 가중치 타입에 따라 처리
         double weight = weightType.getValue();
 
         // LIKE 관계 생성 또는 가중치 증가
-        memberNodeRepository.createOrIncreaseLikeRelationship(memberId, trackId, weight);
+        relationshipService.createOrIncreaseLikeRelationship(memberId, trackId, weight);
 
         // 트랙에 연결된 모든 태그 노드에 대해 PREFER 관계 생성 또는 가중치 증가
         List<Integer> tagIds = trackNodeRepository.findTagIdsByTrackId(trackId);
         for (Integer tagId : tagIds) {
-            memberNodeRepository.createOrIncreasePreferRelationship(memberId, tagId, weight);
+            relationshipService.createOrIncreasePreferRelationship(memberId, tagId, weight);
         }
     }
 
@@ -117,26 +107,18 @@ public class DataCollectingService {
     @Transactional
     public void likeTrack(Integer memberId, Integer trackId, WeightType weightType) {
         // 회원과 트랙 존재 확인
-        if (!memberNodeRepository.existsById(memberId)) {
-            log.warn("Member with id {} not found", memberId);
-            throw new EntityNotFoundException("Member not found");
-        }
-
-        if (!trackNodeRepository.existsById(trackId)) {
-            log.warn("Track with id {} not found", trackId);
-            throw new EntityNotFoundException("Track not found");
-        }
+        validateMemberAndTrack(memberId, trackId);
 
         // 가중치 타입에 따라 처리
         double weight = weightType.getValue();
 
         // LIKE 관계 생성 또는 가중치 증가
-        memberNodeRepository.createOrIncreaseLikeRelationship(memberId, trackId, weight);
+        relationshipService.createOrIncreaseLikeRelationship(memberId, trackId, weight);
 
         // 트랙에 연결된 모든 태그 노드에 대해 PREFER 관계 생성 또는 가중치 증가
         List<Integer> tagIds = trackNodeRepository.findTagIdsByTrackId(trackId);
         for (Integer tagId : tagIds) {
-            memberNodeRepository.createOrIncreasePreferRelationship(memberId, tagId, weight);
+            relationshipService.createOrIncreasePreferRelationship(memberId, tagId, weight);
         }
     }
 
@@ -160,7 +142,7 @@ public class DataCollectingService {
         }
 
         // FOLLOW 관계 생성
-        memberNodeRepository.createFollowRelationship(followerId, followingId);
+        relationshipService.createFollowRelationship(followerId, followingId);
     }
 
     /**
@@ -172,18 +154,11 @@ public class DataCollectingService {
     @Transactional
     public void createTrackSimilarity(Integer trackId1, Integer trackId2) {
         // 트랙 존재 확인
-        if (!trackNodeRepository.existsById(trackId1)) {
-            log.warn("Track with id {} not found", trackId1);
-            throw new EntityNotFoundException("Track1 not found");
-        }
-
-        if (!trackNodeRepository.existsById(trackId2)) {
-            log.warn("Track with id {} not found", trackId2);
-            throw new EntityNotFoundException("Track2 not found");
-        }
+        validateTrack(trackId1, "Track1");
+        validateTrack(trackId2, "Track2");
 
         // SIMILAR 관계 생성
-        relationshipRepository.createSimilarRelationship(trackId1, trackId2);
+        relationshipService.createSimilarRelationship(trackId1, trackId2);
     }
 
     /**
@@ -195,17 +170,31 @@ public class DataCollectingService {
     @Transactional
     public void writeTrack(Integer memberId, Integer trackId) {
         // 회원과 트랙 존재 확인
+        validateMemberAndTrack(memberId, trackId);
+
+        // WRITE 관계 생성
+        relationshipService.createWriteRelationship(memberId, trackId);
+    }
+
+    /**
+     * 회원과 트랙의 존재 여부를 검증하는 헬퍼 메서드
+     */
+    private void validateMemberAndTrack(Integer memberId, Integer trackId) {
         if (!memberNodeRepository.existsById(memberId)) {
             log.warn("Member with id {} not found", memberId);
             throw new EntityNotFoundException("Member not found");
         }
 
+        validateTrack(trackId, "Track");
+    }
+
+    /**
+     * 트랙의 존재 여부를 검증하는 헬퍼 메서드
+     */
+    private void validateTrack(Integer trackId, String trackName) {
         if (!trackNodeRepository.existsById(trackId)) {
             log.warn("Track with id {} not found", trackId);
-            throw new EntityNotFoundException("Track not found");
+            throw new EntityNotFoundException(trackName + " not found");
         }
-
-        // WRITE 관계 생성
-        relationshipRepository.createWriteRelationship(memberId, trackId);
     }
 }

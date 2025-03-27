@@ -99,7 +99,7 @@ public class GuideController {
     }
     @GetMapping("/create/track/{id}")
     public String createTrack(@PathVariable int id) throws Exception {
-        dataCollectingService.createTrack(id, Arrays.asList(1,3,4,7));
+        dataCollectingService.createTrack(id, Arrays.asList(8,6));
         return "";
     }
     @GetMapping("/create/tag/{id}")
