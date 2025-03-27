@@ -134,8 +134,62 @@ public class MemberService {
         return memberInfoList;
     }
 
-    public List<MemberInfo> getFollower(Integer memberId){
-           
+    public List<MemberInfo> getFollower(Integer memberId, PageRequest pageRequest) {
+        // 회원의 팔로워 목록 가져오기
+        Member member = null;
+        if (memberId == null) {
+            member = authService.getMember();
+        } else {
+            member = memberRepository.findById(memberId)
+                    .orElseThrow(() -> {
+                        log.warn("해당하는 회원이 없습니다. memberId : {}", memberId);
+                        return new NotFoundMemberException();
+                    });
+        }
+
+        List<Follow> followerList = followRepository.findByToMemberId(member.getId(), pageRequest);
+        List<MemberInfo> followerInfoList = new LinkedList<>();
+        for (Follow follower : followerList) {
+            Member followerMember = follower.getFromMember();
+            MemberInfo memberInfo = MemberInfo.builder()
+                    .memberId(followerMember.getId())
+                    .nickname(followerMember.getNickname())
+                    .profileImg(followerMember.getProfileImage())
+                    .build();
+
+            followerInfoList.add(memberInfo);
+        }
+
+        return followerInfoList;
+    }
+
+    public List<MemberInfo> getFollowing(Integer memberId, PageRequest pageRequest) {
+        // 회원의 팔로잉 목록 가져오기
+        Member member = null;
+        if (memberId == null) {
+            member = authService.getMember();
+        } else {
+            member = memberRepository.findById(memberId)
+                    .orElseThrow(() -> {
+                        log.warn("해당하는 회원이 없습니다. memberId : {}", memberId);
+                        return new NotFoundMemberException();
+                    });
+        }
+
+        List<Follow> followingList = followRepository.findByFromMemberId(member.getId(), pageRequest);
+        List<MemberInfo> followingInfoList = new LinkedList<>();
+        for (Follow following : followingList) {
+            Member followingMember = following.getToMember();
+            MemberInfo memberInfo = MemberInfo.builder()
+                    .memberId(followingMember.getId())
+                    .nickname(followingMember.getNickname())
+                    .profileImg(followingMember.getProfileImage())
+                    .build();
+
+            followingInfoList.add(memberInfo);
+        }
+
+        return followingInfoList;
     }
 
 

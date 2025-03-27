@@ -2,6 +2,7 @@ package com.ssafy.backend.member.controller;
 
 import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.member.model.common.MemberInfo;
+import com.ssafy.backend.member.model.request.RequestFollowRequestDto;
 import com.ssafy.backend.member.model.request.UpdateMemberRequestDto;
 import com.ssafy.backend.member.model.request.UpdatePasswordRequestDto;
 import com.ssafy.backend.member.model.request.UploadProfileImageRequestDto;
@@ -31,7 +32,7 @@ public class MemberController {
     public ApiResponse<?> getMember(@RequestParam(value = "memberId", required = false) Integer memberId) {
         MemberDetailResponseDto result = memberService.getMember(memberId);
 
-        return new ApiResponse.builder<Object>()
+        return new ApiResponse.builder<MemberDetailResponseDto>()
                 .payload(result)
                 .build();
     }
@@ -72,7 +73,7 @@ public class MemberController {
     public ApiResponse<?> uploadImage(UploadProfileImageRequestDto uploadProfileImageRequestDto) {
         String result = memberService.uploadImage(uploadProfileImageRequestDto);
 
-        return new ApiResponse.builder<Object>()
+        return new ApiResponse.builder<String>()
                 .payload(result)
                 .build();
     }
@@ -106,7 +107,7 @@ public class MemberController {
                                        @RequestParam(value = "size") Integer size) {
         List<MemberInfo> result = memberService.searchMember(query, PageRequest.of(page,size, Sort.by(Sort.Order.asc("nickname"))));
         
-        return new ApiResponse.builder<Object>()
+        return new ApiResponse.builder<List<MemberInfo>>()
                 .payload(result)
                 .build();
     }
@@ -114,12 +115,12 @@ public class MemberController {
     /**
      * todo: 회원 팔로우
      *
-     * @param memberId,follow 팔로우할 상대와, 팔로우할지 여부
+     * @param requestFollowRequestDto memberId,follow 팔로우할 상대와, 팔로우할지 여부
      * @return
      */
     @PostMapping("/follow")
-    public ApiResponse<?> followMember() {
-
+    public ApiResponse<?> followMember(@RequestBody RequestFollowRequestDto requestFollowRequestDto) {
+        memberService.followMember(requestFollowRequestDto);
         return new ApiResponse.builder<Object>()
                 .payload(null)
                 .build();
@@ -134,10 +135,11 @@ public class MemberController {
      */
     @GetMapping("/follower")
     public ApiResponse<?> getFollower(@RequestParam(value = "memberId", required = false) Integer memberId,
-                                      @RequestParam(value = "page", required = false, defaultValue = "0") Integer page) {
-
-        return new ApiResponse.builder<Object>()
-                .payload(null)
+                                      @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
+                                      @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
+        List<MemberInfo> result = memberService.getFollower(memberId, PageRequest.of(page, size));
+        return new ApiResponse.builder<List<MemberInfo>>()
+                .payload(result)
                 .build();
     }
 
@@ -151,9 +153,9 @@ public class MemberController {
     @GetMapping("/following")
     public ApiResponse<?> getFollowing(@RequestParam(value = "memberId", required = false) Integer memberId,
                                        @RequestParam(value = "page", required = false, defaultValue = "0") Integer page) {
-
-        return new ApiResponse.builder<Object>()
-                .payload(null)
+        List<MemberInfo> result = memberService.getFollowing(memberId, PageRequest.of(page, 10));
+        return new ApiResponse.builder<List<MemberInfo>>()
+                .payload(result)
                 .build();
     }
 }

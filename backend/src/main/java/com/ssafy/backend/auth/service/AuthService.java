@@ -109,10 +109,10 @@ public class AuthService {
 
         //todo : 아이디, 비밀번호, 닉네임, 이메일, 생일, 성별 형식 체크
 
-//        if(!redisService.hasKey(email + "-validated")) // 이메일 검증이 완료되지 않았다면,
-//            throw new EmailNotValidatedException();
-//
-//        redisService.delete(email + "-validated");
+        if(!redisService.hasKey(email + "-validated")) // 이메일 검증이 완료되지 않았다면,
+            throw new EmailNotValidatedException();
+
+        redisService.delete(email + "-validated");
 
         // 새 회원 등록
         Member member = Member.builder()

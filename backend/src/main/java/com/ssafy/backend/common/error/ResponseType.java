@@ -15,7 +15,7 @@ public enum ResponseType {
     INVALID_OLD_PASSWORD("IOP", HttpStatus.BAD_REQUEST, "기존 비밀번호가 올바르지 않습니다."),
     INVALID_NEW_PASSWORD("INP", HttpStatus.BAD_REQUEST, "새로운 비밀번호의 형식이 맞지 않습니다."),
     UNREADABLE_FILE("URF", HttpStatus.BAD_REQUEST, "파일을 읽을 수 없습니다."),
-    DUPLICATE_FOLLOW_REQUEST("DFR", HttpStatus.BAD_REQUEST, "팔로우 취소를 요청했으나, 기존에 팔로우 관계가 아닙니다."),
+    DUPLICATE_FOLLOW_REQUEST("DFR", HttpStatus.BAD_REQUEST, "중복된 팔로우 요청입니다."),
     INVALID_ORDER("IO", HttpStatus.BAD_REQUEST, "order 옵션이 잘못되었습니다."),
 
     // 필수 값 누락
