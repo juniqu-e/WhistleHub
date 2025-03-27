@@ -256,13 +256,13 @@ public class AuthService {
      * @param validateEmailRequestDto 이메일, 코드
      */
     public void validateEmail(ValidateEmailRequestDto validateEmailRequestDto) {
+        if (redisService.hasKey(validateEmailRequestDto.getEmail() + "-validated"))
+            throw new AlreadyValidatedEmailException();
+
         // code가 없으면 인증 실패 (만료되거나, 이메일이 잘못된 경우)
         Object codeObject = redisService.get(validateEmailRequestDto.getEmail());
         if (codeObject == null)
             throw new InvalidEmailAuthException();
-
-        if (redisService.hasKey(validateEmailRequestDto.getEmail() + "-validated"))
-            throw new AlreadyValidatedEmailException();
 
         // code가 일치하지 않으면 인증 실패
         String code = (String) codeObject;
