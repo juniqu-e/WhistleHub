@@ -1,7 +1,9 @@
 package com.whistlehub.playlist.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.whistlehub.common.data.local.room.UserRepository
 import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
 import com.whistlehub.common.data.repository.PlaylistService
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,7 +15,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PlaylistViewModel @Inject constructor(
-    val playlistService: PlaylistService
+    val playlistService: PlaylistService,
+    val userRepository: UserRepository
 ) : ViewModel() {
     private val _playlists = MutableStateFlow<List<PlaylistResponse.GetMemberPlaylistsResponse>>(emptyList())
     val playlists: MutableStateFlow<List<PlaylistResponse.GetMemberPlaylistsResponse>> get() = _playlists
@@ -27,7 +30,13 @@ class PlaylistViewModel @Inject constructor(
 
     fun getPlaylists() {
         viewModelScope.launch(Dispatchers.IO) {
-            val playlistResponse = playlistService.getMemberPlaylists(1, 1, 1) // 모든 요청 완료 후 리스트 생성
+            val user = userRepository.getUser() // 사용자 정보 가져오기
+
+            // 사용자 정보가 없을 경우 기본값으로 1(테스트계정 ID) 사용
+            if (user == null) {
+                Log.d("warning", "User not found, using default ID 1")
+            }
+            val playlistResponse = playlistService.getMemberPlaylists(user?.memberId ?: 1, 1, 10)
 
             withContext(Dispatchers.Main) {
                 _playlists.emit(playlistResponse.payload ?: emptyList())

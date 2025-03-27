@@ -1,5 +1,6 @@
 package com.whistlehub.playlist.di
 
+import com.whistlehub.common.data.local.room.UserRepository
 import com.whistlehub.common.data.repository.PlaylistService
 import com.whistlehub.playlist.viewmodel.PlaylistViewModel
 import dagger.Module
@@ -13,7 +14,10 @@ import javax.inject.Singleton
 object PlaylistModule {
     @Provides
     @Singleton
-    fun providePlaylistViewModel(playlistService: PlaylistService): PlaylistViewModel {
-        return PlaylistViewModel(playlistService)
+    fun providePlaylistViewModel(
+        playlistService: PlaylistService,
+        userRepository: UserRepository
+    ): PlaylistViewModel {
+        return PlaylistViewModel(playlistService, userRepository)
     }
 }
