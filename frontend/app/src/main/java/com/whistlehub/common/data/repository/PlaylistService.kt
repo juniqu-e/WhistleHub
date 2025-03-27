@@ -24,7 +24,9 @@ class PlaylistService @Inject constructor(
     // 특정 멤버의 플레이리스트 목록 조회
     suspend fun getMemberPlaylists(
         memberId: Int,
-        page: Int, size: Int, orderby: String = "ASC"
+        page: Int,
+        size: Int,
+        orderby: String = "ASC"
     ): ApiResponse<List<PlaylistResponse.GetMemberPlaylistsResponse>> {
         return executeApiCall { playlistApi.getMemberPlaylists(memberId, page, size, orderby) }
     }

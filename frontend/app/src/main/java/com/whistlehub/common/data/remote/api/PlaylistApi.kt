@@ -19,7 +19,9 @@ interface PlaylistApi {
     @GET("playlist/member")
     suspend fun getMemberPlaylists(
         @Query("memberId") memberId: Int,
-        @Query("page") page: Int, @Query("size") size: Int, @Query("orderby") orderby: String
+        @Query("page") page: Int,
+        @Query("size") size: Int,
+        @Query("orderby") orderby: String
     ): Response<ApiResponse<List<PlaylistResponse.GetMemberPlaylistsResponse>>>
     // 플레이리스트 조회
     @GET("playlist")

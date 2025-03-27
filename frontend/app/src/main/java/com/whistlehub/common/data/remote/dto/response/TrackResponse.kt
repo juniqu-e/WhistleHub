@@ -9,14 +9,16 @@ sealed class TrackResponse {
         val title: String,
         val description: String,
         val duration: Int,
-        val imageUrl: String, val artistInfo: ArtistInfo?,
+        val imageUrl: String,
+        val artistInfo: ArtistInfo?,
         val isLike: Boolean,
         val importCount: Int,
         val likeCount: Int,
         val viewCount: Int,
         val createdAt: String,
         val sourceTrack: List<TrackSummary>,
-        val importTrack: List<TrackSummary>, val tags: List<TagInfo>?
+        val importTrack: List<TrackSummary>,
+        val tags: List<TagInfo>?
     )
     // 작곡가 정보
     data class ArtistInfo(
@@ -27,7 +29,8 @@ sealed class TrackResponse {
 
     // 태그 정보
     data class TagInfo(
-        val tagId: Int, val name: String
+        val tagId: Int,
+        val name: String
     )
     // 소스 트랙 요약 정보
     data class TrackSummary(
