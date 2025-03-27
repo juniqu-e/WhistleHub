@@ -100,7 +100,11 @@ fun LabeledInputField(
         // 에러 메시지 영역
         Box(modifier = Modifier.height(30.dp)) {
             if (!errorMessage.isNullOrEmpty()) {
-                val displayColor = if (errorMessage.contains("사용 가능한")) Color.Green
+                val displayColor = if (
+                    errorMessage.contains("사용 가능한") ||
+                    errorMessage.contains("인증 성공") ||
+                    errorMessage.contains("인증 코드가 전송되었습니다.")
+                ) Color.Green
                                     else MaterialTheme.colorScheme.error
 
                 Text(

@@ -66,7 +66,7 @@ fun BottomNavigationBar(navController: NavHostController) {
                         Text(
                             screen.title,
                             color = if (index == selectedNavigationIndex.intValue)
-                                Color.Black
+                                Color.White
                             else Color.Gray
                         )
                     }

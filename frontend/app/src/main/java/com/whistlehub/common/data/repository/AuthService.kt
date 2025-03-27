@@ -18,7 +18,6 @@ import javax.inject.Singleton
 @Singleton
 class AuthService @Inject constructor(
     private val authApi: AuthApi,
-    private val tokenRefresh: TokenRefresh? = null
 ) : ApiRepository() {
     // 회원 가입
     suspend fun register(

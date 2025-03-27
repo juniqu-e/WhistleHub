@@ -117,6 +117,19 @@ public class ControllerExceptionHandler {
                 .build();
     }
 
+    @ExceptionHandler(TrackNotFoundException.class)
+    public ApiResponse<?> trackNotFoundHandler(TrackNotFoundException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.TRACK_NOT_FOUND)
+                .build();
+    }
+    @ExceptionHandler(NotFoundLayerException.class)
+    public ApiResponse<?> layerNotFoundHandler(NotFoundLayerException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.LAYER_NOT_FOUND)
+                .build();
+    }
+
     @ExceptionHandler(EmailSendFailedException.class)
     public ApiResponse<?> emailSendFailedHandler(EmailSendFailedException e) {
         return new ApiResponse.builder<Object>()

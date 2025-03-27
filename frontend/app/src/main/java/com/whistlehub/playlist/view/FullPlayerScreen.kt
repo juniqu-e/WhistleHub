@@ -222,12 +222,12 @@ fun TrackInfomation(modifier: Modifier = Modifier, trackPlayViewModel: TrackPlay
             color = CustomColors().Grey200,
             textAlign = TextAlign.Center
         )
-        if (currentTrack?.tags != null) {
+        if (currentTrack?.tags?.isNotEmpty() == true) {
             FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)) {
                 currentTrack?.tags?.forEach { tag ->
                     Button({}) {
                         Text(
-                            text = tag,
+                            text = tag.name,
                             style = Typography.bodyLarge,
                             color = CustomColors().Grey950,
                             textAlign = TextAlign.Center
@@ -326,13 +326,13 @@ fun TrackMenu(trackPlayViewModel: TrackPlayViewModel = hiltViewModel(), onReport
             color = CustomColors().Grey200,
             textAlign = TextAlign.Center
         )
-        if (currentTrack?.tags != null) {
+        if (currentTrack?.tags?.isNotEmpty() == true) {
             FlowRow(Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)) {
                 currentTrack?.tags?.forEach { tag ->
                     Button({}) {
                         Text(
-                            text = tag,
+                            text = tag.name,
                             style = Typography.bodySmall,
                             color = CustomColors().Grey950,
                             textAlign = TextAlign.Center

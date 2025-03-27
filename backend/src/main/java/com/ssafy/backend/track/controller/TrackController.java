@@ -148,4 +148,14 @@ public class TrackController {
                 .payload(null)
                 .build();
     }
+
+    @GetMapping("/track")
+    public ApiResponse<?> getSearchTrack(String keyword,
+                                   int page,
+                                   int size,
+                                   @RequestParam("order-by") String orderBy) {
+        return new ApiResponse.builder<Object>()
+                .payload(trackService.searchTrack(keyword, page, size, orderBy))
+                .build();
+    }
 }

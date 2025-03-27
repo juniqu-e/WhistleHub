@@ -17,9 +17,6 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private external fun startAudioEngine(): Int
-    private external fun stopAudioEngine(): Int
-
     companion object {
         init {
             System.loadLibrary("whistlehub")
@@ -40,36 +37,9 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
-        val result = startAudioEngine()
-        if (result == 0) {
-            Log.d("MainActivity", "Audio engine started successfully")
-        } else {
-            Log.e("MainActivity", "Audio engine failed to start")
-        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        stopAudioEngine()
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    val pretendard = Pretendard()
-
-    pretendard.TitleLarge(
-        text = "휘슬허브",
-        modifier = Modifier
-    )
-
-
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    WhistleHubTheme {
-        Greeting("Android")
     }
 }
