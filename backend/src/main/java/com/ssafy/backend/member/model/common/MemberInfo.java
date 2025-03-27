@@ -1,4 +1,4 @@
-package com.ssafy.backend.track.dto.response;
+package com.ssafy.backend.member.model.common;
 
 import lombok.*;
 

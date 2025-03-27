@@ -96,6 +96,20 @@ public class ControllerExceptionHandler {
                 .build();
     }
 
+    @ExceptionHandler(InvalidNewPasswordException.class)
+    public ApiResponse<?> invalidNewPasswordHandler(InvalidNewPasswordException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.INVALID_NEW_PASSWORD)
+                .build();
+    }
+
+    @ExceptionHandler(InvalidOldPasswordException.class)
+    public ApiResponse<?> invalidOldPasswordHandler(InvalidOldPasswordException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.INVALID_OLD_PASSWORD)
+                .build();
+    }
+
     @ExceptionHandler(ExpiredAccessTokenException.class)
     public ApiResponse<?> expiredAccessTokenHandler(ExpiredAccessTokenException e) {
         return new ApiResponse.builder<Object>()
@@ -162,6 +176,34 @@ public class ControllerExceptionHandler {
     public ApiResponse<?> alreadyValidatedEmailHandler(AlreadyValidatedEmailException e) {
         return new ApiResponse.builder<Object>()
                 .errorStatus(ResponseType.ALREADY_VALIDATED_EMAIL)
+                .build();
+    }
+
+    @ExceptionHandler(NotPermittedException.class)
+    public ApiResponse<?> notPermittedHandler(NotPermittedException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.NOT_PERMITTED)
+                .build();
+    }
+
+    @ExceptionHandler(FileUploadFailedException.class)
+    public ApiResponse<?> fileUploadFailedHandler(FileUploadFailedException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.FILE_UPLOAD_FAILED)
+                .build();
+    }
+
+    @ExceptionHandler(UnreadableFileException.class)
+    public ApiResponse<?> unreadableFileHandler(UnreadableFileException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.UNREADABLE_FILE)
+                .build();
+    }
+
+    @ExceptionHandler(DuplicateFollowRequestException.class)
+    public ApiResponse<?> duplicateFollowRequestHandler(DuplicateFollowRequestException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.DUPLICATE_FOLLOW_REQUEST)
                 .build();
     }
 

@@ -1,7 +1,7 @@
 package com.ssafy.backend.auth.service;
 
-import com.ssafy.backend.Mail.model.common.EmailMessage;
-import com.ssafy.backend.Mail.service.EmailService;
+import com.ssafy.backend.mail.model.common.EmailMessage;
+import com.ssafy.backend.mail.service.EmailService;
 import com.ssafy.backend.auth.model.common.CustomUserDetails;
 import com.ssafy.backend.auth.model.common.TagDto;
 import com.ssafy.backend.auth.model.request.RefreshRequestDto;
@@ -14,8 +14,6 @@ import com.ssafy.backend.common.prop.JWTProp;
 import com.ssafy.backend.common.prop.MailProp;
 import com.ssafy.backend.common.service.RedisService;
 import com.ssafy.backend.common.util.JWTUtil;
-import com.ssafy.backend.graph.model.entity.type.WeightType;
-import com.ssafy.backend.graph.repository.MemberNodeRepository;
 import com.ssafy.backend.graph.service.DataCollectingService;
 import com.ssafy.backend.mysql.entity.Member;
 import com.ssafy.backend.mysql.entity.Tag;
@@ -58,6 +56,7 @@ public class AuthService {
     private final MailProp mailProp;
     private final JWTProp jwtProp;
     private final TagRepository tagRepository;
+
     /**
      * 현재 요청의 jwt 토큰으로 로그인한 회원 정보를 반환합니다.
      *
@@ -68,11 +67,18 @@ public class AuthService {
 
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        return memberRepository.findById(customUserDetails.getMember().getId())
+        Member member = memberRepository.findById(customUserDetails.getMember().getId())
                 .orElseThrow(() -> {
                     log.warn("해당하는 회원이 존재하지 않습니다.");
                     return new NotFoundMemberException();
                 });
+
+        if (!member.getEnabled()) {
+            log.warn("탈퇴한 회원입니다.");
+            throw new NotFoundMemberException();
+        }
+
+        return member;
     }
 
     /**
@@ -126,8 +132,8 @@ public class AuthService {
 
 
         // 태그 추가
-        for(Tag tag : tagList) {
-            log.info("(member: {}) 가 (tag : {}, {})를 선호합니다.",member.getId(), tag.getId(), tag.getName());
+        for (Tag tag : tagList) {
+            log.info("(member: {}) 가 (tag : {}, {})를 선호합니다.", member.getId(), tag.getId(), tag.getName());
             // todo : 태그 선호 관계 추가
             // dataCollectingService.viewTag(member.getId(), tag.getId(), WeightType.LIKE);
         }
@@ -250,13 +256,13 @@ public class AuthService {
      * @param validateEmailRequestDto 이메일, 코드
      */
     public void validateEmail(ValidateEmailRequestDto validateEmailRequestDto) {
+        if (redisService.hasKey(validateEmailRequestDto.getEmail() + "-validated"))
+            throw new AlreadyValidatedEmailException();
+
         // code가 없으면 인증 실패 (만료되거나, 이메일이 잘못된 경우)
         Object codeObject = redisService.get(validateEmailRequestDto.getEmail());
         if (codeObject == null)
             throw new InvalidEmailAuthException();
-
-        if (redisService.hasKey(validateEmailRequestDto.getEmail() + "-validated"))
-            throw new AlreadyValidatedEmailException();
 
         // code가 일치하지 않으면 인증 실패
         String code = (String) codeObject;
@@ -305,7 +311,7 @@ public class AuthService {
     public List<TagDto> getTagList() {
         List<Tag> tagList = tagRepository.findAll();
         List<TagDto> tagDtoList = new LinkedList<>();
-        for(Tag tag : tagList) {
+        for (Tag tag : tagList) {
             TagDto tagDto = TagDto.builder()
                     .id(tag.getId())
                     .name(tag.getName())

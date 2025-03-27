@@ -23,4 +23,5 @@ public class LoginResponseDto {
     private String refreshToken;
     private String profileImage;
     private String nickname;
+    private Integer memberId;
 }

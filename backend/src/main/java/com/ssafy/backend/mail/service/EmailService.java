@@ -1,6 +1,6 @@
-package com.ssafy.backend.Mail.service;
+package com.ssafy.backend.mail.service;
 
-import com.ssafy.backend.Mail.model.common.EmailMessage;
+import com.ssafy.backend.mail.model.common.EmailMessage;
 import com.ssafy.backend.common.error.exception.EmailSendFailedException;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
