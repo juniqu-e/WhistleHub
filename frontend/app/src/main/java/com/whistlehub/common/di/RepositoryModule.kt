@@ -1,11 +1,25 @@
 package com.whistlehub.common.di
 
-import com.whistlehub.common.data.remote.api.*
-import com.whistlehub.common.data.repository.*
+import android.content.Context
+import com.whistlehub.common.data.local.room.AppDatabase
+import com.whistlehub.common.data.local.room.UserRepository
+import com.whistlehub.common.data.remote.api.AuthApi
+import com.whistlehub.common.data.remote.api.PlaylistApi
+import com.whistlehub.common.data.remote.api.ProfileApi
+import com.whistlehub.common.data.remote.api.RankingApi
+import com.whistlehub.common.data.remote.api.TrackApi
+import com.whistlehub.common.data.remote.api.WorkstationApi
+import com.whistlehub.common.data.repository.AuthService
+import com.whistlehub.common.data.repository.PlaylistService
+import com.whistlehub.common.data.repository.ProfileService
+import com.whistlehub.common.data.repository.RankingService
+import com.whistlehub.common.data.repository.TrackService
+import com.whistlehub.common.data.repository.WorkstationService
 import com.whistlehub.common.util.TokenRefresh
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -33,6 +47,16 @@ object RepositoryModule {
         tokenManager: com.whistlehub.common.util.TokenManager
     ): TokenRefresh {
         return TokenRefresh(tokenManager, AuthService(authApi))
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideUserRepository(
+        @ApplicationContext context: Context
+    ): UserRepository {
+        val database = AppDatabase.getInstance(context)
+        return UserRepository(database.userDao())
     }
 
     @Provides
