@@ -166,6 +166,27 @@ public class ControllerExceptionHandler {
                 .build();
     }
 
+    @ExceptionHandler(NotPermittedException.class)
+    public ApiResponse<?> notPermittedHandler(NotPermittedException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.NOT_PERMITTED)
+                .build();
+    }
+
+    @ExceptionHandler(FileUploadFailedException.class)
+    public ApiResponse<?> fileUploadFailedHandler(FileUploadFailedException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.FILE_UPLOAD_FAILED)
+                .build();
+    }
+
+    @ExceptionHandler(UnreadableFileException.class)
+    public ApiResponse<?> unreadableFileHandler(UnreadableFileException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.UNREADABLE_FILE)
+                .build();
+    }
+
     // 이외의 정의되지 않은 서버 에러처리
     @ExceptionHandler(Exception.class)
     public ApiResponse<?> serverErrorHandler(Exception e) {

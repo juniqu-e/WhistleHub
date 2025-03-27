@@ -1,5 +1,7 @@
 package com.ssafy.backend.common.service;
 
+import com.ssafy.backend.common.error.exception.FileUploadFailedException;
+import com.ssafy.backend.common.error.exception.UnreadableFileException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,8 +23,11 @@ import java.util.UUID;
  * <pre>AWS S3 서비스</pre>
  *
  * @author 박병주
- * @version 1.0
+ * @author 허현준
+ * @version 1.1
  * @since 2025-03-13
+ * @changes 1.0 - 최초 작성
+ *          1.1 - 파일 업로드 예외 처리 추가
  */
 
 @Service
@@ -69,10 +74,10 @@ public class S3Service {
             if (response.sdkHttpResponse().isSuccessful()) {
                 return filePrefix + fileName;
             } else {
-                throw new RuntimeException("파일 업로드 실패");
+                throw new FileUploadFailedException();
             }
         } catch (IOException e) {
-            throw new RuntimeException("파일 IO 에러");
+            throw new UnreadableFileException();
         }
     }
 

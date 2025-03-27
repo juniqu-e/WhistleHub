@@ -2,11 +2,15 @@ package com.ssafy.backend.member.service;
 
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.ApiResponse;
+import com.ssafy.backend.common.error.exception.FileUploadFailedException;
 import com.ssafy.backend.common.error.exception.InvalidOldPasswordException;
 import com.ssafy.backend.common.error.exception.NotFoundMemberException;
+import com.ssafy.backend.common.error.exception.NotPermittedException;
+import com.ssafy.backend.common.service.S3Service;
 import com.ssafy.backend.member.model.common.MemberInfo;
 import com.ssafy.backend.member.model.request.UpdateMemberRequestDto;
 import com.ssafy.backend.member.model.request.UpdatePasswordRequestDto;
+import com.ssafy.backend.member.model.request.UploadProfileImageRequestDto;
 import com.ssafy.backend.member.model.response.MemberDetailResponseDto;
 import com.ssafy.backend.mysql.entity.Member;
 import com.ssafy.backend.mysql.repository.MemberRepository;
@@ -16,6 +20,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -25,27 +30,28 @@ import java.util.List;
 @Slf4j
 public class MemberService {
     private final MemberRepository memberRepository;
+    private final S3Service s3Service;
     private final AuthService authService;
     private final PasswordEncoder passwordEncoder;
 
     public MemberDetailResponseDto getMember(Integer memberId) {
         // 회원 정보 조회
-         Member member = null;
-         if (memberId == null) {
+        Member member = null;
+        if (memberId == null) {
             member = authService.getMember();
-         }else {
-             memberRepository.findById(memberId)
-                     .orElseThrow(() -> {
-                         log.warn("해당하는 회원이 없습니다. memberId : {}", memberId);
-                         return new NotFoundMemberException();
-                     });
-         }
+        } else {
+            memberRepository.findById(memberId)
+                    .orElseThrow(() -> {
+                        log.warn("해당하는 회원이 없습니다. memberId : {}", memberId);
+                        return new NotFoundMemberException();
+                    });
+        }
 
-            return MemberDetailResponseDto.builder()
-                    .nickname(member.getNickname())
-                    .profileImage(member.getProfileImage())
-                    .profileText(member.getProfileText())
-                    .build();
+        return MemberDetailResponseDto.builder()
+                .nickname(member.getNickname())
+                .profileImage(member.getProfileImage())
+                .profileText(member.getProfileText())
+                .build();
     }
 
     @Transactional
@@ -57,7 +63,7 @@ public class MemberService {
         memberRepository.save(member);
     }
 
-    public void deleteMember(){
+    public void deleteMember() {
         // 회원 탈퇴
         Member member = authService.getMember();
         member.setEnabled(false);
@@ -65,8 +71,34 @@ public class MemberService {
         memberRepository.save(member);
     }
 
-    public void uploadImage() {
+    @Transactional
+    public String uploadImage(UploadProfileImageRequestDto uploadProfileImageRequestDto) {
         // todo: 프로필 이미지 업로드
+        Member member = authService.getMember();
+
+        // 멤버 정보 조회
+        if (!member.getId().equals(uploadProfileImageRequestDto.getMemberId()))
+            throw new NotPermittedException();
+
+        MultipartFile multipartFile = uploadProfileImageRequestDto.getImage();
+        String memberProfileImagePath = member.getProfileImage();
+        String imageUrl = null;
+
+        // 파일을 처음 업로드하는지, 기존에 업로드했는지 구분
+        if (memberProfileImagePath == null) {
+            // 처음 업로드하는 경우
+            imageUrl = s3Service.uploadFile(multipartFile, S3Service.IMAGE);
+            member.setProfileImage(imageUrl);
+        }else{
+            // 기존에 업로드한 경우
+            imageUrl = s3Service.updateFile(memberProfileImagePath, multipartFile, S3Service.IMAGE);
+            member.setProfileImage(imageUrl);
+        }
+
+        // 멤버 정보 업데이트
+        memberRepository.save(member);
+
+        return imageUrl;
     }
 
     @Transactional
@@ -74,7 +106,7 @@ public class MemberService {
         // 비밀번호 변경
         Member member = authService.getMember();
         String oldPassword = passwordEncoder.encode(updatePasswordRequestDto.getOldPassword());
-        if(!member.getPassword().equals(oldPassword))
+        if (!member.getPassword().equals(oldPassword))
             throw new InvalidOldPasswordException();
 
         // todo: 새로운 비밀번호 입력 검증 로직 추가

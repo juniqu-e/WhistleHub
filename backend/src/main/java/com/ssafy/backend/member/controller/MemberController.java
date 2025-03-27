@@ -4,6 +4,7 @@ import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.member.model.common.MemberInfo;
 import com.ssafy.backend.member.model.request.UpdateMemberRequestDto;
 import com.ssafy.backend.member.model.request.UpdatePasswordRequestDto;
+import com.ssafy.backend.member.model.request.UploadProfileImageRequestDto;
 import com.ssafy.backend.member.model.response.MemberDetailResponseDto;
 import com.ssafy.backend.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class MemberController {
     @GetMapping("/")
     public ApiResponse<?> getMember(@RequestParam(value = "memberId", required = false) Integer memberId) {
         MemberDetailResponseDto result = memberService.getMember(memberId);
+
         return new ApiResponse.builder<Object>()
                 .payload(result)
                 .build();
@@ -40,6 +42,7 @@ public class MemberController {
     @PutMapping("/")
     public ApiResponse<?> updateMember(UpdateMemberRequestDto updateMemberRequestDto) {
         memberService.updateMember(updateMemberRequestDto);
+
         return new ApiResponse.builder<Object>()
                 .payload(null)
                 .build();
@@ -52,6 +55,7 @@ public class MemberController {
     @DeleteMapping("/")
     public ApiResponse<?> deleteMember() {
         memberService.deleteMember();
+
         return new ApiResponse.builder<Object>()
                 .payload(null)
                 .build();
@@ -63,28 +67,30 @@ public class MemberController {
      * @return 이미지 업로드된 링크
      */
     @PostMapping("/image")
-    public ApiResponse<?> uploadImage() {
+    public ApiResponse<?> uploadImage(UploadProfileImageRequestDto uploadProfileImageRequestDto) {
+        String result = memberService.uploadImage(uploadProfileImageRequestDto);
 
         return new ApiResponse.builder<Object>()
-                .payload(null)
+                .payload(result)
                 .build();
     }
 
     /**
      * 비밀번호 변경
      *
-     * @return
+     * @return 비밀번호 변경 결과
      */
     @PutMapping("/password")
     public ApiResponse<?> updatePassword(UpdatePasswordRequestDto updatePasswordRequestDto) {
         memberService.updatePassword(updatePasswordRequestDto);
+
         return new ApiResponse.builder<Object>()
                 .payload(null)
                 .build();
     }
 
     /**
-     * todo: 회원 검색
+     * 회원 검색
      *
      * @param query 검색어 -> 닉네임 검색
      * @param page  페이지 번호
