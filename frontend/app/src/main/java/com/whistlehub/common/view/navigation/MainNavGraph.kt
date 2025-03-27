@@ -22,7 +22,7 @@ import com.whistlehub.common.viewmodel.SignUpViewModel
 fun MainNavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
     NavHost(
         navController = navController,
-        startDestination = "login",
+        startDestination = "main",
         modifier = modifier
     ) {
         //유저 인증(로그인)
