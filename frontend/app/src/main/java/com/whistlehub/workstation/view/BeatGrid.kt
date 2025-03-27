@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.workstation.data.PatternBlock
 
 @Composable
@@ -41,15 +42,15 @@ fun BeatGrid(
                     .padding(2.dp)
                     .background(
                         when {
-                            isStart -> Color.Cyan
-                            isBlocked -> Color.Red
+                            isStart -> CustomColors().Mint500
+                            isBlocked -> CustomColors().Mint300
                             else -> Color.DarkGray
                         }
                     )
                     .clickable { onClick(i) }, // 완전 자유 클릭
                 contentAlignment = Alignment.Center
             ) {
-                Text("${i + 1}", fontSize = 10.sp, color = Color.White)
+                Text("${i + 1}", fontSize = 10.sp, color = Color.Black)
             }
         }
     }

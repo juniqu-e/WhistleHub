@@ -97,8 +97,9 @@ class WorkStationViewModel @Inject constructor(
                         blocks.add(newBlock)
                     }
                 }
-
+                Log.d("Layer", layer.patternBlocks.toString())
                 layer.copy(patternBlocks = blocks)
+
             } else layer
         }
     }

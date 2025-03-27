@@ -297,20 +297,20 @@ fun LayerItem(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false }
                 ) {
+                    //마디 조정
+                    DropdownMenuItem(
+                        text = { Text("마디 조정") },
+                        onClick = {
+                            menuExpanded = false
+                            onBeatAdjustment(layer)
+                        }
+                    )
                     //삭제 이벤트
                     DropdownMenuItem(
                         text = { Text("레이어 삭제") },
                         onClick = {
                             menuExpanded = false
                             onDelete(layer)
-                        }
-                    )
-                    //초기화 이벤트
-                    DropdownMenuItem(
-                        text = { Text("박자 조정") },
-                        onClick = {
-                            menuExpanded = false
-                            onBeatAdjustment(layer)
                         }
                     )
                     //초기화 이벤트
