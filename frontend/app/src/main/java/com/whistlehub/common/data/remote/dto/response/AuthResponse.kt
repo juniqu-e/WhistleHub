@@ -19,6 +19,7 @@ sealed class AuthResponse {
     )
     // 로그인
     data class LoginResponse(
+        val memberId: Int,
         val refreshToken: String,
         val accessToken: String,
         val profileImage: String,
