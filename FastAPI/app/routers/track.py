@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Form, Query, Path, HTTPException, status
+from fastapi import APIRouter, UploadFile, File, Form, Query, Path, HTTPException, status, BackgroundTasks
 import config
 import logging
 import utils
@@ -26,7 +26,7 @@ openl3_service = OpenL3Service()
 @utils.logger()
 async def process_audio(
     audio: UploadFile = File(..., description="처리할 오디오 파일"),
-    track_id: Optional[int] = Form(None, description="RDB 트랙 ID")
+    trackId: Optional[int] = Form(None, description="RDB 트랙 ID")
 ):
     # 임시 파일로 저장
     with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(audio.filename)[1]) as temp_file:
@@ -36,15 +36,15 @@ async def process_audio(
             temp_file.write(contents)
             temp_file.flush()
             
-            # 임베딩 추출 및 milvus에에 저장 (track_id 전달)
-            milvus_id = openl3_service.process_audio_file(temp_file.name, track_id)
+            # 임베딩 추출 및 milvus에에 저장 (trackId 전달)
+            milvusId = openl3_service.process_audio_file(temp_file.name, trackId)
             
-            if not milvus_id:
+            if not milvusId:
                 raise CustomException(ResponseType.SERVER_ERROR, "오디오 파일 처리에 실패했습니다")
             
             return ApiResponse(payload={
-                "id": milvus_id,  # Milvus 내부 ID
-                "track_id": track_id,  # 외부 트랙 ID 
+                "id": milvusId,  # Milvus 내부 ID
+                "trackId": trackId,  # 외부 트랙 ID 
                 "filename": audio.filename
             })
         
@@ -60,19 +60,19 @@ async def process_audio(
 
 # 트랙 ID로 유사도 검색 API
 @router.get(
-    "/similar/{track_id}",
+    "/similar/{trackId}",
     summary="RDB 트랙 ID로 유사한 트랙 검색 API",
     description="RDB 트랙 ID를 기준으로 유사한 오디오 트랙을 검색합니다",
     response_model=ApiResponse[List[dict]]
 )
 @utils.logger()
 async def find_similar_by_track_id(
-    track_id: int = Path(..., description="검색 기준 RDB 트랙 ID"),
+    trackId: int = Path(..., description="검색 기준 RDB 트랙 ID"),
     limit: int = Query(5, description="반환할 결과 수", gt=0, le=100)
 ):
     try:
-        similar_tracks = openl3_service.find_similar_by_track_id(track_id, limit)
-        return ApiResponse(payload=similar_tracks)
+        similarTracks = openl3_service.find_similar_by_track_id(trackId, limit)
+        return ApiResponse(payload=similarTracks)
     
     except Exception as e:
         utils.log(f"Error finding similar tracks by ID: {str(e)}", level=logging.ERROR)
@@ -89,7 +89,7 @@ async def find_similar_by_track_id(
 @utils.logger()
 async def upload_and_find_similar(
     audio: UploadFile = File(..., description="검색 기준 오디오 파일"),
-    track_id: Optional[int] = Form(None, description="RDB 트랙 ID"),
+    trackId: Optional[int] = Form(None, description="RDB 트랙 ID"),
     limit: int = Form(5, description="반환할 결과 수", gt=0, le=100)
 ):
     # 임시 파일로 저장
@@ -100,23 +100,23 @@ async def upload_and_find_similar(
             temp_file.write(contents)
             temp_file.flush()
             
-            # 임베딩 추출 및 milvus에에 저장 (track_id 전달)
-            milvus_id = openl3_service.process_audio_file(temp_file.name, track_id)
+            # 임베딩 추출 및 milvus에에 저장 (trackId 전달)
+            milvusId = openl3_service.process_audio_file(temp_file.name, trackId)
             
-            if not milvus_id:
+            if not milvusId:
                 raise CustomException(ResponseType.SERVER_ERROR, "오디오 파일 처리에 실패했습니다")
 
             
             # 트랙 ID로 유사도 검색
-            similar_tracks = openl3_service.find_similar_by_track_id(track_id, limit)
+            similarTracks = openl3_service.find_similar_by_track_id(trackId, limit)
             
             return ApiResponse(payload={
-                "processed_file": {
-                    "milvus_id": milvus_id,
-                    "track_id": track_id,
+                "processedFile": {
+                    "milvusId": milvusId,
+                    "trackId": trackId,
                     "filename": audio.filename
                 },
-                "similar_tracks": similar_tracks
+                "similarTracks": similarTracks
             })
         
         except Exception as e:
@@ -138,17 +138,17 @@ async def upload_and_find_similar(
 @utils.logger()
 async def batch_process_audio_files(
     files: List[UploadFile] = File(..., description="처리할 오디오 파일들"),
-    metadata: str = Form(..., description="JSON 형식의 파일 메타데이터 {파일명: track_id, 파일명: track_id, ...}")
+    metadata: str = Form(..., description="JSON 형식의 파일 메타데이터 {파일명: trackId, 파일명: trackId, ...}")
 ):
     # 1. JSON 파싱, 파일명과 메타데이터 검증
     try:
-        file_metadata = json.loads(metadata)
+        fileMetadata = json.loads(metadata)
     except json.JSONDecodeError as e:
         utils.log(f"Invalid JSON metadata: {str(e)}", level=logging.ERROR)
         raise CustomException(ResponseType.BAD_REQUEST, f"올바르지 않은 JSON 형식: {str(e)}")
 
     uploaded_filenames = {file.filename for file in files}
-    metadata_filenames = set(file_metadata.keys())
+    metadata_filenames = set(fileMetadata.keys())
     
     missing_metadata = uploaded_filenames - metadata_filenames
     if missing_metadata:
@@ -170,30 +170,30 @@ async def batch_process_audio_files(
                     temp_file.write(contents)
                     temp_file.flush()
                     
-                    # 메타데이터에서 track_id 찾기
-                    track_id = file_metadata.get(file.filename)
-                    if track_id is None:
-                        utils.log(f"No track_id found for file: {file.filename}", level=logging.WARNING)
+                    # 메타데이터에서 trackId 찾기
+                    trackId = fileMetadata.get(file.filename)
+                    if trackId is None:
+                        utils.log(f"No trackId found for file: {file.filename}", level=logging.WARNING)
                         results[file.filename] = {
-                            "milvus_id": None,
-                            "track_id": None,
-                            "error": "메타데이터에 track_id가 없습니다"
+                            "milvusId": None,
+                            "trackId": None,
+                            "error": "메타데이터에 trackId가 없습니다"
                         }
                         continue
                     
                     # 임베딩 추출 및 저장
-                    milvus_id = openl3_service.process_audio_file(temp_file.name, track_id)
+                    milvusId = openl3_service.process_audio_file(temp_file.name, trackId)
                     results[file.filename] = {
-                        "milvus_id": milvus_id,
-                        "track_id": track_id,
-                        "status": "success" if milvus_id else "failed"
+                        "milvusId": milvusId,
+                        "trackId": trackId,
+                        "status": "success" if milvusId else "failed"
                     }
                     
                 except Exception as file_error:
                     utils.log(f"Error processing file {file.filename}: {str(file_error)}", level=logging.ERROR)
                     results[file.filename] = {
-                        "milvus_id": None,
-                        "track_id": file_metadata.get(file.filename),
+                        "milvusId": None,
+                        "trackId": fileMetadata.get(file.filename),
                         "error": str(file_error)
                     }
                 
@@ -203,11 +203,11 @@ async def batch_process_audio_files(
                         os.remove(temp_file.name)
         
         # 결과 통계 계산
-        failed_count = sum(1 for item in results.values() if item.get("milvus_id") is None)
-        success_count = len(results) - failed_count
+        failedCount = sum(1 for item in results.values() if item.get("milvusId") is None)
+        successCount = len(results) - failedCount
         
         return ApiResponse(payload={
-            "message": f"{len(results)}개 파일 중 {success_count}개 처리 성공, {failed_count}개 실패",
+            "message": f"{len(results)}개 파일 중 {successCount}개 처리 성공, {failedCount}개 실패",
             "results": results
         })
     
@@ -216,3 +216,118 @@ async def batch_process_audio_files(
         import traceback
         traceback.print_exc()
         raise CustomException(ResponseType.SERVER_ERROR, f"다중 오디오 파일 처리 중 오류 발생: {str(e)}")
+
+
+@router.post(
+    "/upload/async",
+    summary="비동기 오디오 파일 처리 API",
+    description="오디오 파일을 비동기로 임베딩을 추출하여 Milvus에 저장하고 결과를 Callback URL로 전송합니다",
+    response_model=ApiResponse[dict]
+)
+@utils.logger()
+async def async_process_audio(
+    background_tasks: BackgroundTasks,  # Move to the beginning to fix the parameter order
+    audio: UploadFile = File(..., description="처리할 오디오 파일"),
+    trackId: Optional[int] = Form(None, description="RDB 트랙 ID"),
+    limit: int = Form(5, description="반환할 결과 수", gt=0, le=100),
+    callbackUrl: str = Form(..., description="결과를 받을 Callback URL")
+):
+
+    # 임시 파일로 저장 (처리 후 삭제하지 않음 - 백그라운드에서 사용)
+    temp_file_path = None
+    try:
+        # 임시 파일 생성
+        suffix = os.path.splitext(audio.filename)[1]
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+            temp_file_path = temp_file.name
+            contents = await audio.read()
+            temp_file.write(contents)
+            temp_file.flush()
+        
+        # 백그라운드 태스크로 처리 작업 등록
+        background_tasks.add_task(
+            process_audio_in_background,
+            temp_file_path=temp_file_path,
+            file_name=audio.filename, 
+            track_id=trackId,
+            limit=limit,
+            callback_url=callbackUrl
+        )
+        
+        # 즉시 응답 반환
+        return ApiResponse(payload={
+            "message": "오디오 파일 처리가 백그라운드에서 시작되었습니다.",
+            "file": audio.filename,
+            "trackId": trackId,
+            "callbackUrl": callbackUrl
+        })
+    
+    except Exception as e:
+        # 오류 발생 시 임시 파일 정리
+        if temp_file_path and os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+        utils.log(f"Error in async audio processing: {str(e)}", level=logging.ERROR)
+        raise CustomException(ResponseType.SERVER_ERROR, f"비동기 오디오 처리 중 오류 발생: {str(e)}")
+
+
+# 백그라운드에서 실행될 오디오 처리 함수
+def process_audio_in_background(temp_file_path: str, file_name: str, track_id: Optional[int], limit: int, callback_url: str):
+    import requests
+    from requests.exceptions import RequestException
+    
+    try:
+        utils.log(f"Background processing started for file: {file_name}", level=logging.INFO)
+        
+        # OpenL3로 임베딩 추출 및 Milvus에 저장
+        milvus_id = openl3_service.process_audio_file(temp_file_path, track_id)
+
+        result_data = ApiResponse(payload={
+            "success": False,
+            "file": file_name,
+            "trackId": track_id,
+        })
+        
+
+        
+        if (milvus_id):
+            # 임베딩 저장 성공 시 유사한 트랙 검색
+            similar_tracks = openl3_service.find_similar_by_track_id(track_id, limit) if track_id else []
+            
+            result_data.payload["success"] = True
+            result_data.payload["milvusId"] = milvus_id
+            result_data.payload["similarTracks"] = similar_tracks
+
+
+        # 콜백 URL로 결과 전송
+        try:
+            response = requests.post(
+                callback_url, 
+                json=result_data,
+                headers={"Content-Type": "application/json"}
+            )
+            utils.log(f"Callback sent to {callback_url} with status: {response.status_code}", level=logging.INFO)
+        except RequestException as e:
+            utils.log(f"Failed to send callback: {str(e)}", level=logging.ERROR)
+    
+    except Exception as e:
+        # 백그라운드 처리 중 오류 발생 시 콜백 전송 시도
+        utils.log(f"Background processing error: {str(e)}", level=logging.ERROR)
+        try:
+            requests.post(
+                callback_url,
+                json={
+                    "success": False,
+                    "file": file_name,
+                    "trackId": track_id,
+                    "error": str(e)
+                },
+                headers={"Content-Type": "application/json"}
+            )
+        except:
+            pass
+    
+    finally:
+        # 처리 완료 후 임시 파일 삭제
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+            utils.log(f"Temporary file removed: {temp_file_path}", level=logging.INFO)

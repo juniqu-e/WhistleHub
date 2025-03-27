@@ -10,6 +10,7 @@ import com.ssafy.backend.graph.model.entity.type.WeightType;
 import com.ssafy.backend.graph.service.DataCollectingService;
 import com.ssafy.backend.mysql.entity.*;
 import com.ssafy.backend.mysql.repository.*;
+import com.ssafy.backend.openl3.service.Openl3Service;
 import com.ssafy.backend.track.dto.request.TrackImageUploadRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUpdateRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
@@ -52,6 +53,7 @@ public class TrackService {
     private final S3Service s3Service;
 
     private final AuthService authService;
+    private final Openl3Service openl3Service;
 
     /**
      * 트랙 음원 데이터를 반환
@@ -128,6 +130,8 @@ public class TrackService {
         // 1-4-1. Track 노드 생성 및 태그 연결
         dataCollectingService.createTrack(t.getId(), Arrays.stream(trackUploadRequestDto.getTags()).toList());
         // 1-4-2. TODO: FastAPI로 음원 보내기
+        openl3Service.uploadAndFindSimilar(trackUploadRequestDto.getTrackSoundFile().getResource(), t.getId(), 10);
+
         // 2. 레이어 목록 저장
         int layerSize = trackUploadRequestDto.getLayerName().length;
         for (int i = 0; i < layerSize; i++) {
