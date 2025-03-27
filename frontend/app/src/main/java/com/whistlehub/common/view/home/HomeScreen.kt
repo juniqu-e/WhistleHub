@@ -17,6 +17,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -33,11 +34,8 @@ fun HomeScreen(paddingValues: PaddingValues) {
     // ViewModel 초기화
     val trackPlayViewModel = hiltViewModel<TrackPlayViewModel>()
 
-    // 트랙 로드
-    trackPlayViewModel.loadTracks()
-
     // 트랙 리스트 UI
-    val trackList = trackPlayViewModel.trackList.collectAsState(initial = emptyList())
+    val trackList by trackPlayViewModel.trackList.collectAsState(initial = emptyList())
 
     // 추천태그 리스트
     val tags = listOf("Pop", "Rock", "Jazz", "Classical", "Hip-Hop", "Electronic", "Indie", "R&B", "Country", "Reggae") // 예시 태그 리스트
@@ -64,8 +62,8 @@ fun HomeScreen(paddingValues: PaddingValues) {
             LazyRow(
                 Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(trackList.value.size) { index ->
-                    NewTrackCard(trackList.value[index])
+                items(trackList.size) { index ->
+                    NewTrackCard(trackList[index])
                 }
             }
         }

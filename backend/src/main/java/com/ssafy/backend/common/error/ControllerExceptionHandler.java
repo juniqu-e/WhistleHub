@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 /**
  * <pre>예외 전역처리</pre>
  * Exception catch of Spring Container
+ *
  * @author 박병주
  * @version 1.0
  * @since 2025-03-12
@@ -64,6 +65,103 @@ public class ControllerExceptionHandler {
     public ApiResponse<?> duplicateNicknameHandler(DuplicateNicknameException e) {
         return new ApiResponse.builder<Object>()
                 .errorStatus(ResponseType.DUPLICATE_NICKNAME)
+                .build();
+    }
+
+    @ExceptionHandler(MissingParameterException.class)
+    public ApiResponse<?> badRequestHandler(MissingParameterException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.PARAMETER_REQUIRED)
+                .build();
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ApiResponse<?> notFoundHandler(NotFoundException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.NOT_FOUND)
+                .build();
+    }
+
+    @ExceptionHandler(DuplicateTrackException.class)
+    public ApiResponse<?> duplicateTrackHandler(DuplicateTrackException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.DUPLICATE_TRACK)
+                .build();
+    }
+
+    @ExceptionHandler(InvalidAccessTokenException.class)
+    public ApiResponse<?> invalidAccessTokenHandler(InvalidAccessTokenException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.INVALID_ACCESS_TOKEN)
+                .build();
+    }
+
+    @ExceptionHandler(ExpiredAccessTokenException.class)
+    public ApiResponse<?> expiredAccessTokenHandler(ExpiredAccessTokenException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.EXPIRED_ACCESS_TOKEN)
+                .build();
+    }
+
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ApiResponse<?> invalidRefreshTokenHandler(InvalidRefreshTokenException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.INVALID_REFRESH_TOKEN)
+                .build();
+    }
+
+    @ExceptionHandler(ExpiredRefreshTokenException.class)
+    public ApiResponse<?> expiredRefreshTokenHandler(ExpiredRefreshTokenException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.EXPIRED_REFRESH_TOKEN)
+                .build();
+    }
+
+    @ExceptionHandler(TrackNotFoundException.class)
+    public ApiResponse<?> trackNotFoundHandler(TrackNotFoundException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.TRACK_NOT_FOUND)
+                .build();
+    }
+    @ExceptionHandler(NotFoundLayerException.class)
+    public ApiResponse<?> layerNotFoundHandler(NotFoundLayerException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.LAYER_NOT_FOUND)
+                .build();
+    }
+
+    @ExceptionHandler(EmailSendFailedException.class)
+    public ApiResponse<?> emailSendFailedHandler(EmailSendFailedException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.EMAIL_SEND_FAILED)
+                .build();
+    }
+
+    @ExceptionHandler(EmailNotValidatedException.class)
+    public ApiResponse<?> emailNotValidatedHandler(EmailNotValidatedException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.EMAIL_NOT_VALIDATED)
+                .build();
+    }
+
+    @ExceptionHandler(InvalidEmailAuthException.class)
+    public ApiResponse<?> invalidEmailCodeHandler(InvalidEmailAuthException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.EMAIL_NOT_VALIDATED)
+                .build();
+    }
+
+    @ExceptionHandler(NotMatchIdAndEmailException.class)
+    public ApiResponse<?> notMatchIdAndEmailHandler(NotMatchIdAndEmailException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.NOT_MATCH_ID_AND_EMAIL)
+                .build();
+    }
+
+    @ExceptionHandler(AlreadyValidatedEmailException.class)
+    public ApiResponse<?> alreadyValidatedEmailHandler(AlreadyValidatedEmailException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.ALREADY_VALIDATED_EMAIL)
                 .build();
     }
 

@@ -25,19 +25,19 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
+import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
-import com.whistlehub.playlist.data.Track
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 
 @Composable
-fun TrackItemRow(track: Track, style: TrackItemStyle = TrackItemStyle.DEFAULT, trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
+fun TrackItemRow(track: TrackResponse.GetTrackDetailResponse, style: TrackItemStyle = TrackItemStyle.DEFAULT, trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
     val isPlaying by trackPlayViewModel.isPlaying.collectAsState(initial = false)
 
     Row(Modifier
         .clickable {
-            if (currentTrack?.id != track.id) {
+            if (currentTrack?.trackId != track.trackId) {
                 trackPlayViewModel.stopTrack()
             }
             trackPlayViewModel.playTrack(track)
@@ -72,7 +72,7 @@ fun TrackItemRow(track: Track, style: TrackItemStyle = TrackItemStyle.DEFAULT, t
                 color = CustomColors().Grey50
             )
             Text(
-                track.artist.nickname,
+                track.artistInfo?.nickname ?: "Unknown Artist",
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = Typography.bodyMedium,
@@ -80,7 +80,7 @@ fun TrackItemRow(track: Track, style: TrackItemStyle = TrackItemStyle.DEFAULT, t
             )
         }
 
-        if (currentTrack?.id == track.id && isPlaying) {
+        if (currentTrack?.trackId == track.trackId && isPlaying) {
             // Add current track specific UI here
             IconButton({trackPlayViewModel.pauseTrack()}) {
                 Icon(

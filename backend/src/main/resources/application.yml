@@ -24,7 +24,6 @@ spring:
     redis:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
-      expire-time: ${REDIS_EXPIRE_TIME}
   neo4j:
     uri: ${NEO4J_URI}
     authentication:
@@ -32,14 +31,18 @@ spring:
       password: ${NEO4J_PASSWORD}
 
 
-#  mail:
-#    host: ${SPRING_MAIL_HOST}
-#    username: ${SPRING_MAIL_USERNAME}
-#    password: ${SPRING_MAIL_PASSWORD}
-#    properties:
-#      mail.smtp.auth: true
-#      mail.smtp.starttls.enable: true
-#    port: ${SPRING_MAIL_PORT}
+  mail:
+    host: ${SPRING_MAIL_HOST}
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          timeout: 5000
+          starttls:
+            enable: true
+    port: 587 #smtp port
 
 #  security:
 #    oauth2:

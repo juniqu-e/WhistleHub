@@ -20,12 +20,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import coil3.compose.AsyncImage
+import com.whistlehub.R
+import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
-import com.whistlehub.playlist.data.Track
 
 @Composable
-fun NewTrackCard(track: Track) {
+fun NewTrackCard(track: TrackResponse.GetTrackDetailResponse) {
     Box(
         Modifier
             .heightIn(max = 200.dp)
@@ -36,15 +37,15 @@ fun NewTrackCard(track: Track) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 AsyncImage(
-                    model = track.artist.profileImage,
-                    contentDescription = track.artist.nickname,
+                    model = track.artistInfo?.profileImage ?: R.drawable.default_profile,
+                    contentDescription = track.artistInfo?.nickname,
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape),
                     contentScale = ContentScale.Crop
                 )
                 Text(
-                    text = track.artist.nickname,
+                    text = track.artistInfo?.nickname ?: "Unknown Artist",
                     modifier = Modifier
                         .padding(start = 12.dp)
                         .weight(1f),
@@ -71,7 +72,7 @@ fun NewTrackCard(track: Track) {
                         color = CustomColors().Grey50
                     )
                     Text(
-                        text = track.artist.nickname,
+                        text = track.artistInfo?.nickname ?: "Unknown Artist",
                         modifier = Modifier,
                         style = Typography.bodyLarge,
                         color = CustomColors().Mint500

@@ -1,8 +1,9 @@
 package com.whistlehub.workstation.di
 
 import androidx.compose.runtime.Composable
+import com.whistlehub.workstation.data.BottomBarActions
 
 interface WorkStationBottomBarProvider {
     @Composable
-    fun WorkStationBottomBar()
+    fun WorkStationBottomBar(actions: BottomBarActions)
 }

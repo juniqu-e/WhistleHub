@@ -82,12 +82,43 @@ public class PlaylistController {
                 .build();
     }
 
-    // 플레이리스트 사진 업로드
-    @PostMapping("/image")
-    public ApiResponse<?> uploadImage(@RequestBody UploadPlaylistImageRequestDto requestDto) {
-        playlistService.uploadImage(requestDto);
+// 플레이리스트 사진 업로드
+@PostMapping(value = "/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+public ApiResponse<?> uploadImage(UploadPlaylistImageRequestDto requestDto) {
+    playlistService.uploadImage(requestDto);
+    return new ApiResponse.builder<Object>()
+            .payload(null)
+            .build();
+}
+
+    // 플레이리스트에 트랙 추가
+    @PostMapping("/track")
+    public ApiResponse<?> addTrack(@RequestBody AddTrackRequestDto requestDto) {
+        playlistService.addTrack(requestDto);
         return new ApiResponse.builder<Object>()
                 .payload(null)
+                .build();
+    }
+
+    @GetMapping("/member")
+    public ApiResponse<?> getMemberPlaylist(
+            @RequestParam int memberId,
+            @RequestParam int page,
+            @RequestParam int size,
+            @RequestParam String orderby) {
+
+        List<GetMemberPlaylistResponseDto> playlists;
+
+        if(orderby.equals("ASC")) {
+            playlists = playlistService.getMemberPlaylist(memberId, PageRequest.of(page, size, Sort.by(Sort.Order.asc("createdAt"))));
+        } else if(orderby.equals("DESC")) {
+            playlists = playlistService.getMemberPlaylist(memberId, PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt"))));
+        } else {
+            throw new MissingParameterException();
+        }
+
+        return new ApiResponse.builder<Object>()
+                .payload(playlists)
                 .build();
     }
 }

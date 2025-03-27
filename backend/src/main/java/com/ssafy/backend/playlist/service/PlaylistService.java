@@ -49,25 +49,38 @@ public class PlaylistService {
     public int createPlaylist(String name, String description, MultipartFile image, List<Integer> trackIds) {
         Playlist playlist = new Playlist();
         playlist.setName(name);
-        playlist.setDescription(description);
 
         //멤버 정보 추가
         //playlist.setMember(memberRepository.findById(member
 
+        // 설명이 null이 아닐 때만 추가
+        if(description != null && !description.isEmpty()) {
+            playlist.setDescription(description);
+        }
+
         // 이미지 저장 -> S3
-        String imageUrl = s3Service.uploadFile(image, S3Service.IMAGE);
-        playlist.setImageUrl(image.getOriginalFilename());
+        if(image != null && !image.isEmpty()) {
+            String imageUrl = s3Service.uploadFile(image, S3Service.IMAGE);
+            playlist.setImageUrl(imageUrl);
+        }
 
         int playlistId = playlistRepository.save(playlist).getId();
 
         // 트랙 저장 -> TrackRepository
-        int order = 1;
-        for (int trackId : trackIds) {
-            PlaylistTrack playlistTrack = new PlaylistTrack();
-            playlistTrack.setPlaylist(playlist);
-            playlistTrack.setTrack(trackRepository.findById(trackId).orElseThrow());
-            playlistTrack.setPlayOrder(order++);
-            playlistTrackRepository.save(playlistTrack);
+        try {
+            if (trackIds != null && trackIds.length > 0) {
+                int order = 1;
+                for (int trackId : trackIds) {
+                    PlaylistTrack playlistTrack = new PlaylistTrack();
+                    playlistTrack.setPlaylist(playlist);
+                    playlistTrack.setTrack(trackRepository.findById(trackId).orElseThrow());
+                    playlistTrack.setPlayOrder(order++);
+                    playlistTrackRepository.save(playlistTrack);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("플레이리스트 생성 중 오류 발생: {}", e.getMessage());
+            throw new NotFoundPlaylistException();
         }
         return playlistId;
     }
@@ -157,7 +170,60 @@ public class PlaylistService {
                     return new NotFoundPlaylistException();
                 }
         );
-        playlist.setImageUrl(requestDto.getImage());
+
+        if(playlist.getImageUrl() == null || playlist.getImageUrl().isEmpty()) {
+            playlist.setImageUrl(s3Service.uploadFile(requestDto.getImage(), S3Service.IMAGE));
+        }else {
+            playlist.setImageUrl(s3Service.updateFile(playlist.getImageUrl(), requestDto.getImage(), S3Service.IMAGE));
+        }
+
         playlistRepository.save(playlist);
+    }
+
+    @Transactional
+    public void addTrack(AddTrackRequestDto requestDto) {
+        Playlist playlist = playlistRepository.findById(requestDto.getPlaylistId()).orElseThrow(
+                () -> {
+                    log.warn("{} 해당 플레이리스트가 없습니다.", requestDto.getPlaylistId());
+                    return new NotFoundException();
+                }
+        );
+        Track track = trackRepository.findById(requestDto.getTrackId()).orElseThrow(
+                () -> {
+                    log.warn("{} 해당 트랙이 없습니다.", requestDto.getTrackId());
+                    return new NotFoundException();
+                }
+        );
+
+        List<PlaylistTrack> playlistTracks = playlistTrackRepository.findAllByPlaylist(playlist);
+
+        for(PlaylistTrack playlistTrack : playlistTracks) {
+            if(playlistTrack.getTrack().getId().equals(track.getId())) {
+                throw new DuplicateTrackException();
+            }
+        }
+        
+        playlistTrackRepository.save(PlaylistTrack.builder()
+                .playlist(playlist)
+                .track(track)
+                .playOrder(playlistTracks.size() + 1)
+                .build());
+    }
+
+    public List<GetMemberPlaylistResponseDto> getMemberPlaylist(int memberId, PageRequest pageRequest) {
+        List<Playlist> playlists = playlistRepository.findAllByMemberId(memberId, pageRequest);
+
+        List<GetMemberPlaylistResponseDto> responseDtos = new ArrayList<>();
+
+       for(Playlist playlist : playlists) {
+              responseDtos.add(
+                     GetMemberPlaylistResponseDto.builder()
+                            .playlistId(playlist.getId())
+                            .imageUrl(playlist.getImageUrl())
+                             .name(playlist.getName())
+                            .build()
+              );
+       }
+       return responseDtos;
     }
 }

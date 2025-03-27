@@ -68,7 +68,7 @@ dependencies {
     implementation(libs.retrofit)     // Retrofit
     implementation(libs.java.jwt)
     implementation(libs.converter.gson)     // Retrofit
-    implementation(libs.okhttp.logging.interceptor) // Okhttp
+    implementation(libs.okhttp.logging.interceptor)
     ksp(libs.androidx.room.compiler)     // Room
     implementation(libs.androidx.room.runtime)     // Room
     implementation(libs.androidx.room.ktx)     // Room

@@ -14,22 +14,20 @@ import javax.inject.Singleton
 
 @Singleton
 class RankingService @Inject constructor(
-    private val rankingApi: RankingApi
+    private val rankingApi: RankingApi,
 ) : ApiRepository() {
     // 랭킹 조회
     suspend fun getRanking(
-        token: String,
         rankingType: String,
         period: String,
         tag: String? = null
     ): ApiResponse<List<RankingResponse.GetRankingResponse>> {
-        return executeApiCall { rankingApi.getRanking(token, rankingType, period, tag) }
+        return executeApiCall { rankingApi.getRanking(rankingType, period, tag) }
     }
     // 추천 트랙 조회
     suspend fun getRecommendTrack(
-        token: String,
         trackId: Int?
     ): ApiResponse<List<RankingResponse.RecommendTrackResponse>> {
-        return executeApiCall { rankingApi.getRecommendTrack(token, trackId) }
+        return executeApiCall { rankingApi.getRecommendTrack(trackId) }
     }
 }

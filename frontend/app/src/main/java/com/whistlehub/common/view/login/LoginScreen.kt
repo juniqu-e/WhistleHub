@@ -1,5 +1,6 @@
 package com.whistlehub.common.view.login
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -24,7 +25,15 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.whistlehub.R
+import com.whistlehub.common.viewmodel.LoginViewModel
+import com.whistlehub.common.viewmodel.LoginState
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import com.whistlehub.common.view.theme.Typography
 
 @Composable
 fun HomeScreen(
@@ -32,20 +41,45 @@ fun HomeScreen(
     onSignUpClick: () -> Unit = {},
     onForgotPasswordClick: () -> Unit = {}
 ) {
+    // 키보드 자동으로 올라오게 하기
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     // 아이디/비밀번호 상태 관리
     var userId by remember { mutableStateOf("") }
     var userPassword by remember { mutableStateOf("") }
     var isUserIdFocused by remember { mutableStateOf(false) }
     var isPasswordFocused by remember { mutableStateOf(false) }
 
-    // 커스텀 색상 객체 생성
+    // 로그인 결과에 따른 UI 처리 (예: 에러 메시지 출력)
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // ViewModel의 로그인 상태를 구독합니다.
+    val loginState by viewModel.loginState.collectAsState()
+
+    // 로그인 상태에 따른 이벤트 처리
+    LaunchedEffect(loginState) {
+        when (loginState) {
+            is LoginState.Success -> {
+                onLoginSuccess()
+                viewModel.resetState()
+            }
+            is LoginState.Error -> {
+                errorMessage = (loginState as LoginState.Error).message
+            }
+            else -> { /* Idle 또는 Loading 상태는 별도 처리 */ }
+        }
+    }
+
     val colors = CustomColors()
+    val textFieldStyle = Typography.bodyMedium.copy(color = colors.Grey50)
+    val placeholderStyle = Typography.bodyMedium.copy(color = colors.Grey300)
+    val buttonTextStyle = Typography.titleMedium.copy(color = colors.Grey950)
 
-    // 텍스트 스타일 정의
-    val textFieldStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
-    val placeholderStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White.copy(alpha = 0.7f))
-
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding()
+    ) {
         // 배경 이미지
         Image(
             painter = painterResource(id = R.drawable.login_background),
@@ -71,6 +105,7 @@ fun HomeScreen(
                     .widthIn(max = 800.dp)
                     .fillMaxHeight()
             ) {
+                @Suppress("UnusedBoxWithConstraintsScope") // Lint 오류방지 코드
                 BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                     val verticalPadding = when {
                         maxHeight < 500.dp -> 30.dp
@@ -110,7 +145,7 @@ fun HomeScreen(
                                         val strokeWidth = 1.dp.toPx()
                                         val y = size.height
                                         drawLine(
-                                            color = if (isUserIdFocused) Color.White else Color.White.copy(alpha = 0.7f),
+                                            color = if (isUserIdFocused) colors.Mint500 else colors.Grey50,
                                             start = Offset(0f, y),
                                             end = Offset(size.width, y),
                                             strokeWidth = strokeWidth
@@ -121,10 +156,16 @@ fun HomeScreen(
                                     value = userId,
                                     onValueChange = { userId = it },
                                     textStyle = textFieldStyle,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .align(Alignment.CenterStart)
-                                        .onFocusChanged { isUserIdFocused = it.isFocused },
+                                        .onFocusChanged { focusState ->
+                                            isUserIdFocused = focusState.isFocused
+                                            if (focusState.isFocused) {
+                                                keyboardController?.show()
+                                            }
+                                        },
                                     singleLine = true,
                                     interactionSource = remember { MutableInteractionSource() },
                                     decorationBox = { innerTextField ->
@@ -150,7 +191,7 @@ fun HomeScreen(
                                         val strokeWidth = 1.dp.toPx()
                                         val y = size.height
                                         drawLine(
-                                            color = if (isPasswordFocused) Color.White else Color.White.copy(alpha = 0.7f),
+                                            color = if (isPasswordFocused) colors.Mint500 else colors.Grey50,
                                             start = Offset(0f, y),
                                             end = Offset(size.width, y),
                                             strokeWidth = strokeWidth
@@ -166,7 +207,12 @@ fun HomeScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .align(Alignment.CenterStart)
-                                        .onFocusChanged { isPasswordFocused = it.isFocused },
+                                        .onFocusChanged { focusState ->
+                                            isPasswordFocused = focusState.isFocused
+                                            if (focusState.isFocused) {
+                                                keyboardController?.show()
+                                            }
+                                        },
                                     singleLine = true,
                                     interactionSource = remember { MutableInteractionSource() },
                                     decorationBox = { innerTextField ->
@@ -190,11 +236,19 @@ fun HomeScreen(
                                 colors = ButtonDefaults.buttonColors(containerColor = colors.Mint500),
                                 shape = RoundedCornerShape(8.dp)
                             ) {
-                                Text(
-                                    text = "로그인",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.padding(vertical = 4.dp)
-                                )
+                                if (loginState == LoginState.Loading) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        color = Color.White,
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Text(
+                                        text = "로그인",
+                                        style = buttonTextStyle,
+                                        modifier = Modifier.padding(vertical = 4.dp)
+                                    )
+                                }
                             }
 
                             // 회원가입/비밀번호 찾기 행 (아이템 간 20.dp 간격, 가운데 "|" 구분자)
@@ -203,14 +257,17 @@ fun HomeScreen(
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                TextButton(onClick = onSignUpClick) {
-                                    Text(text = "회원가입", color = Color.White)
+                                TextButton(onClick = {
+                                    onSignUpClick()
+                                }
+                                ) {
+                                    Text(text = "회원가입", color = colors.Grey50)
                                 }
                                 Spacer(modifier = Modifier.width(20.dp))
-                                Text(text = "|", color = Color.White)
+                                Text(text = "|", color = colors.Grey50)
                                 Spacer(modifier = Modifier.width(20.dp))
                                 TextButton(onClick = onForgotPasswordClick) {
-                                    Text(text = "비밀번호 찾기", color = Color.White)
+                                    Text(text = "비밀번호 찾기", color = colors.Grey50)
                                 }
                             }
                         }
@@ -220,12 +277,3 @@ fun HomeScreen(
         }
     }
 }
-
-@Preview(showBackground = true, device = "spec:width=360dp,height=740dp")
-@Composable
-fun LoginScreenPhonePreview() {
-    WhistleHubTheme {
-        HomeScreen()
-    }
-}
-

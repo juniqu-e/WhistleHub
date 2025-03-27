@@ -20,4 +20,4 @@ class ApiResponse(BaseModel, Generic[T]):
     """
     code: str = Field(ResponseType.SUCCESS.code, description="응답 코드")
     message: str = Field(ResponseType.SUCCESS.message, description="응답 메시지")
-    object: Optional[T] = Field(None, description="응답 객체")
+    payload: Optional[T] = Field(None, description="응답 객체")

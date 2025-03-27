@@ -74,7 +74,7 @@ fun FullPlayerScreen(
                 if (trackPlayViewModel.isPlaying.value) {
                     trackPlayViewModel.pauseTrack()
                 } else {
-                    trackPlayViewModel.playTrack(currentTrack!!)
+                    trackPlayViewModel.resumeTrack()
                 }
             }
         })
@@ -131,7 +131,7 @@ fun TrackInfomation(modifier: Modifier = Modifier, trackPlayViewModel: TrackPlay
         )
         Text(
             modifier = Modifier.fillMaxWidth(),
-            text = currentTrack?.artist?.nickname ?: "Artist Name",
+            text = currentTrack?.artistInfo?.nickname ?: "Artist Name",
             style = Typography.bodyLarge,
             color = CustomColors().Grey200,
             textAlign = TextAlign.Center
@@ -143,12 +143,12 @@ fun TrackInfomation(modifier: Modifier = Modifier, trackPlayViewModel: TrackPlay
             color = CustomColors().Grey200,
             textAlign = TextAlign.Center
         )
-        if (currentTrack?.tags != null) {
+        if (currentTrack?.tags?.isNotEmpty() == true) {
             FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)) {
                 currentTrack?.tags?.forEach { tag ->
                     Button({}) {
                         Text(
-                            text = tag,
+                            text = tag.name,
                             style = Typography.bodyLarge,
                             color = CustomColors().Grey200,
                             textAlign = TextAlign.Center
@@ -201,6 +201,122 @@ fun TrackInteraction(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
             }
         }) {
             Icon(Icons.AutoMirrored.Rounded.List, contentDescription = "플레이리스트", tint = if(playerViewState == PlayerViewState.PLAYLIST) CustomColors().Mint500 else CustomColors().Grey200)
+        }
+    }
+}
+
+@Composable
+fun TrackMenu(trackPlayViewModel: TrackPlayViewModel = hiltViewModel(), onReportClick: () -> Unit = {}) {
+    val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
+    Column(modifier = Modifier.heightIn(min = 200.dp).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Bottom),
+        horizontalAlignment = Alignment.CenterHorizontally) {
+        if (currentTrack?.imageUrl != null) {
+            AsyncImage(
+                model = currentTrack!!.imageUrl,
+                contentDescription = "Track Image",
+                modifier = Modifier.size(75.dp),
+                contentScale = ContentScale.Crop,
+            )
+        } else {
+            // 기본 배경 이미지
+            Image(painterResource(R.drawable.default_track),
+                contentDescription = "Track Image",
+                modifier = Modifier.size(75.dp),
+                contentScale = ContentScale.Crop)
+        }
+        Text(
+            modifier = Modifier.fillMaxWidth(),
+            text = currentTrack?.title ?: "Track Title",
+            style = Typography.titleMedium,
+            color = CustomColors().Grey50,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            modifier = Modifier.fillMaxWidth(),
+            text = currentTrack?.artistInfo?.nickname ?: "Artist Name",
+            style = Typography.bodyLarge,
+            color = CustomColors().Mint500,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            modifier = Modifier.fillMaxWidth(),
+            text = "Tags",
+            style = Typography.titleSmall,
+            color = CustomColors().Grey200,
+            textAlign = TextAlign.Center
+        )
+        if (currentTrack?.tags?.isNotEmpty() == true) {
+            FlowRow(Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)) {
+                currentTrack?.tags?.forEach { tag ->
+                    Button({}) {
+                        Text(
+                            text = tag.name,
+                            style = Typography.bodySmall,
+                            color = CustomColors().Grey950,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        } else {
+            Text(
+                modifier = Modifier.fillMaxWidth(),
+                text = "태그가 없습니다.",
+                style = Typography.bodySmall,
+                color = CustomColors().Grey200,
+                textAlign = TextAlign.Center
+            )
+        }
+        Row(
+            Modifier.clickable{}.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("플레이리스트에 추가")
+            IconButton({}) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                    contentDescription = "플레이리스트에 추가",
+                    tint = CustomColors().Grey200,
+                    modifier = Modifier.size(16.dp))
+            }
+        }
+        HorizontalDivider(thickness = 1.dp, color = CustomColors().Grey50)
+        Row(
+            Modifier.clickable{}.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("내 트랙에 Import")
+            IconButton({}) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                    contentDescription = "내 트랙에 Import",
+                    tint = CustomColors().Grey200,
+                    modifier = Modifier.size(16.dp))
+            }
+        }
+        if (true /* 내 트랙이 아닐 때 */) {
+            HorizontalDivider(thickness = 1.dp, color = CustomColors().Grey50)
+            Row(
+                Modifier.clickable {
+                    onReportClick()
+                }.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("신고")
+                IconButton({
+                    onReportClick()
+                }) {
+                    Icon(
+                        Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                        contentDescription = "신고",
+                        tint = CustomColors().Grey200,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
         }
     }
 }

@@ -3,20 +3,19 @@ package com.ssafy.backend.common.config;
 
 import com.ssafy.backend.common.filter.JWTFilter;
 import com.ssafy.backend.common.filter.LoginFilter;
+import com.ssafy.backend.common.prop.JWTProp;
 import com.ssafy.backend.common.prop.OriginProp;
 import com.ssafy.backend.common.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -40,7 +39,7 @@ public class WebSecurityConfig {
 
     final private OriginProp originProp;
     private final JWTUtil jwtUtil;
-    private final JWTConfig jwtConfig;
+    private final JWTProp jwtProp;
     private final AuthenticationConfiguration authenticationConfiguration;
 
 
@@ -91,7 +90,7 @@ public class WebSecurityConfig {
                         .anyRequest().authenticated())
 
                 .addFilterBefore(new JWTFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
-                .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil,jwtConfig), UsernamePasswordAuthenticationFilter.class);
+                .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, jwtProp), UsernamePasswordAuthenticationFilter.class);
 
 
 

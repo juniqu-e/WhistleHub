@@ -1,0 +1,28 @@
+package com.whistlehub.workstation.data
+
+data class Layer(
+    val id: Int,
+    val name: String,
+    val description: String = "",
+    val category: String = "",  // 예: "DRUM", "BASS", "OTHERS"
+    val colorHex: String? = null,
+    val length: Int,
+    val patternBlocks: List<PatternBlock> = emptyList()
+) {
+    val beatPattern: List<Boolean>
+        get() = MutableList(60) { false }.apply {
+            patternBlocks.forEach { block ->
+                for (i in block.start until (block.start + block.length).coerceAtMost(60)) {
+                    this[i] = true
+                }
+            }
+        }
+}
+
+data class PatternBlock(val start: Int, val length: Int)
+
+data class Track(
+    val id: Int,
+    val name: String,
+    val layers: List<Layer> = emptyList()
+)
