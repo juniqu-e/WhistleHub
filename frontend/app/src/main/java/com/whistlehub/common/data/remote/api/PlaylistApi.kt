@@ -36,9 +36,13 @@ interface PlaylistApi {
         @Query("playlistId") playlistId: Int
     ): Response<ApiResponse<PlaylistResponse.GetPlaylistResponse>>
     // 플레이리스트 생성
+    @Multipart
     @POST("playlist")
     suspend fun createPlaylist(
-        @Body request: PlaylistRequest.CreatePlaylistRequest
+        @Part("name") name : RequestBody,
+        @Part("description") description : RequestBody,
+        @Part("trackIds") trackIds : RequestBody,
+        @Part image: MultipartBody.Part?
     ): Response<ApiResponse<Int>>
     // 플레이리스트 수정
     @PUT("playlist")

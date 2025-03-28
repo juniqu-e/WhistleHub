@@ -10,6 +10,7 @@ import com.whistlehub.common.data.repository.PlaylistService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -20,13 +21,13 @@ class PlaylistViewModel @Inject constructor(
     val userRepository: UserRepository
 ) : ViewModel() {
     private val _playlists = MutableStateFlow<List<PlaylistResponse.GetMemberPlaylistsResponse>>(emptyList())
-    val playlists: MutableStateFlow<List<PlaylistResponse.GetMemberPlaylistsResponse>> get() = _playlists
+    val playlists: StateFlow<List<PlaylistResponse.GetMemberPlaylistsResponse>> get() = _playlists
 
     private val _playlistInfo = MutableStateFlow<PlaylistResponse.GetPlaylistResponse?>(null)
-    val playlistInfo: MutableStateFlow<PlaylistResponse.GetPlaylistResponse?> get() = _playlistInfo
+    val playlistInfo: StateFlow<PlaylistResponse.GetPlaylistResponse?> get() = _playlistInfo
 
     private val _playlistTrack = MutableStateFlow<List<PlaylistResponse.PlaylistTrackResponse>>(emptyList())
-    val playlistTrack: MutableStateFlow<List<PlaylistResponse.PlaylistTrackResponse>> get() = _playlistTrack
+    val playlistTrack: StateFlow<List<PlaylistResponse.PlaylistTrackResponse>> get() = _playlistTrack
 
 
     fun getPlaylists() {
@@ -78,6 +79,26 @@ class PlaylistViewModel @Inject constructor(
                 Log.d("success", "Track added to playlist successfully Track$trackId into playlist$playlistId")
             } else {
                 Log.d("error", "${addTrackResponse.message}")
+            }
+        }
+    }
+
+    fun createPlaylist(
+        name: String = "New Playlist",
+        description: String? = null,
+        trackIds: List<Int>? = null
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val createPlaylistResponse = playlistService.createPlaylist(
+                name = name,
+                description = description,
+                trackIds = trackIds
+            )
+            if (createPlaylistResponse.code == "SU") {
+                Log.d("success", "Playlist created successfully with ID ${createPlaylistResponse.payload}")
+                getPlaylists() // 플레이리스트 목록 갱신
+            } else {
+                Log.d("error", "${createPlaylistResponse.message}")
             }
         }
     }

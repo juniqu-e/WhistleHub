@@ -38,9 +38,15 @@ class PlaylistService @Inject constructor(
     }
     // 플레이리스트 생성
     suspend fun createPlaylist(
-        request: PlaylistRequest.CreatePlaylistRequest
+        name: String,
+        description: String? = null,
+        trackIds: List<Int>? = null,
+        image: MultipartBody.Part? = null
     ): ApiResponse<Int> {
-        return executeApiCall { playlistApi.createPlaylist(request) }
+        val nameBody: RequestBody = name.toRequestBody("text/plain".toMediaTypeOrNull())
+        val descriptionBody: RequestBody = description?.toRequestBody("text/plain".toMediaTypeOrNull()) ?: "".toRequestBody("text/plain".toMediaTypeOrNull())
+        val trackIdsBody: RequestBody = trackIds?.joinToString(",")?.toRequestBody("text/plain".toMediaTypeOrNull()) ?: "".toRequestBody("text/plain".toMediaTypeOrNull())
+        return executeApiCall { playlistApi.createPlaylist(nameBody, descriptionBody, trackIdsBody, image) }
     }
     // 플레이리스트 수정
     suspend fun updatePlaylist(

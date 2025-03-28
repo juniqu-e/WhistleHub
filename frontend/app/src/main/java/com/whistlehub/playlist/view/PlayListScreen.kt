@@ -23,6 +23,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,7 +49,10 @@ import com.whistlehub.playlist.viewmodel.PlaylistViewModel
 fun PlayListScreen(navController: NavHostController, playlistViewModel: PlaylistViewModel = hiltViewModel()) {
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
 
-    playlistViewModel.getPlaylists()
+    LaunchedEffect(Unit) {
+        // 플레이리스트 목록을 가져옴
+        playlistViewModel.getPlaylists()
+    }
     val playlists = playlistViewModel.playlists.collectAsState()
 
     // 플레이리스트 화면
@@ -170,21 +174,29 @@ fun PlayListScreen(navController: NavHostController, playlistViewModel: Playlist
     }
 
     // CreatePlaylist Dialog
+    var playlistTitle by remember { mutableStateOf("") }
+    var playlistDescription by remember { mutableStateOf("") }
+
     if (showCreatePlaylistDialog) {
         AlertDialog(
             onDismissRequest = { showCreatePlaylistDialog = false },
             title = { Text(
-                text = "Create Playlist",
+                text = "플레이리스트 생성",
                 style = Typography.titleLarge,
                 color = CustomColors().Grey50,
             ) },
-            text = { CreatePlaylist() },
+            text = { CreatePlaylist(
+                onInputTitle = { playlistTitle = it},
+                onInputDescription = { playlistDescription = it },
+            ) },
             modifier = Modifier
                 .fillMaxWidth()
                 .background(CustomColors().Grey950),
             confirmButton = {
                 Button(
-                    onClick = { showCreatePlaylistDialog = false },
+                    onClick = {
+                        playlistViewModel.createPlaylist(name = playlistTitle, description = playlistDescription)
+                        showCreatePlaylistDialog = false },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = CustomColors().Mint500,
                         contentColor = CustomColors().Grey950,
