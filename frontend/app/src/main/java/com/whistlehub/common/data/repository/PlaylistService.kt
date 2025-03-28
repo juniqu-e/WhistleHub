@@ -60,6 +60,12 @@ class PlaylistService @Inject constructor(
     ): ApiResponse<List<PlaylistResponse.PlaylistTrackResponse>> {
         return executeApiCall { playlistApi.getPlaylistTracks(playlistId) }
     }
+    // 플레이리스트에 트랙 추가
+    suspend fun addTrackToPlaylist(
+        request: PlaylistRequest.AddTrackToPlaylistRequest
+    ): ApiResponse<Unit> {
+        return executeApiCall { playlistApi.addTrackToPlaylist(request) }
+    }
     // 플레이리스트 내부 수정 (위치 이동, 삭제)
     suspend fun updatePlaylistTracks(
         request: PlaylistRequest.UpdatePlaylistTrackRequest

@@ -6,7 +6,14 @@ import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
-import retrofit2.http.*
+import retrofit2.http.Body
+import retrofit2.http.DELETE
+import retrofit2.http.GET
+import retrofit2.http.Multipart
+import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Part
+import retrofit2.http.Query
 
 /**
 ----------------------------
@@ -48,6 +55,11 @@ interface PlaylistApi {
     suspend fun getPlaylistTracks(
         @Query("playlistId") playlistId: Int
     ): Response<ApiResponse<List<PlaylistResponse.PlaylistTrackResponse>>>
+    // 플레이리스트에 트랙 추가
+    @POST("playlist/track")
+    suspend fun addTrackToPlaylist(
+        @Body request: PlaylistRequest.AddTrackToPlaylistRequest
+    ): Response<ApiResponse<Unit>>
     // 플레이리스트 내부 수정 (위치 이동, 삭제)
     @PUT("playlist/track")
     suspend fun updatePlaylistTracks(
