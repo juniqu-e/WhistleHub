@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -23,7 +22,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -37,7 +35,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
@@ -67,6 +64,8 @@ import com.whistlehub.R
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Pretendard
 import com.whistlehub.common.view.theme.Typography
+import com.whistlehub.common.view.track.ReportDialog
+import com.whistlehub.common.view.track.TrackMenu
 import com.whistlehub.playlist.view.component.PlayerComment
 import com.whistlehub.playlist.view.component.PlayerPlaylist
 import com.whistlehub.playlist.viewmodel.PlayerViewState
@@ -284,123 +283,6 @@ fun TrackInteraction(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun TrackMenu(trackPlayViewModel: TrackPlayViewModel = hiltViewModel(), onReportClick: () -> Unit = {}) {
-    val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
-    Column(modifier = Modifier.heightIn(min = 200.dp).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Bottom),
-        horizontalAlignment = Alignment.CenterHorizontally) {
-        if (currentTrack?.imageUrl != null) {
-            AsyncImage(
-                model = currentTrack!!.imageUrl,
-                contentDescription = "Track Image",
-                modifier = Modifier.size(75.dp),
-                contentScale = ContentScale.Crop,
-            )
-        } else {
-            // 기본 배경 이미지
-            Image(painterResource(R.drawable.default_track),
-                contentDescription = "Track Image",
-                modifier = Modifier.size(75.dp),
-                contentScale = ContentScale.Crop)
-        }
-        Text(
-            modifier = Modifier.fillMaxWidth(),
-            text = currentTrack?.title ?: "Track Title",
-            style = Typography.titleMedium,
-            color = CustomColors().Grey50,
-            textAlign = TextAlign.Center
-        )
-        Text(
-            modifier = Modifier.fillMaxWidth(),
-            text = currentTrack?.artistInfo?.nickname ?: "Artist Name",
-            style = Typography.bodyLarge,
-            color = CustomColors().Mint500,
-            textAlign = TextAlign.Center
-        )
-        Text(
-            modifier = Modifier.fillMaxWidth(),
-            text = "Tags",
-            style = Typography.titleSmall,
-            color = CustomColors().Grey200,
-            textAlign = TextAlign.Center
-        )
-        if (currentTrack?.tags?.isNotEmpty() == true) {
-            FlowRow(Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)) {
-                currentTrack?.tags?.forEach { tag ->
-                    Button({}) {
-                        Text(
-                            text = tag.name,
-                            style = Typography.bodySmall,
-                            color = CustomColors().Grey950,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            }
-        } else {
-            Text(
-                modifier = Modifier.fillMaxWidth(),
-                text = "태그가 없습니다.",
-                style = Typography.bodySmall,
-                color = CustomColors().Grey200,
-                textAlign = TextAlign.Center
-            )
-        }
-        Row(
-            Modifier.clickable{}.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("플레이리스트에 추가")
-            IconButton({}) {
-                Icon(Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                    contentDescription = "플레이리스트에 추가",
-                    tint = CustomColors().Grey200,
-                    modifier = Modifier.size(16.dp))
-            }
-        }
-        HorizontalDivider(thickness = 1.dp, color = CustomColors().Grey50)
-        Row(
-            Modifier.clickable{}.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("내 트랙에 Import")
-            IconButton({}) {
-                Icon(Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                    contentDescription = "내 트랙에 Import",
-                    tint = CustomColors().Grey200,
-                    modifier = Modifier.size(16.dp))
-            }
-        }
-        if (true /* 내 트랙이 아닐 때 */) {
-            HorizontalDivider(thickness = 1.dp, color = CustomColors().Grey50)
-            Row(
-                Modifier.clickable {
-                    onReportClick()
-                }.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("신고")
-                IconButton({
-                    onReportClick()
-                }) {
-                    Icon(
-                        Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                        contentDescription = "신고",
-                        tint = CustomColors().Grey200,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
 @Composable
 fun PlayerBackground(modifier: Modifier = Modifier, trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
     // 트랙의 배경 이미지를 표시하는 UI
@@ -512,35 +394,6 @@ fun PlayerController(
                         modifier = Modifier.size(50.dp)
                     )
                 }
-        }
-    }
-}
-
-@Composable
-fun ReportDialog() {
-    // 신고 다이얼로그 UI
-    // 신고 사유는 하드코딩으로 설정
-    val reportReasons = listOf("저작권 문제 위반 음원", "청소년에게 유해한 음원", "폭력적이거나 혐오스러운 음원", "스팸 또는 광고성 음원")
-    var selectedReason by remember { mutableStateOf(reportReasons[0]) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        reportReasons.forEach { reason ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { selectedReason = reason }
-                    .background(if (selectedReason == reason) CustomColors().Grey600 else Color.Transparent, shape = RoundedCornerShape(10.dp))
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(text = reason, style = Typography.bodyLarge, color = CustomColors().Grey200)
-            }
         }
     }
 }
