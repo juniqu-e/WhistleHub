@@ -64,11 +64,13 @@ import com.whistlehub.R
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Pretendard
 import com.whistlehub.common.view.theme.Typography
+import com.whistlehub.common.view.track.AddToPlaylistDialog
 import com.whistlehub.common.view.track.ReportDialog
 import com.whistlehub.common.view.track.TrackMenu
 import com.whistlehub.playlist.view.component.PlayerComment
 import com.whistlehub.playlist.view.component.PlayerPlaylist
 import com.whistlehub.playlist.viewmodel.PlayerViewState
+import com.whistlehub.playlist.viewmodel.PlaylistViewModel
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import java.util.concurrent.TimeUnit
 
@@ -78,9 +80,11 @@ fun FullPlayerScreen(
     navController: NavController,
     paddingValues: PaddingValues,
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
+    playlistViewModel: PlaylistViewModel = hiltViewModel(),
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showPlayerMenu by remember { mutableStateOf(false) }
+    var showAddToPlaylistDialog by remember { mutableStateOf(false) }
     var showReportDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -126,19 +130,22 @@ fun FullPlayerScreen(
             }
             TrackInteraction(trackPlayViewModel)
         }
-        if (showPlayerMenu)
+        if (showPlayerMenu) {
             ModalBottomSheet(
                 onDismissRequest = { showPlayerMenu = false },
                 sheetState = sheetState,
-                modifier = Modifier
-                    .wrapContentHeight()
+                modifier = Modifier.wrapContentHeight()
                     .background(CustomColors().Grey950.copy(alpha = 0.7f)),
             ) {
                 TrackMenu(onReportClick = {
                     showReportDialog = true
                     showPlayerMenu = false
+                }, onAddToPlaylistClick = {
+                    showAddToPlaylistDialog = true
+                    showPlayerMenu = false
                 })
             }
+        }
         if (showReportDialog) {
             AlertDialog(
                 onDismissRequest = { showReportDialog = false },
@@ -167,6 +174,21 @@ fun FullPlayerScreen(
                         Text("취소", style = Typography.bodyLarge)
                     }
                 }
+            )
+        }
+        if (showAddToPlaylistDialog) {
+            AlertDialog(
+                onDismissRequest = { showAddToPlaylistDialog = false },
+                title = { Text("플레이리스트에 추가", style = Typography.titleLarge, color = CustomColors().Grey50) },
+                text = { AddToPlaylistDialog(
+                    onPlaylistSelect = { playlistId ->
+                        playlistViewModel.addTrackToPlaylist(playlistId, currentTrack?.trackId ?: 0)
+                        showAddToPlaylistDialog = false
+                    }
+                ) },
+                modifier = Modifier.fillMaxWidth().background(CustomColors().Grey950),
+                confirmButton = {},
+                dismissButton = {}
             )
         }
     }

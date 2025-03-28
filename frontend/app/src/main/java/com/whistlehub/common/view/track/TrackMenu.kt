@@ -36,7 +36,12 @@ import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun TrackMenu(trackPlayViewModel: TrackPlayViewModel = hiltViewModel(), onReportClick: () -> Unit = {}) {
+fun TrackMenu(
+    trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
+    onReportClick: () -> Unit = {},
+    onAddToPlaylistClick: () -> Unit = {},
+    onImportToMyTrackClick: () -> Unit = {}
+) {
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
     Column(modifier = Modifier.heightIn(min = 200.dp).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Bottom),
@@ -102,7 +107,9 @@ fun TrackMenu(trackPlayViewModel: TrackPlayViewModel = hiltViewModel(), onReport
             )
         }
         Row(
-            Modifier.clickable{}.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
+            Modifier.clickable{
+                onAddToPlaylistClick()
+            }.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -117,7 +124,9 @@ fun TrackMenu(trackPlayViewModel: TrackPlayViewModel = hiltViewModel(), onReport
         }
         HorizontalDivider(thickness = 1.dp, color = CustomColors().Grey50)
         Row(
-            Modifier.clickable{}.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
+            Modifier.clickable{
+                onAddToPlaylistClick()
+            }.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {

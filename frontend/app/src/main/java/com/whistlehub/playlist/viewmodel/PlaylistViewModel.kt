@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.whistlehub.common.data.local.room.UserRepository
+import com.whistlehub.common.data.remote.dto.request.PlaylistRequest
 import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
 import com.whistlehub.common.data.repository.PlaylistService
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -36,7 +37,7 @@ class PlaylistViewModel @Inject constructor(
             if (user == null) {
                 Log.d("warning", "User not found, using default ID 1")
             }
-            val playlistResponse = playlistService.getMemberPlaylists(user?.memberId ?: 1, 1, 10)
+            val playlistResponse = playlistService.getMemberPlaylists(user?.memberId ?: 1, 0, 10) // 페이지는 0번부터
 
             withContext(Dispatchers.Main) {
                 _playlists.emit(playlistResponse.payload ?: emptyList())
@@ -61,6 +62,22 @@ class PlaylistViewModel @Inject constructor(
 
             withContext(Dispatchers.Main) {
                 _playlistTrack.emit(playlistTrackResponse.payload ?: emptyList())
+            }
+        }
+    }
+
+    fun addTrackToPlaylist(playlistId: Int, trackId: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val addTrackResponse = playlistService.addTrackToPlaylist(
+                PlaylistRequest.AddTrackToPlaylistRequest(
+                    playlistId = playlistId,
+                    trackId = trackId
+                )
+            )
+            if (addTrackResponse.code == "SU") {
+                Log.d("success", "Track added to playlist successfully Track$trackId into playlist$playlistId")
+            } else {
+                Log.d("error", "${addTrackResponse.message}")
             }
         }
     }
