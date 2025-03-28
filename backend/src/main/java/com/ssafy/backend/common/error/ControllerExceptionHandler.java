@@ -127,6 +127,8 @@ public class ControllerExceptionHandler {
     public ApiResponse<?> layerNotFoundHandler(NotFoundLayerException e) {
         return new ApiResponse.builder<Object>()
                 .errorStatus(ResponseType.LAYER_NOT_FOUND)
+                .build();
+    }
 
     @ExceptionHandler(EmailSendFailedException.class)
     public ApiResponse<?> emailSendFailedHandler(EmailSendFailedException e) {

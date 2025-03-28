@@ -10,6 +10,7 @@ from typing import List, Optional
 import json
 
 from app.services.UseOpenl3 import OpenL3Service
+from app.services.callback import process_audio_in_background
 
 router = APIRouter(prefix=f"{config.API_BASE_URL}/track", tags=["audio"])
 
@@ -226,12 +227,21 @@ async def batch_process_audio_files(
 )
 @utils.logger()
 async def async_process_audio(
-    background_tasks: BackgroundTasks,  # Move to the beginning to fix the parameter order
+    background_tasks: BackgroundTasks,
     audio: UploadFile = File(..., description="처리할 오디오 파일"),
     trackId: Optional[int] = Form(None, description="RDB 트랙 ID"),
     limit: int = Form(5, description="반환할 결과 수", gt=0, le=100),
     callbackUrl: str = Form(..., description="결과를 받을 Callback URL")
 ):
+    # 지원되는 파일 형식 확인
+    supported_formats = ['.wav', '.mp3', '.flac', '.ogg', '.m4a', '.aac']
+    file_ext = os.path.splitext(audio.filename.lower())[1]
+    
+    if not file_ext or file_ext not in supported_formats:
+        raise CustomException(
+            ResponseType.BAD_REQUEST, 
+            f"지원하지 않는 파일 형식입니다. 지원 형식: {', '.join(supported_formats)}"
+        )
 
     # 임시 파일로 저장 (처리 후 삭제하지 않음 - 백그라운드에서 사용)
     temp_file_path = None
@@ -243,6 +253,15 @@ async def async_process_audio(
             contents = await audio.read()
             temp_file.write(contents)
             temp_file.flush()
+            
+        # 파일 크기 확인
+        file_size = os.path.getsize(temp_file_path)
+        if file_size == 0:
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+            raise CustomException(ResponseType.BAD_REQUEST, "빈 파일이 업로드되었습니다.")
+        
+        utils.log(f"파일이 {temp_file_path}에 저장되었습니다. 크기: {file_size} bytes", level=logging.DEBUG)
         
         # 백그라운드 태스크로 처리 작업 등록
         background_tasks.add_task(
@@ -266,68 +285,5 @@ async def async_process_audio(
         # 오류 발생 시 임시 파일 정리
         if temp_file_path and os.path.exists(temp_file_path):
             os.remove(temp_file_path)
-        utils.log(f"Error in async audio processing: {str(e)}", level=logging.ERROR)
+        utils.log(f"비동기 오디오 처리 중 오류 발생: {str(e)}", level=logging.ERROR)
         raise CustomException(ResponseType.SERVER_ERROR, f"비동기 오디오 처리 중 오류 발생: {str(e)}")
-
-
-# 백그라운드에서 실행될 오디오 처리 함수
-def process_audio_in_background(temp_file_path: str, file_name: str, track_id: Optional[int], limit: int, callback_url: str):
-    import requests
-    from requests.exceptions import RequestException
-    
-    try:
-        utils.log(f"Background processing started for file: {file_name}", level=logging.INFO)
-        
-        # OpenL3로 임베딩 추출 및 Milvus에 저장
-        milvus_id = openl3_service.process_audio_file(temp_file_path, track_id)
-
-        result_data = ApiResponse(payload={
-            "success": False,
-            "file": file_name,
-            "trackId": track_id,
-        })
-        
-
-        
-        if (milvus_id):
-            # 임베딩 저장 성공 시 유사한 트랙 검색
-            similar_tracks = openl3_service.find_similar_by_track_id(track_id, limit) if track_id else []
-            
-            result_data.payload["success"] = True
-            result_data.payload["milvusId"] = milvus_id
-            result_data.payload["similarTracks"] = similar_tracks
-
-
-        # 콜백 URL로 결과 전송
-        try:
-            response = requests.post(
-                callback_url, 
-                json=result_data,
-                headers={"Content-Type": "application/json"}
-            )
-            utils.log(f"Callback sent to {callback_url} with status: {response.status_code}", level=logging.INFO)
-        except RequestException as e:
-            utils.log(f"Failed to send callback: {str(e)}", level=logging.ERROR)
-    
-    except Exception as e:
-        # 백그라운드 처리 중 오류 발생 시 콜백 전송 시도
-        utils.log(f"Background processing error: {str(e)}", level=logging.ERROR)
-        try:
-            requests.post(
-                callback_url,
-                json={
-                    "success": False,
-                    "file": file_name,
-                    "trackId": track_id,
-                    "error": str(e)
-                },
-                headers={"Content-Type": "application/json"}
-            )
-        except:
-            pass
-    
-    finally:
-        # 처리 완료 후 임시 파일 삭제
-        if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
-            utils.log(f"Temporary file removed: {temp_file_path}", level=logging.INFO)

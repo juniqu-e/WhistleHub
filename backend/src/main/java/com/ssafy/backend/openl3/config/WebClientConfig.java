@@ -15,7 +15,7 @@ public class WebClientConfig {
 
     @Bean
     public WebClient fastAPIClient() {
-        log.info("Fast API host: " + FASTAPI_HOST);
+        log.info("Fast API host: {}", FASTAPI_HOST);
         return WebClient.builder()
                 .baseUrl(FASTAPI_HOST) // FastAPI 서버의 URL
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024)) // 10MB 설정

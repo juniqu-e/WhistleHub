@@ -26,10 +26,13 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class Openl3Service {
 
-    private final WebClient fastAPIClient;
+//    private final WebClient fastAPIClient;
 
     @Value("${BACKEND_HOST}")
     private String BACKEND_HOST;
+
+    @Value("${FASTAPI_HOST}")
+    private String FASTAPI_HOST;
 
     public void uploadAndFindSimilar(Resource audioFile, Integer trackId, int limit) {
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
@@ -46,24 +49,20 @@ public class Openl3Service {
         builder.part("limit", limit);
         builder.part("callbackUrl", BACKEND_HOST + "/api/openl3/similar/callback");
 
+        // 요청 정보 로깅
+        log.info("콜백 URL: {}", BACKEND_HOST + "/api/openl3/similar/callback");
+
+        WebClient fastAPIClient = WebClient.builder().baseUrl(FASTAPI_HOST).build();
+
         fastAPIClient.post()
-                .uri("/upload/async")
+                .uri("/api/FastAPI/track" +
+                        "/upload/async")
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(BodyInserters.fromMultipartData(builder.build()))
-                .exchangeToMono(response -> {
-                    // 응답 상태 코드 로깅
-                    log.info("응답 상태 코드: {}", response.statusCode());
-
-                    if (response.statusCode().isError()) {
-                        return response.bodyToMono(String.class)
-                                .flatMap(error -> Mono.error(new RuntimeException(error)));
-                    } else {
-                        return response.bodyToMono(new ParameterizedTypeReference<ApiResponse<Map<String, Object>>>() {});
-                    }
-                })
-                .subscribe(
-                        result -> log.info("요청 성공"),
-                        error -> log.error("요청 실패: {}", error.getMessage())
-                );
+                .retrieve()
+                .bodyToMono(Void.class)
+                .doOnSuccess(unused -> log.info("backend->fastapi 요청 성공"))
+                .doOnError(error -> log.error("backend->fastapi 요청 실패: {}", error.getMessage()))
+                .subscribe();
     }
 }
