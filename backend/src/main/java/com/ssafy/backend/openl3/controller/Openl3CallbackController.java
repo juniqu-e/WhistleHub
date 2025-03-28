@@ -31,8 +31,12 @@ public class Openl3CallbackController {
         log.info("Received callback with request: {}", request);
 
         for(SimilarCallbackDto dto : request.getPayload()) {
-            log.info("({})-[similarity:{}]->({})", id, dto.getSimilarity(), dto.getTrackId());
-            dataCollectingService.createTrackSimilarity(id, dto.getTrackId(), dto.getSimilarity());
+            try{
+                log.info("({})-[similarity:{}]->({})", id, dto.getSimilarity(), dto.getTrackId());
+                dataCollectingService.createTrackSimilarity(id, dto.getTrackId(), dto.getSimilarity());
+            } catch (Exception e) {
+                log.error("Error processing callback for trackId: {}", dto.getTrackId(), e);
+            }
         }
 
         return new ApiResponse.builder<Object>()
