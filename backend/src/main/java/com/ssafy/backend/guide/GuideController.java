@@ -121,8 +121,8 @@ public class GuideController {
     }
 
     @GetMapping("/sim/{track1}/{track2}")
-    public String createDummy(@PathVariable int track1, @PathVariable int track2) throws Exception {
-        dataCollectingService.createTrackSimilarity(track1, track2);
+    public String createDummy(@PathVariable int track1, @PathVariable int track2, @PathVariable double similarity) throws Exception {
+        dataCollectingService.createTrackSimilarity(track1, track2,similarity);
         return "";
     }
 

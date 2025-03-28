@@ -148,13 +148,13 @@ public class DataCollectingService {
      * @param trackId2 두 번째 트랙 id
      */
     @Transactional
-    public void createTrackSimilarity(Integer trackId1, Integer trackId2) {
+    public void createTrackSimilarity(Integer trackId1, Integer trackId2, Double similarity) {
         // 트랙 존재 확인
         validateTrack(trackId1, "Track1");
         validateTrack(trackId2, "Track2");
 
         // SIMILAR 관계 생성
-        relationshipService.createSimilarRelationship(trackId1, trackId2);
+        relationshipService.createSimilarRelationship(trackId1, trackId2, similarity);
     }
 
     /**
