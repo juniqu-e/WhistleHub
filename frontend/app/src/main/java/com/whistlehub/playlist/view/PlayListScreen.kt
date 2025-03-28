@@ -23,7 +23,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,10 +48,10 @@ import com.whistlehub.playlist.viewmodel.PlaylistViewModel
 fun PlayListScreen(navController: NavHostController, playlistViewModel: PlaylistViewModel = hiltViewModel()) {
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        // 플레이리스트 목록을 가져옴
-        playlistViewModel.getPlaylists()
-    }
+    playlistViewModel.getPlaylists()
+//    LaunchedEffect(Unit) {
+//        // 플레이리스트 목록을 가져옴
+//    }
     val playlists = playlistViewModel.playlists.collectAsState()
 
     // 플레이리스트 화면
@@ -112,9 +111,7 @@ fun PlayListScreen(navController: NavHostController, playlistViewModel: Playlist
                 .fillMaxWidth()
                 .clickable {
                     // 플레이리스트 클릭 시 트랙 목록 받아옴
-                    playlistViewModel.getPlaylistInfo(playlist.playlistId)
-                    playlistViewModel.getPlaylistTrack(playlist.playlistId)
-                    navController.navigate(Screen.PlayListTrackList.route)
+                    navController.navigate(Screen.PlayListTrackList.route + "/${playlist.playlistId}")
                 },
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically) {

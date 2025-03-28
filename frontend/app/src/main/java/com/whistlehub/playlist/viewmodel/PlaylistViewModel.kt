@@ -46,24 +46,29 @@ class PlaylistViewModel @Inject constructor(
         }
     }
 
-    fun getPlaylistInfo(playlistId: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val playlistResponse = playlistService.getPlaylists(playlistId) // 모든 요청 완료 후 리스트 생성
-
-            withContext(Dispatchers.Main) {
-                _playlistInfo.emit(playlistResponse.payload)
+    suspend fun getPlaylistInfo(playlistId: Int) {
+        try {
+            val playlistInfoResponse = playlistService.getPlaylists(playlistId)
+            if (playlistInfoResponse.code == "SU") {
+                _playlistInfo.value = playlistInfoResponse.payload
+            } else {
+                Log.d("error", "Failed to get playlist info: ${playlistInfoResponse.message}")
             }
+        } catch (e: Exception) {
+            Log.d("error", "Failed to get playlist info: ${e.message}")
         }
     }
 
-    fun getPlaylistTrack(playlistId: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val playlistTrackResponse =
-                playlistService.getPlaylistTracks(playlistId) // 모든 요청 완료 후 리스트 생성
-
-            withContext(Dispatchers.Main) {
-                _playlistTrack.emit(playlistTrackResponse.payload ?: emptyList())
+    suspend fun getPlaylistTrack(playlistId: Int) {
+        try {
+            val playlistTrackResponse = playlistService.getPlaylistTracks(playlistId)
+            if (playlistTrackResponse.code == "SU") {
+                _playlistTrack.value = playlistTrackResponse.payload ?: emptyList()
+            } else {
+                Log.d("error", "Failed to get playlist tracks: ${playlistTrackResponse.message}")
             }
+        } catch (e: Exception) {
+            Log.d("error", "Failed to get playlist tracks: ${e.message}")
         }
     }
 
