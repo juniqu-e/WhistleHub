@@ -8,6 +8,7 @@ import com.ssafy.backend.member.model.request.UpdatePasswordRequestDto;
 import com.ssafy.backend.member.model.request.UploadProfileImageRequestDto;
 import com.ssafy.backend.member.model.response.MemberDetailResponseDto;
 import com.ssafy.backend.member.service.MemberService;
+import com.ssafy.backend.playlist.dto.TrackInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -74,7 +75,7 @@ public class MemberController {
     }
 
     /**
-     * todo: 프로필 이미지 업로드
+     *  프로필 이미지 업로드
      * @see com.ssafy.backend.common.service.S3Service
      * @return 이미지 업로드된 링크
      */
@@ -122,7 +123,7 @@ public class MemberController {
     }
 
     /**
-     * todo: 회원 팔로우
+     *  회원 팔로우
      *
      * @param requestFollowRequestDto memberId,follow 팔로우할 상대와, 팔로우할지 여부
      * @return
@@ -136,7 +137,7 @@ public class MemberController {
     }
 
     /**
-     * todo: 회원의 팔로워 목록 가져오기
+     *  회원의 팔로워 목록 가져오기
      *
      * @param memberId 팔로워 목록을 가져올 회원 아이디 -> 없다면 자기 자신의 팔로워 목록 가져오기
      * @param page     페이지 번호
@@ -153,10 +154,11 @@ public class MemberController {
     }
 
     /**
-     * todo: 회원의 팔로잉 목록 가져오기
+     *  회원의 팔로잉 목록 가져오기
      *
      * @param memberId 팔로잉 목록을 가져올 회원 아이디 -> 없다면 자기 자신의 팔로잉 목록 가져오기
      * @param page     페이지 번호
+     * @param size     페이지 사이즈
      * @return 팔로잉 목록
      */
     @GetMapping("/following")
@@ -165,6 +167,24 @@ public class MemberController {
                                        @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
         List<MemberInfo> result = memberService.getFollowing(memberId, PageRequest.of(page, size));
         return new ApiResponse.builder<List<MemberInfo>>()
+                .payload(result)
+                .build();
+    }
+
+    /**
+     *  회원의 트랙 목록 가져오기
+     *
+     * @param memberId 트랙 목록을 가져올 회원 아이디 -> 없다면 자기 자신의 트랙 목록 가져오기
+     * @param page     페이지 번호
+     * @param size     페이지 사이즈
+     * @return 트랙 목록
+     */
+    @GetMapping("/track")
+    public ApiResponse<?> getTrack(@RequestParam(value = "memberId") Integer memberId,
+                                       @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
+                                       @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
+        List<TrackInfo> result = memberService.getTrack(memberId, PageRequest.of(page, size));
+        return new ApiResponse.builder<List<TrackInfo>>()
                 .payload(result)
                 .build();
     }
