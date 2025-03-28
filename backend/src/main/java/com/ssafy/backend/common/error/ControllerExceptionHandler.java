@@ -3,6 +3,7 @@ package com.ssafy.backend.common.error;
 import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.common.error.exception.*;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -17,8 +18,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class ControllerExceptionHandler {
-
-
     @ExceptionHandler(NotFoundPageException.class)
     public ApiResponse<?> notFoundPageHandler(NotFoundPageException e) {
         return new ApiResponse.builder<Object>()
@@ -204,6 +203,20 @@ public class ControllerExceptionHandler {
     public ApiResponse<?> duplicateFollowRequestHandler(DuplicateFollowRequestException e) {
         return new ApiResponse.builder<Object>()
                 .errorStatus(ResponseType.DUPLICATE_FOLLOW_REQUEST)
+                .build();
+    }
+
+    @ExceptionHandler(InvalidFormattedRequest.class)
+    public ApiResponse<?> invalidFormattedRequestHandler(InvalidFormattedRequest e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.INVALID_FORMATTED_REQUEST)
+                .build();
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ApiResponse<?> httpMessageNotReadableHandler(HttpMessageNotReadableException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.INVALID_FORMATTED_REQUEST)
                 .build();
     }
 

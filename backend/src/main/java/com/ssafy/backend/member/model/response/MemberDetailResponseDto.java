@@ -5,6 +5,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * <pre>회원 상세 정보 응답 DTO</pre>
+ *
+ * 회원의 닉네임, 프로필 이미지 URL, 프로필 텍스트를 포함하는 DTO 클래스입니다.
+ * @author 허현준
+ * @version 1.0
+ * @since 2025-03-27
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

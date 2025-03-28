@@ -15,7 +15,6 @@ import lombok.NoArgsConstructor;
  * @version 1.0
  * @since 2025.03.26
  */
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

@@ -16,6 +16,15 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * <pre>회원 컨트롤러</pre>
+ *
+ * 회원 정보 조회, 수정, 탈퇴, 프로필 이미지 업로드, 비밀번호 변경, 회원 검색, 팔로워/팔로잉 목록 조회, 팔로우 신청 등의 기능을 제공한다.
+ *
+ * @author 허현준
+ * @version 1.0
+ * @since 2025-03-26
+ */
 @RequestMapping("/api/member")
 @RestController
 @RequiredArgsConstructor

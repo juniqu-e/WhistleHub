@@ -18,6 +18,9 @@ public enum ResponseType {
     DUPLICATE_FOLLOW_REQUEST("DFR", HttpStatus.BAD_REQUEST, "중복된 팔로우 요청입니다."),
     INVALID_ORDER("IO", HttpStatus.BAD_REQUEST, "order 옵션이 잘못되었습니다."),
 
+    // 입력 형식이 잘못된 경우
+    INVALID_FORMATTED_REQUEST("IFR", HttpStatus.BAD_REQUEST, "입력 형식이 잘못되었습니다."),
+
     // 필수 값 누락
     PARAMETER_REQUIRED("PR", HttpStatus.BAD_REQUEST, "필수 값이 누락되었습니다."),
     PLAYLIST_TITLE_REQUIRED("PTR", HttpStatus.BAD_REQUEST, "플레이리스트 제목이 없습니다."),

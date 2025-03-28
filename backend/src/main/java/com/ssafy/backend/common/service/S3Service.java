@@ -24,10 +24,11 @@ import java.util.UUID;
  *
  * @author 박병주
  * @author 허현준
- * @version 1.1
+ * @version 1.2
  * @since 2025-03-13
  * @changes 1.0 - 최초 작성
  *          1.1 - 파일 업로드 예외 처리 추가
+ *          1.2 - 파일 크기 제한, 확장자 제한 추가
  */
 
 @Service
@@ -53,12 +54,24 @@ public class S3Service {
      * @param file   업로드 할 파일
      * @param folder 업로드할 폴더
      * @return 업로드 경로 문자열
-     *  todo: image, music 파일 크기 제한
-     *  todo: image, music 파일 확장자 제한
      */
     public String uploadFile(MultipartFile file, String folder) {
         String filenameExtension = StringUtils.getFilenameExtension(file.getOriginalFilename());
         String uuid = UUID.randomUUID().toString();
+
+        // 파일 입력을 보고 잘못됨 -> BADREQUEST
+
+        // 파일 크기 제한
+        if(file.getSize() > 20 * 1024 * 1024) // 20MB
+            throw new UnreadableFileException();
+
+        // 파일 확장자 제한
+        if(filenameExtension == null)
+            throw new UnreadableFileException();
+        if(folder.equals(IMAGE) && !filenameExtension.matches("jpg|jpeg|png|gif")) // 이미지 확장자
+            throw new UnreadableFileException();
+        if(folder.equals(MUSIC) && !filenameExtension.matches("mp3|wav|ogg")) // 음악 확장자
+            throw new UnreadableFileException();
 
         // UUID + 시간값 + .확장자
         String fileName = folder + "/" + uuid + System.currentTimeMillis() + "." + filenameExtension;
