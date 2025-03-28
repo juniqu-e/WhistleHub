@@ -2,6 +2,7 @@ package com.ssafy.backend.mysql.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
 
@@ -12,6 +13,7 @@ import java.time.Instant;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@SQLRestriction("enabled = true AND blocked = false")
 public class Track extends Common{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

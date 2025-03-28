@@ -12,8 +12,11 @@ import com.ssafy.backend.member.model.request.UploadProfileImageRequestDto;
 import com.ssafy.backend.member.model.response.MemberDetailResponseDto;
 import com.ssafy.backend.mysql.entity.Follow;
 import com.ssafy.backend.mysql.entity.Member;
+import com.ssafy.backend.mysql.entity.Track;
 import com.ssafy.backend.mysql.repository.FollowRepository;
 import com.ssafy.backend.mysql.repository.MemberRepository;
+import com.ssafy.backend.mysql.repository.TrackRepository;
+import com.ssafy.backend.playlist.dto.TrackInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -25,6 +28,15 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * <pre>회원 서비스</pre>
+ * <p>
+ * 회원 정보 조회, 수정, 탈퇴, 프로필 이미지 업로드, 비밀번호 변경, 회원 검색, 팔로워/팔로잉 목록 조회, 팔로우 신청 등의 기능을 제공한다.
+ *
+ * @author 허현준
+ * @version 1.0
+ * @since 2025-03-26
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -34,14 +46,21 @@ public class MemberService {
     private final AuthService authService;
     private final PasswordEncoder passwordEncoder;
     private final FollowRepository followRepository;
+    private final TrackRepository trackRepository;
 
+    /**
+     * 회원 정보 조회
+     *
+     * @param memberId 회원 ID
+     * @return 회원 정보
+     */
     public MemberDetailResponseDto getMember(Integer memberId) {
         // 회원 정보 조회
         Member member = memberRepository.findById(memberId)
-                    .orElseThrow(() -> {
-                        log.warn("해당하는 회원이 없습니다. memberId : {}", memberId);
-                        return new NotFoundMemberException();
-                    });
+                .orElseThrow(() -> {
+                    log.warn("해당하는 회원이 없습니다. memberId : {}", memberId);
+                    return new NotFoundMemberException();
+                });
 
 
         return MemberDetailResponseDto.builder()
@@ -51,6 +70,11 @@ public class MemberService {
                 .build();
     }
 
+    /**
+     * 회원 정보 수정
+     *
+     * @param updateMemberRequestDto 회원 정보 수정 요청 DTO
+     */
     @Transactional
     public void updateMember(UpdateMemberRequestDto updateMemberRequestDto) {
         // 회원 정보 수정
@@ -60,6 +84,9 @@ public class MemberService {
         memberRepository.save(member);
     }
 
+    /**
+     * 회원 탈퇴
+     */
     public void deleteMember() {
         // 회원 탈퇴
         Member member = authService.getMember();
@@ -68,9 +95,14 @@ public class MemberService {
         memberRepository.save(member);
     }
 
+    /**
+     * 프로필 이미지 업로드
+     *
+     * @param uploadProfileImageRequestDto 프로필 이미지 업로드 요청 DTO
+     * @return 업로드된 이미지 URL
+     */
     @Transactional
     public String uploadImage(UploadProfileImageRequestDto uploadProfileImageRequestDto) {
-        // todo: 프로필 이미지 업로드
         Member member = authService.getMember();
 
         // 멤버 정보 조회
@@ -86,7 +118,7 @@ public class MemberService {
             // 처음 업로드하는 경우
             imageUrl = s3Service.uploadFile(multipartFile, S3Service.IMAGE);
             member.setProfileImage(imageUrl);
-        }else{
+        } else {
             // 기존에 업로드한 경우
             imageUrl = s3Service.updateFile(memberProfileImagePath, multipartFile, S3Service.IMAGE);
             member.setProfileImage(imageUrl);
@@ -98,21 +130,40 @@ public class MemberService {
         return imageUrl;
     }
 
+    /**
+     * 비밀번호 변경
+     *
+     * @param updatePasswordRequestDto 비밀번호 변경 요청 DTO
+     */
     @Transactional
     public void updatePassword(UpdatePasswordRequestDto updatePasswordRequestDto) {
         // 비밀번호 변경
         Member member = authService.getMember();
         String oldPassword = updatePasswordRequestDto.getOldPassword();
+        String newPassword = updatePasswordRequestDto.getNewPassword();
+
+        // 기존 비밀번호 검증
         if (!passwordEncoder.matches(oldPassword, member.getPassword()))
             throw new InvalidOldPasswordException();
 
-        // todo: 새로운 비밀번호 입력 검증 로직 추가 new, old가 같다거나, new의 형식이 맞지 않거나
+        // 새로운 비밀번호 입력 검증
+        if (!authService.validatePasswordFormat(newPassword)) // 새로운 비밀번호가 형식이 맞지 않을 경우
+            throw new InvalidNewPasswordException();
+        if (oldPassword.equals(newPassword)) // 기존 비밀번호와 새로운 비밀번호가 같을 경우
+            throw new InvalidNewPasswordException();
 
-        String newPassword = passwordEncoder.encode(updatePasswordRequestDto.getNewPassword());
+        newPassword = passwordEncoder.encode(newPassword);
         member.setPassword(newPassword);
         memberRepository.save(member);
     }
 
+    /**
+     * 회원 검색
+     *
+     * @param query       검색어
+     * @param pageRequest 페이지 요청
+     * @return 회원 정보 리스트
+     */
     public List<MemberInfo> searchMember(String query, PageRequest pageRequest) {
         // 회원 검색
         List<Member> memberList = memberRepository.findByNicknameContaining(query, pageRequest);
@@ -130,6 +181,13 @@ public class MemberService {
         return memberInfoList;
     }
 
+    /**
+     * 회원의 팔로워 목록 가져오기
+     *
+     * @param memberId    팔로워 목록을 가져올 회원 ID
+     * @param pageRequest 페이지 요청
+     * @return 팔로워 정보 리스트
+     */
     public List<MemberInfo> getFollower(Integer memberId, PageRequest pageRequest) {
         // 회원의 팔로워 목록 가져오기
         Member member = null;
@@ -159,13 +217,20 @@ public class MemberService {
         return followerInfoList;
     }
 
+    /**
+     * 회원의 팔로잉 목록 가져오기
+     *
+     * @param memberId    팔로잉 목록을 가져올 회원 ID
+     * @param pageRequest 페이지 요청
+     * @return 팔로잉 정보 리스트
+     */
     public List<MemberInfo> getFollowing(Integer memberId, PageRequest pageRequest) {
         // 회원의 팔로잉 목록 가져오기
-        Member member =  memberRepository.findById(memberId)
-                    .orElseThrow(() -> {
-                        log.warn("해당하는 회원이 없습니다. memberId : {}", memberId);
-                        return new NotFoundMemberException();
-                    });
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> {
+                    log.warn("해당하는 회원이 없습니다. memberId : {}", memberId);
+                    return new NotFoundMemberException();
+                });
 
 
         List<Follow> followingList = followRepository.findByFromMemberId(member.getId(), pageRequest);
@@ -185,6 +250,11 @@ public class MemberService {
     }
 
 
+    /**
+     * 회원 팔로우 신청
+     *
+     * @param requestFollowRequestDto 팔로우 신청 요청 DTO
+     */
     public void followMember(RequestFollowRequestDto requestFollowRequestDto) {
         Member member = authService.getMember();
         boolean followRequest = requestFollowRequestDto.getFollow();
@@ -195,8 +265,8 @@ public class MemberService {
                     return new NotFoundMemberException();
                 });
 
-        if(followRequest){ // 팔로우 신청 요청인경우,
-            if(followRepository.findByFromMemberIdAndToMemberId(member.getId(), targetMember.getId()).isPresent()){
+        if (followRequest) { // 팔로우 신청 요청인경우,
+            if (followRepository.findByFromMemberIdAndToMemberId(member.getId(), targetMember.getId()).isPresent()) {
                 log.warn("이미 팔로우 신청한 회원입니다. memberId : {}", requestFollowRequestDto.getMemberId());
                 throw new DuplicateFollowRequestException();
             }
@@ -205,13 +275,54 @@ public class MemberService {
             follow.setToMember(targetMember);
 
             followRepository.save(follow);
-        }else{ // 팔로우 취소 요청인 경우,
-            if(followRepository.findByFromMemberIdAndToMemberId(member.getId(), targetMember.getId()).isEmpty()){
+        } else { // 팔로우 취소 요청인 경우,
+            if (followRepository.findByFromMemberIdAndToMemberId(member.getId(), targetMember.getId()).isEmpty()) {
                 log.warn("팔로우 신청하지 않은 회원입니다. memberId : {}", requestFollowRequestDto.getMemberId());
                 throw new DuplicateFollowRequestException();
             }
 
             followRepository.deleteByFromMemberIdAndToMemberId(member.getId(), targetMember.getId());
         }
+    }
+
+    /**
+     * 회원의 트랙 목록 가져오기
+     *
+     * @param memberId    트랙 목록을 가져올 회원 ID
+     * @param pageRequest 페이지 요청
+     * @return 트랙 정보 리스트
+     */
+    public List<TrackInfo> getTrack(Integer memberId, PageRequest pageRequest) {
+        // 회원의 트랙 목록 가져오기
+        Member requestMember = authService.getMember();
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> {
+                    log.warn("해당하는 회원이 없습니다. memberId : {}", memberId);
+                    return new NotFoundMemberException();
+                });
+        List<Track> trackList;
+
+        // 트랙 목록 조회
+        if(requestMember.getId().equals(member.getId())){
+            trackList = trackRepository.findByMemberId(member.getId(), pageRequest);
+        }else{
+            trackList = trackRepository.findByMemberIdAndVisibility(member.getId(), true, pageRequest);
+        }
+
+        // 트랙 정보 리스트 생성
+        List<TrackInfo> trackInfoList = new LinkedList<>();
+        for (Track track : trackList) {
+            TrackInfo trackInfo = TrackInfo.builder()
+                    .trackId(track.getId())
+                    .title(track.getTitle())
+                    .nickname(member.getNickname())
+                    .duration(track.getDuration())
+                    .imageUrl(track.getImageUrl())
+                    .build();
+
+            trackInfoList.add(trackInfo);
+        }
+
+        return trackInfoList;
     }
 }

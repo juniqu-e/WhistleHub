@@ -98,7 +98,36 @@ public class AuthService {
         List<Integer> tagIdList = registerRequestDto.getTagList();
         List<Tag> tagList = tagRepository.findAllById(tagIdList);
 
+        // 회원가입에 필요한 검증 시작
 
+        // 입력 값 체크 -> 일반적인 에러 반환
+        // 아이디, 비밀번호, 닉네임, 이메일, 생일, 성별 형식 체크
+        if (!validateLoginIdFormat(loginId)) {
+            log.warn("아이디 형식이 잘못되었습니다.");
+            throw new InvalidFormattedRequest();
+        }
+        if (!validateNicknameFormat(nickname)) {
+            log.warn("닉네임 형식이 잘못되었습니다.");
+            throw new InvalidFormattedRequest();
+        }
+        if (!validateEmailFormat(email)) {
+            log.warn("이메일 형식이 잘못되었습니다.");
+            throw new InvalidFormattedRequest();
+        }
+        if (!validatePasswordFormat(password)) {
+            log.warn("비밀번호 형식이 잘못되었습니다.");
+            throw new InvalidFormattedRequest();
+        }
+        if (!validateBirthFormat(birth)) {
+            log.warn("생년월일 형식이 잘못되었습니다.");
+            throw new InvalidFormattedRequest();
+        }
+        if (!validateGenderFormat(gender)) {
+            log.warn("성별 형식이 잘못되었습니다.");
+            throw new InvalidFormattedRequest();
+        }
+
+        // DB데이터 체크 -> 조금더 구체적으로 에러 반환
         // 중복 체크 loginId, nickname, email
         if (checkDuplicatedId(loginId))
             throw new DuplicateIdException();
@@ -107,13 +136,12 @@ public class AuthService {
         if (checkDuplicatedEmail(email))
             throw new DuplicateEmailException();
 
-        //todo : 아이디, 비밀번호, 닉네임, 이메일, 생일, 성별 형식 체크
-
-        if(!redisService.hasKey(email + "-validated")) // 이메일 검증이 완료되지 않았다면,
+        if (!redisService.hasKey(email + "-validated")) // 이메일 검증이 완료되지 않았다면,
             throw new EmailNotValidatedException();
 
         redisService.delete(email + "-validated");
 
+        // 검증 종료
         // 새 회원 등록
         Member member = Member.builder()
                 .loginId(loginId)
@@ -140,6 +168,99 @@ public class AuthService {
 
         return member.getId();
     }
+
+    /**
+     * 아이디 형식을 검증합니다.
+     * - 4-20자
+     * - 영어 대소문자, 숫자 허용
+     *
+     * @param loginId 검증할 아이디
+     * @return 형식이 유효하면 true, 아니면 false
+     */
+    public boolean validateLoginIdFormat(String loginId) {
+        if (loginId == null) return false;
+        return loginId.matches("^[a-zA-Z0-9]{4,20}$");
+    }
+
+    /**
+     * 닉네임 형식을 검증합니다.
+     * - 2-20자
+     * - 한글, 영어 허용
+     *
+     * @param nickname 검증할 닉네임
+     * @return 형식이 유효하면 true, 아니면 false
+     */
+    public boolean validateNicknameFormat(String nickname) {
+        if (nickname == null) return false;
+        return nickname.matches("^[a-zA-Z가-힣0-9]{2,20}$");
+    }
+
+    /**
+     * 이메일 형식을 검증합니다.
+     *
+     * @param email 검증할 이메일
+     * @return 형식이 유효하면 true, 아니면 false
+     */
+    public boolean validateEmailFormat(String email) {
+        if (email == null) return false;
+        // 길이 검증 (최소 5자, 최대 100자)
+        if (email.length() < 5 || email.length() > 100) return false;
+
+        return email.matches("^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$");
+    }
+
+    /**
+     * 비밀번호 형식을 검증합니다.
+     * - 8-64자
+     * - 영문 소문자, 영문 대문자, 숫자, 특수 문자가 각각 1개 이상 반드시 포함
+     *
+     * @param password 검증할 비밀번호
+     * @return 형식이 유효하면 true, 아니면 false
+     */
+    public boolean validatePasswordFormat(String password) {
+        if (password == null) return false;
+
+        // 각 문자 종류가 반드시 포함되어야 함
+        String regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?])"
+                + "[a-zA-Z0-9!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]{8,64}$";
+
+        return password.matches(regex);
+    }
+
+    /**
+     * 생년월일 형식을 검증합니다.
+     * - YYYY-MM-DD 형식
+     *
+     * @param birth 검증할 생년월일
+     * @return 형식이 유효하면 true, 아니면 false
+     */
+    public boolean validateBirthFormat(String birth) {
+        if (birth == null) return false;
+        // YYYY-MM-DD 형식 검증
+        if (!birth.matches("^\\d{4}-\\d{2}-\\d{2}$")) return false;
+
+        try {
+            // 실제 날짜 유효성 검증
+            java.time.LocalDate.parse(birth);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * 성별 형식을 검증합니다.
+     *
+     * @param gender 검증할 성별
+     * @return 형식이 유효하면 true, 아니면 false
+     */
+    public boolean validateGenderFormat(Character gender) {
+        if (gender == null)
+            return false;
+
+        return gender == 'M' || gender == 'F';
+    }
+
 
     /**
      * 중복된 아이디가 DB에 있는지 확인합니다.
@@ -308,6 +429,11 @@ public class AuthService {
         emailService.sendMail(emailMessage, true); // 내부적으로 메일발송에 실패했을때 예외를 던집니다.
     }
 
+    /**
+     * 태그 목록을 가져옵니다.
+     *
+     * @return 태그 목록
+     */
     public List<TagDto> getTagList() {
         List<Tag> tagList = tagRepository.findAll();
         List<TagDto> tagDtoList = new LinkedList<>();
