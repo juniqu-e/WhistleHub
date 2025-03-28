@@ -10,9 +10,10 @@ import org.springframework.stereotype.Repository;
 public interface RelationshipRepository extends Neo4jRepository<TrackNode, Integer> {
 
     @Query("MATCH (t1:Track {id: $trackId1}), (t2:Track {id: $trackId2}) " +
-            "MERGE (t1)-[:SIMILAR]->(t2)")
+            "MERGE (t1)-[:SIMILAR{similarity: $similarity}]->(t2)")
     void createSimilarRelationship(@Param("trackId1") Integer trackId1,
-                                   @Param("trackId2") Integer trackId2);
+                                   @Param("trackId2") Integer trackId2,
+                                      @Param("similarity") Double similarity);
 
     @Query("MATCH (t:Track {id: $trackId}), (tag:Tag {id: $tagId}) " +
             "MERGE (t)-[:HAVE]->(tag)")
