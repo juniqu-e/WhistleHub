@@ -1,5 +1,6 @@
 package com.ssafy.backend.auth.service;
 
+import com.ssafy.backend.graph.model.entity.type.WeightType;
 import com.ssafy.backend.mail.model.common.EmailMessage;
 import com.ssafy.backend.mail.service.EmailService;
 import com.ssafy.backend.auth.model.common.CustomUserDetails;
@@ -156,15 +157,16 @@ public class AuthService {
         member = memberRepository.save(member);
 
         // 그래프 DB에도 추가
+        // 회원 노드 생성
         dataCollectingService.createMember(member.getId());
 
-
-        // 태그 추가
+        List<Integer> tagNodeIdList = new LinkedList<>();
         for (Tag tag : tagList) {
-            log.info("(member: {}) 가 (tag : {}, {})를 선호합니다.", member.getId(), tag.getId(), tag.getName());
-            // todo : 태그 선호 관계 추가
-            // dataCollectingService.viewTag(member.getId(), tag.getId(), WeightType.LIKE);
+            tagNodeIdList.add(tag.getId());
         }
+
+        // 태그 노드 연결
+        dataCollectingService.viewTags(member.getId(), tagNodeIdList, WeightType.LIKE);
 
         return member.getId();
     }
