@@ -23,8 +23,8 @@ public class RelationshipService {
     final private RelationshipRepository relationshipRepository;
 
     @Transactional
-    public void createSimilarRelationship(Integer trackId1, Integer trackId2) {
-        relationshipRepository.createSimilarRelationship(trackId1, trackId2);
+    public void createSimilarRelationship(Integer trackId1, Integer trackId2, Double similarity) {
+        relationshipRepository.createSimilarRelationship(trackId1, trackId2, similarity);
     }
 
     @Transactional
