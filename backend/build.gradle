@@ -50,13 +50,17 @@ dependencies {
 
     // ffmpeg
     implementation group: 'net.bramp.ffmpeg', name: 'ffmpeg', version: '0.8.0'
+    // https://mvnrepository.com/artifact/org.jjazzlab/fluidsynthjava
+    implementation("org.jjazzlab:fluidsynthjava:0.3.2")
+
 
     // mail
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 
     // LangChain4j
-    implementation 'dev.langchain4j:langchain4j-google-ai-gemini:1.0.0-beta2'
-    implementation 'dev.langchain4j:langchain4j-neo4j:1.0.0-beta2'
+    implementation 'dev.langchain4j:langchain4j-google-ai-gemini:1.0.0-alpha1'
+    implementation 'dev.langchain4j:langchain4j-open-ai:1.0.0-alpha1'
+    implementation 'dev.langchain4j:langchain4j-neo4j:1.0.0-alpha1'
 
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
