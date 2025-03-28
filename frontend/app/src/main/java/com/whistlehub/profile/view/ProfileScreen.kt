@@ -1,5 +1,6 @@
 package com.whistlehub.profile.view
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
@@ -33,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,30 +44,27 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
-import com.whistlehub.common.data.remote.dto.response.ProfileResponse
-import com.whistlehub.common.data.remote.dto.response.TrackResponse
-import com.whistlehub.common.view.copmonent.TrackItemColumn
+import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.common.viewmodel.LoginViewModel
 import com.whistlehub.profile.viewmodel.ProfileViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel(),
-    originNavController: NavHostController,
-    userViewModel: LoginViewModel = hiltViewModel()
+    logoutManager: LogoutManager,
+    navController: NavHostController
 ) {
     val customColors = CustomColors()
+    val profile by viewModel.profile.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
 
-    val profile = viewModel.profileState
-    val tracks = viewModel.trackListState // 기본값: emptyList() 이미 설정됨
-    val userInfo by userViewModel.userInfo.collectAsState()
-    // 화면 진입 시 데이터 로딩
+    // 화면이 처음 구성될 때 프로필 데이터를 로드합니다.
     LaunchedEffect(Unit) {
-        viewModel.loadProfile(userInfo?.memberId)
+        viewModel.loadProfile()
     }
 
     Scaffold(
@@ -76,8 +76,8 @@ fun ProfileScreen(
                         Icon(Icons.Default.Menu, contentDescription = "메뉴", tint = customColors.Grey50)
                     }
                     IconButton(onClick = {
-                        originNavController.navigate("login") {
-                            popUpTo("login") { inclusive = true }
+                        coroutineScope.launch {
+                            logoutManager.emitLogout()
                         }
                     }) {
                         Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "로그아웃", tint = customColors.Grey50)
@@ -93,29 +93,20 @@ fun ProfileScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(8.dp)
         ) {
-            // 에러 메시지가 있을 경우 상단에 노출 (기본 레이아웃은 계속 표시)
-            if (viewModel.errorMessage != null) {
-                item {
-                    Text(
-                        text = "Error: ${viewModel.errorMessage}",
-                        color = customColors.Error500,
-                        modifier = Modifier.fillMaxWidth().padding(8.dp)
-                    )
-                }
-            }
-
             // 헤더 영역
             item {
                 ProfileHeader(
-                    userNickname = profile.nickname,
-                    userDescription = profile.profileText,
-                    followerCount = 1230, // 예시
-                    followingCount = 4560, // 예시
-                    trackCount = tracks.size
+                    profileImage = profile?.profileImage,
+                    nickname = profile?.nickname ?: "Loading...",
+                    profileText = profile?.profileText ?: "",
+                    followerCount = 1230, // 예시 데이터
+                    followingCount = 4560, // 예시 데이터
+                    trackCount = 0 // tracks.size
                 )
             }
 
-            // 트랙 목록 렌더링 (비어있으면 빈 리스트)
+            // 트랙 목록 렌더링 부분은 주석 처리합니다.
+            /*
             items(tracks) { track ->
                 ProfileTrackItem(
                     trackId = track.trackId,
@@ -125,6 +116,7 @@ fun ProfileScreen(
                     imageUrl = track.imageUrl
                 )
             }
+            */
         }
     }
 }
@@ -168,13 +160,14 @@ fun ProfileTrackItem(
 
 @Composable
 fun ProfileHeader(
-    userNickname: String,
-    userDescription: String,
+    profileImage: String?,
+    nickname: String,
+    profileText: String,
     followerCount: Int,
     followingCount: Int,
     trackCount: Int = 0
 ) {
-    val customColors = CustomColors()
+    val colors = CustomColors()
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -185,32 +178,42 @@ fun ProfileHeader(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(androidx.compose.foundation.shape.CircleShape)
-                    .background(Color.Gray),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
+            if (!profileImage.isNullOrEmpty()) {
+                AsyncImage(
+                    model = profileImage,
                     contentDescription = "Profile Image",
-                    tint = customColors.Grey50,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(32.dp))
                 )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(32.dp))
+                        .background(Color.Gray),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Profile Image",
+                        tint = Color.LightGray                        ,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column {
                 Text(
-                    text = userNickname,
+                    text = nickname,
                     style = MaterialTheme.typography.titleLarge,
-                    color = customColors.Grey50
+                    color = colors.Grey50
                 )
                 Text(
-                    text = userDescription,
+                    text = profileText,
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 2,
-                    color = customColors.Grey50
+                    color = colors.Grey50
                 )
             }
         }

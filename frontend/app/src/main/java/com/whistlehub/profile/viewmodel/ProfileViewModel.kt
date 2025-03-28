@@ -1,53 +1,51 @@
 package com.whistlehub.profile.viewmodel
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.whistlehub.common.data.local.room.UserRepository
 import com.whistlehub.common.data.remote.dto.response.ProfileResponse
 import com.whistlehub.common.data.repository.ProfileService
+import com.whistlehub.common.viewmodel.LoginViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val profileService: ProfileService
+    private val profileService: ProfileService,
+    val userRepository: UserRepository
 ) : ViewModel() {
-    var profileState: ProfileResponse.GetProfileResponse by mutableStateOf(
-        ProfileResponse.GetProfileResponse(
-            nickname = "",
-            profileImage = "",
-            profileText = ""
-        )
-    )
-        private set
 
-    var trackListState by mutableStateOf<List<ProfileResponse.GetMemberTracksResponse>>(emptyList())
-        private set
+    private val _isLogin = MutableStateFlow(true)
+    val isLogin: StateFlow<Boolean> get() = _isLogin
 
-    var loading by mutableStateOf(false)
-        private set
+    private val _profile = MutableStateFlow<ProfileResponse.GetProfileResponse?>(null)
+    val profile: MutableStateFlow<ProfileResponse.GetProfileResponse?> get() = _profile
 
-    var errorMessage by mutableStateOf<String?>(null)
-        private set
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> get() = _errorMessage
 
     fun loadProfile(memberId: Int? = null) {
         viewModelScope.launch {
-            loading = true
-            val profileResponse = profileService.getProfile(memberId)
-            val tracksResponse = profileService.getMemberTracks(memberId, page = 1, orderby = "latest")
-
-            if (profileResponse.payload != null && tracksResponse.payload != null) {
-                profileState = profileResponse.payload
-                trackListState = tracksResponse.payload
-                errorMessage = null
-            } else {
-                errorMessage = profileResponse.message ?: "프로필 데이터를 불러오는데 실패했습니다."
+            val user = userRepository.getUser()
+            if (user == null) {
+                Log.d("warning", "User not found, using default ID 1")
             }
-
-            loading = false
+            val profileResponse = profileService.getProfile(user?.memberId ?: 0)
+            withContext(Dispatchers.Main) {
+                if (profileResponse.code != "SU") {
+                    _errorMessage.value = profileResponse.message
+                } else {
+                    _profile.emit(profileResponse.payload)
+                }
+            }
         }
     }
 }

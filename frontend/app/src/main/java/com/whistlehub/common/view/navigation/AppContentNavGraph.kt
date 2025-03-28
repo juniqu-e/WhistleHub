@@ -6,7 +6,9 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.common.view.home.HomeScreen
+import com.whistlehub.common.viewmodel.LoginViewModel
 import com.whistlehub.playlist.view.FullPlayerScreen
 import com.whistlehub.playlist.view.PlayListScreen
 import com.whistlehub.playlist.view.PlaylistTrackListScreen
@@ -20,9 +22,9 @@ import com.whistlehub.workstation.view.WorkStationScreen
 @Composable
 fun AppContentNavGraph(
     navController: NavHostController,
+    logoutManager: LogoutManager,
     paddingValues: PaddingValues,
     modifier: Modifier = Modifier,
-    originNavController: NavHostController  // 로그아웃을 위해 전달받은 네비게이션 컨트롤러
 ) {
     NavHost(
         navController = navController,
@@ -43,7 +45,7 @@ fun AppContentNavGraph(
             PlayListScreen(navController = navController)
         }
         composable(route = Screen.Profile.route) {
-            ProfileScreen(/*navController = navController, */originNavController = originNavController)  // 로그아웃을 위해 최상위 컨트롤러 전달
+            ProfileScreen(navController = navController, logoutManager = logoutManager)  // 로그아웃을 위해 최상위 컨트롤러 전달
         }
         // 플레이어 화면
         composable(route = Screen.Player.route) {
