@@ -1,5 +1,7 @@
 package com.ssafy.backend.common.service;
 
+import com.ssafy.backend.common.error.exception.FileUploadFailedException;
+import com.ssafy.backend.common.error.exception.UnreadableFileException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,8 +23,12 @@ import java.util.UUID;
  * <pre>AWS S3 서비스</pre>
  *
  * @author 박병주
- * @version 1.0
+ * @author 허현준
+ * @version 1.2
  * @since 2025-03-13
+ * @changes 1.0 - 최초 작성
+ *          1.1 - 파일 업로드 예외 처리 추가
+ *          1.2 - 파일 크기 제한, 확장자 제한 추가
  */
 
 @Service
@@ -53,6 +59,20 @@ public class S3Service {
         String filenameExtension = StringUtils.getFilenameExtension(file.getOriginalFilename());
         String uuid = UUID.randomUUID().toString();
 
+        // 파일 입력을 보고 잘못됨 -> BADREQUEST
+
+        // 파일 크기 제한
+        if(file.getSize() > 20 * 1024 * 1024) // 20MB
+            throw new UnreadableFileException();
+
+        // 파일 확장자 제한
+        if(filenameExtension == null)
+            throw new UnreadableFileException();
+        if(folder.equals(IMAGE) && !filenameExtension.matches("jpg|jpeg|png|gif")) // 이미지 확장자
+            throw new UnreadableFileException();
+        if(folder.equals(MUSIC) && !filenameExtension.matches("mp3|wav|ogg")) // 음악 확장자
+            throw new UnreadableFileException();
+
         // UUID + 시간값 + .확장자
         String fileName = folder + "/" + uuid + System.currentTimeMillis() + "." + filenameExtension;
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -69,10 +89,10 @@ public class S3Service {
             if (response.sdkHttpResponse().isSuccessful()) {
                 return filePrefix + fileName;
             } else {
-                throw new RuntimeException("파일 업로드 실패");
+                throw new FileUploadFailedException();
             }
         } catch (IOException e) {
-            throw new RuntimeException("파일 IO 에러");
+            throw new UnreadableFileException();
         }
     }
 

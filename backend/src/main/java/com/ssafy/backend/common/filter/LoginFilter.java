@@ -93,6 +93,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         LoginResponseDto loginResponseDto = LoginResponseDto.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .memberId(member.getId())
                 .profileImage(userDetails.getMember().getProfileImage())
                 .nickname(userDetails.getMember().getNickname())
                 .build();

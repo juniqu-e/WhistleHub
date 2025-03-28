@@ -37,6 +37,7 @@ fun AppContentNavGraph(
         }
         composable(route = Screen.DAW.route) {
             WorkStationScreen(navController = navController)
+//            DAWScreen()
         }
         composable(route = Screen.PlayList.route) {
             PlayListScreen(navController = navController)

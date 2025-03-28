@@ -1,13 +1,23 @@
 package com.whistlehub.playlist.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.whistlehub.common.data.local.room.UserRepository
 import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
+import com.whistlehub.common.data.repository.PlaylistService
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
-class PlaylistViewModel @Inject constructor() : ViewModel() {
+class PlaylistViewModel @Inject constructor(
+    val playlistService: PlaylistService,
+    val userRepository: UserRepository
+) : ViewModel() {
     private val _playlists = MutableStateFlow<List<PlaylistResponse.GetMemberPlaylistsResponse>>(emptyList())
     val playlists: MutableStateFlow<List<PlaylistResponse.GetMemberPlaylistsResponse>> get() = _playlists
 
@@ -19,59 +29,39 @@ class PlaylistViewModel @Inject constructor() : ViewModel() {
 
 
     fun getPlaylists() {
-        // 임시 리스트 생성
-        _playlists.value = listOf(
-            PlaylistResponse.GetMemberPlaylistsResponse(
-                playlistId = 1,
-                name = "My Playlist 1",
-                imageUrl = "https://picsum.photos/200/300?random=51"
-            ),
-            PlaylistResponse.GetMemberPlaylistsResponse(
-                playlistId = 2,
-                name = "My Playlist 2",
-                imageUrl = "https://picsum.photos/200/300?random=52"
-            ),
-            PlaylistResponse.GetMemberPlaylistsResponse(
-                playlistId = 3,
-                name = "My Playlist 3",
-                imageUrl = "https://picsum.photos/200/300?random=53"
-            ),
-        )
+        viewModelScope.launch(Dispatchers.IO) {
+            val user = userRepository.getUser() // 사용자 정보 가져오기
+
+            // 사용자 정보가 없을 경우 기본값으로 1(테스트계정 ID) 사용
+            if (user == null) {
+                Log.d("warning", "User not found, using default ID 1")
+            }
+            val playlistResponse = playlistService.getMemberPlaylists(user?.memberId ?: 1, 1, 10)
+
+            withContext(Dispatchers.Main) {
+                _playlists.emit(playlistResponse.payload ?: emptyList())
+            }
+        }
+    }
+
+    fun getPlaylistInfo(playlistId: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val playlistResponse = playlistService.getPlaylists(playlistId) // 모든 요청 완료 후 리스트 생성
+
+            withContext(Dispatchers.Main) {
+                _playlistInfo.emit(playlistResponse.payload)
+            }
+        }
     }
 
     fun getPlaylistTrack(playlistId: Int) {
-        // 임시 플레이리스트 정보 생성
-        _playlistInfo.value = PlaylistResponse.GetPlaylistResponse(
-            memberId = 1,
-            name = "My Playlist 1",
-            description = "This is a sample playlist description.",
-            imageUrl = "https://picsum.photos/200/300?random=61"
-        )
+        viewModelScope.launch(Dispatchers.IO) {
+            val playlistTrackResponse =
+                playlistService.getPlaylistTracks(playlistId) // 모든 요청 완료 후 리스트 생성
 
-        // 임시 리스트 생성 (ID 생략)
-        _playlistTrack.value = listOf(
-            PlaylistResponse.PlaylistTrackResponse(
-                playlistTrackId = 1,
-                playOrder = 1.0,
-                trackInfo = PlaylistResponse.Track(
-                    trackId = 1,
-                    nickname = "Artist 1",
-                    title = "Track 1",
-                    duration = 180,
-                    imageUrl = "https://picsum.photos/200/300?random=71"
-                )
-            ),
-            PlaylistResponse.PlaylistTrackResponse(
-                playlistTrackId = 2,
-                playOrder = 2.0,
-                trackInfo = PlaylistResponse.Track(
-                    trackId = 2,
-                    nickname = "Artist 1",
-                    title = "Track 2",
-                    duration = 240,
-                    imageUrl = "https://picsum.photos/200/300?random=72"
-                )
-            ),
-        )
+            withContext(Dispatchers.Main) {
+                _playlistTrack.emit(playlistTrackResponse.payload ?: emptyList())
+            }
+        }
     }
 }

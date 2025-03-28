@@ -26,9 +26,9 @@ object TrackModule {
     @Provides
     @Singleton
     fun provideTrackPlayViewModel(
-        exoPlayer: ExoPlayer, trackService: TrackService
+        @ApplicationContext context: Context, exoPlayer: ExoPlayer, trackService: TrackService
     ): TrackPlayViewModel {
-        return TrackPlayViewModel(exoPlayer, trackService)
+        return TrackPlayViewModel(context, exoPlayer, trackService)
     }
 
     @Provides

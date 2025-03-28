@@ -1,6 +1,7 @@
 package com.whistlehub.workstation.view
 
 import android.app.Activity
+import android.util.Log
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -32,11 +33,13 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -58,42 +61,20 @@ import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.workstation.data.Layer
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkStationScreen(navController: NavController) {
     val activity = LocalActivity.current as? Activity
     val viewModel: WorkStationViewModel = hiltViewModel()
-    var tracks by remember {
-        mutableStateOf(
-            listOf(
-                Layer(
-                    id = 1,
-                    name = "DRUM",
-                    description = "ba 95 drum loop fever full",
-                    category = "DRUM"
-                ),
-                Layer(
-                    id = 2,
-                    name = "OTHERS",
-                    description = "css 90 full song water d#m 01",
-                    category = "OTHERS"
-                ),
-                Layer(
-                    id = 3,
-                    name = "BASS",
-                    description = "gbc bass 85 gorilla f#fm",
-                    category = "BASS"
-                ),
-                Layer(
-                    id = 4,
-                    name = "BASS",
-                    description = "bpm100 a bass20",
-                    category = "BASS"
-                ),
-            )
-        )
-    }
-    val horizontalScrollState = rememberScrollState()
+    val tracks by viewModel.tracks.collectAsState()
     val verticalScrollState = rememberScrollState()
+    val bottomBarActions = viewModel.bottomBarActions.copy(
+        onExitClicked = {
+            navController.popBackStack()
+            Log.d("Exit", "EXIT")
+        }
+    )
+    val selectedLayerId = remember { mutableStateOf<Int?>(null) }
     // Immersive mode (fullscreen)
     LaunchedEffect(Unit) {
         activity?.window?.let { window ->
@@ -127,22 +108,64 @@ fun WorkStationScreen(navController: NavController) {
         ) {
             LayerPanel(
                 tracks = tracks,
-                onAddInstrument = {
-                    val newId = (tracks.maxOfOrNull { it.id } ?: 0) + 1
-                    tracks = tracks + Layer(newId, "$newId")
-                },
                 verticalScrollState = verticalScrollState,
                 modifier = Modifier.fillMaxWidth(),
-                onDeleteLayer = { layer ->
-                    tracks = tracks.filter { it.id != layer.id }
+                onAddInstrument = {
+                    viewModel.addLayer()
+                },
+                onDeleteLayer = {
+                    viewModel.deleteLayer(it)
                 },
                 onResetLayer = {
                     //믹싱 옵션 초기화
+                },
+                onBeatAdjustment = { layer ->
+//                    beatAdjustmentLayer = layer
+                    selectedLayerId.value = layer.id
                 }
             )
         }
 
-        viewModel.bottomBarProvider.WorkStationBottomBar()
+        viewModel.bottomBarProvider.WorkStationBottomBar(bottomBarActions)
+        val selectedLayer = tracks.firstOrNull { it.id == selectedLayerId.value }
+        selectedLayer?.let { layer ->
+            ModalBottomSheet(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.displayCutout)
+                    .padding(horizontal = 16.dp),
+                onDismissRequest = { selectedLayerId.value = null }
+            ) {
+                BeatAdjustmentPanel(
+                    layer = layer,
+                    onDismiss = { selectedLayerId.value = null },
+                    onGridClick = { index ->
+                        viewModel.toggleBeat(layer.id, index)
+                    },
+                    onAutoRepeatApply = { start, interval ->
+                        viewModel.applyPatternAutoRepeat(selectedLayer.id, start, interval)
+                    }
+                )
+            }
+        }
+//        // 박자 조정 바텀시트 표시
+//        if (beatAdjustmentLayer != null) {
+//            ModalBottomSheet(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .windowInsetsPadding(WindowInsets.displayCutout)
+//                    .padding(horizontal = 16.dp),
+//                onDismissRequest = { beatAdjustmentLayer = null }
+//            ) {
+//                BeatAdjustmentPanel(
+//                    layer = beatAdjustmentLayer!!,
+//                    onDismiss = { beatAdjustmentLayer = null },
+//                    onGridClick = { index ->
+//                        viewModel.toggleBeat(beatAdjustmentLayer!!.id, index)
+//                    }
+//                )
+//            }
+//        }
     }
 }
 
@@ -152,6 +175,7 @@ fun LayerPanel(
     onAddInstrument: () -> Unit,
     onDeleteLayer: (Layer) -> Unit,
     onResetLayer: (Layer) -> Unit,
+    onBeatAdjustment: (Layer) -> Unit,
     verticalScrollState: ScrollState,
     modifier: Modifier
 ) {
@@ -170,6 +194,7 @@ fun LayerPanel(
                     .height(80.dp),
                 onDelete = onDeleteLayer,
                 onReset = onResetLayer,
+                onBeatAdjustment = onBeatAdjustment,
             )
             Spacer(modifier = Modifier.heightIn(8.dp))
         }
@@ -198,7 +223,8 @@ fun LayerItem(
     layer: Layer,
     modifier: Modifier,
     onDelete: (Layer) -> Unit,
-    onReset: (Layer) -> Unit
+    onReset: (Layer) -> Unit,
+    onBeatAdjustment: (Layer) -> Unit,
 ) {
     val bgColor = getTrackColor(layer)
     val textColor = if (bgColor.luminance() > 0.5f) Color.Black else Color.White
@@ -271,6 +297,14 @@ fun LayerItem(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false }
                 ) {
+                    //마디 조정
+                    DropdownMenuItem(
+                        text = { Text("마디 조정") },
+                        onClick = {
+                            menuExpanded = false
+                            onBeatAdjustment(layer)
+                        }
+                    )
                     //삭제 이벤트
                     DropdownMenuItem(
                         text = { Text("레이어 삭제") },
@@ -291,8 +325,6 @@ fun LayerItem(
             }
         }
     }
-
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
