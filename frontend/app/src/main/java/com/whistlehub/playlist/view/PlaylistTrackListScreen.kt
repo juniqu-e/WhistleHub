@@ -61,7 +61,8 @@ fun PlaylistTrackListScreen(
         playlistViewModel.getPlaylistInfo(playlistId)
     }
     val coroutineScope = rememberCoroutineScope()
-    var showDialogState by remember { mutableStateOf(false) }
+    var showPlayPlaylistDialog by remember { mutableStateOf(false) }
+    var showDeletePlaylistDialog by remember { mutableStateOf(false) }
     val playlistTrack by playlistViewModel.playlistTrack.collectAsState()
     val playlistInfo by playlistViewModel.playlistInfo.collectAsState()
 
@@ -87,7 +88,7 @@ fun PlaylistTrackListScreen(
                     modifier = Modifier
                         .size(30.dp)
                         .clickable {
-
+                            showPlayPlaylistDialog = true
                         },
                     tint = CustomColors().Mint500
                 )
@@ -105,7 +106,7 @@ fun PlaylistTrackListScreen(
                     modifier = Modifier
                         .size(24.dp)
                         .clickable {
-                            showDialogState = true
+                            showDeletePlaylistDialog = true
                         },
                     tint = CustomColors().Grey50
                 )
@@ -186,9 +187,9 @@ fun PlaylistTrackListScreen(
     }
 
     // 삭제 다이얼로그
-    if (showDialogState) {
+    if (showDeletePlaylistDialog) {
         AlertDialog(
-            onDismissRequest = { showDialogState = false },
+            onDismissRequest = { showDeletePlaylistDialog = false },
             title = { Text("플레이리스트 삭제") },
             text = { Text("플레이리스트를 삭제하시겠습니까?") },
             confirmButton = {
@@ -198,7 +199,7 @@ fun PlaylistTrackListScreen(
                             playlistViewModel.deletePlaylist(playlistId)
                             navController.popBackStack()
                         }
-                        showDialogState = false
+                        showDeletePlaylistDialog = false
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = CustomColors().Error700,
@@ -209,7 +210,43 @@ fun PlaylistTrackListScreen(
                 }
             },
             dismissButton = {
-                Button(onClick = { showDialogState = false },
+                Button(onClick = { showDeletePlaylistDialog = false },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CustomColors().Grey400,
+                        contentColor = CustomColors().Grey950
+                    )) {
+                    Text("취소")
+                }
+            }
+        )
+    }
+
+    if (showPlayPlaylistDialog) {
+        AlertDialog(
+            onDismissRequest = { showPlayPlaylistDialog = false },
+            title = { Text("플레이리스트 재생") },
+            text = { Text("플레이리스트를 재생하시겠습니까?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            val convertedTracks = playlistTrack.map { track ->
+                                trackPlayViewModel.getTrackbyTrackId(track.trackInfo.trackId)!!
+                            }
+                            trackPlayViewModel.playPlaylist(convertedTracks)
+                        }
+                        showPlayPlaylistDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CustomColors().Mint500,
+                        contentColor = CustomColors().Grey950
+                    )
+                ) {
+                    Text("재생")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showPlayPlaylistDialog = false },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = CustomColors().Grey400,
                         contentColor = CustomColors().Grey950

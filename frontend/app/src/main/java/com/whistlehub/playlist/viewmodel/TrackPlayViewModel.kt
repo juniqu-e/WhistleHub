@@ -203,6 +203,12 @@ class TrackPlayViewModel @Inject constructor(
         }
     }
 
+    suspend fun playPlaylist(tracks: List<TrackResponse.GetTrackDetailResponse>) {
+        // 플레이리스트 재생
+        _playerTrackList.value = tracks
+        playTrack(tracks[0])
+    }
+
     fun setPlayerViewState(state: PlayerViewState) {
         _playerViewState.value = state
     }
