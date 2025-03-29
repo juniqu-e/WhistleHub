@@ -1,6 +1,5 @@
 package com.whistlehub.playlist.view
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -51,6 +50,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun PlayListScreen(navController: NavHostController, playlistViewModel: PlaylistViewModel = hiltViewModel()) {
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
+    var showDeletePlaylistDialog by remember { mutableStateOf(false) }
+    var playlistId by remember { mutableStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -151,10 +152,8 @@ fun PlayListScreen(navController: NavHostController, playlistViewModel: Playlist
                         .size(24.dp)
                         .clickable {
                             // 플레이리스트 삭제
-                            coroutineScope.launch {
-                                Log.d("delete", "플레이리스트 삭제")
-                                playlistViewModel.deletePlaylist(playlist.playlistId)
-                            }
+                            playlistId = playlist.playlistId
+                            showDeletePlaylistDialog = true
                         }
                 )
             }
@@ -223,6 +222,38 @@ fun PlayListScreen(navController: NavHostController, playlistViewModel: Playlist
                     )
                 ) {
                     Text("취소", style = Typography.bodyLarge)
+                }
+            }
+        )
+    }
+    if (showDeletePlaylistDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeletePlaylistDialog = false },
+            title = { Text("플레이리스트 삭제") },
+            text = { Text("플레이리스트를 삭제하시겠습니까?") },
+            confirmButton = {
+                Button (
+                    onClick = {
+                        coroutineScope.launch {
+                            playlistViewModel.deletePlaylist(playlistId)
+                        }
+                        showDeletePlaylistDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CustomColors().Error700,
+                        contentColor = CustomColors().Grey950
+                    )
+                ) {
+                    Text("삭제")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showDeletePlaylistDialog = false },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CustomColors().Grey400,
+                        contentColor = CustomColors().Grey950
+                    )) {
+                    Text("취소")
                 }
             }
         )

@@ -17,6 +17,9 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -24,7 +27,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,6 +61,7 @@ fun PlaylistTrackListScreen(
         playlistViewModel.getPlaylistInfo(playlistId)
     }
     val coroutineScope = rememberCoroutineScope()
+    var showDialogState by remember { mutableStateOf(false) }
     val playlistTrack by playlistViewModel.playlistTrack.collectAsState()
     val playlistInfo by playlistViewModel.playlistInfo.collectAsState()
 
@@ -79,7 +86,9 @@ fun PlaylistTrackListScreen(
                     contentDescription = "Play",
                     modifier = Modifier
                         .size(30.dp)
-                        .clickable {},
+                        .clickable {
+
+                        },
                     tint = CustomColors().Mint500
                 )
                 Icon(
@@ -96,12 +105,7 @@ fun PlaylistTrackListScreen(
                     modifier = Modifier
                         .size(24.dp)
                         .clickable {
-                            coroutineScope.launch {
-                                Log.d("PlaylistTrackListScreen", "Delete Playlist: $playlistId")
-                                playlistViewModel.deletePlaylist(playlistId)
-                                // 플레이리스트 삭제 후, 이전 화면으로 돌아감
-                                navController.popBackStack()
-                            }
+                            showDialogState = true
                         },
                     tint = CustomColors().Grey50
                 )
@@ -179,5 +183,40 @@ fun PlaylistTrackListScreen(
                 }
             }
         }
+    }
+
+    // 삭제 다이얼로그
+    if (showDialogState) {
+        AlertDialog(
+            onDismissRequest = { showDialogState = false },
+            title = { Text("플레이리스트 삭제") },
+            text = { Text("플레이리스트를 삭제하시겠습니까?") },
+            confirmButton = {
+                Button (
+                    onClick = {
+                        coroutineScope.launch {
+                            playlistViewModel.deletePlaylist(playlistId)
+                            navController.popBackStack()
+                        }
+                        showDialogState = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CustomColors().Error700,
+                        contentColor = CustomColors().Grey950
+                    )
+                ) {
+                    Text("삭제")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showDialogState = false },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CustomColors().Grey400,
+                        contentColor = CustomColors().Grey950
+                    )) {
+                    Text("취소")
+                }
+            }
+        )
     }
 }
