@@ -149,7 +149,20 @@ fun PlaylistTrackListScreen(
                     Icon(Icons.Filled.Pause, contentDescription = "Pause", tint = CustomColors().Mint500)
                     }
                 } else {
-                    IconButton({}) {
+                    IconButton({
+                        if (currentTrack?.trackId == track.trackInfo.trackId) {
+                            trackPlayViewModel.resumeTrack()
+                        } else {
+                            coroutineScope.launch {
+                                val convertedTrack = trackPlayViewModel.getTrackbyTrackId(track.trackInfo.trackId)
+                                if (convertedTrack != null) {
+                                    trackPlayViewModel.playTrack(convertedTrack)
+                                } else {
+                                    Log.d("PlaylistTrackListScreen", "Track not found: ${track.trackInfo.trackId}")
+                                }
+                            }
+                        }
+                    }) {
                         Icon(
                             Icons.Filled.PlayArrow,
                             contentDescription = "Play",

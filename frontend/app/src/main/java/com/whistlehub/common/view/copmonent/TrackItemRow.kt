@@ -33,7 +33,10 @@ import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun TrackItemRow(track: TrackResponse.GetTrackDetailResponse, style: TrackItemStyle = TrackItemStyle.DEFAULT, trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
+fun TrackItemRow(track: TrackResponse.GetTrackDetailResponse,
+                 style: TrackItemStyle = TrackItemStyle.DEFAULT,
+                 trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
+) {
     val coroutineScope = rememberCoroutineScope()
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
     val isPlaying by trackPlayViewModel.isPlaying.collectAsState(initial = false)

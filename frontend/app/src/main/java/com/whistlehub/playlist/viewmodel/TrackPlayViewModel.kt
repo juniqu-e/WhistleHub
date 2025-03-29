@@ -116,6 +116,21 @@ class TrackPlayViewModel @Inject constructor(
         exoPlayer.seekTo(position)
     }
 
+    suspend fun getTrackbyTrackId(trackId: Int): TrackResponse.GetTrackDetailResponse? {
+        return try {
+            val response = trackService.getTrackDetail(trackId.toString())
+            if (response.code == "SU") {
+                response.payload
+            } else {
+                Log.d("TrackPlayViewModel", "Failed to get track detail: ${response.message}")
+                null
+            }
+        } catch (e: Exception) {
+            Log.d("TrackPlayViewModel", "Error fetching track detail: ${e.message}")
+            null
+        }
+    }
+
     suspend fun playTrack(track: TrackResponse.GetTrackDetailResponse) {
         try {
             val trackData = trackService.playTrack(trackId = track.trackId.toString())
