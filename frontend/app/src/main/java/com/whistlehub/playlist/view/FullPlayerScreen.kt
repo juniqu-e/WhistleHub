@@ -334,6 +334,7 @@ fun PlayerController(
 ) {
     // 트랙 정보를 가져오기 위해 ViewModel 사용
     // 트랙 재생/일시정지/정지 버튼 클릭 시 ViewModel을 통해 트랙 제어
+    val coroutineScope = rememberCoroutineScope()
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
     val isPlaying by trackPlayViewModel.isPlaying.collectAsState(initial = false)
     val playerPosition by trackPlayViewModel.playerPosition.collectAsState()
@@ -345,7 +346,9 @@ fun PlayerController(
         Slider(
             value = playerPosition.toFloat(),
             onValueChange = { newPosition ->
-                trackPlayViewModel.seekTo(newPosition.toLong())
+                coroutineScope.launch {
+                    trackPlayViewModel.seekTo(newPosition.toLong())
+                }
             },
             valueRange = 0f..trackDuration.toFloat(), modifier = Modifier.fillMaxWidth(), thumb = {
                 Box(
@@ -382,8 +385,10 @@ fun PlayerController(
             horizontalArrangement = Arrangement.SpaceBetween)
         {
             IconButton(onClick = {
+                coroutineScope.launch {
                     trackPlayViewModel.previousTrack()
-                }) {
+                }
+            }) {
                     Icon(
                         imageVector = Icons.Rounded.FastRewind,
                         contentDescription = "PlayBack",
@@ -397,8 +402,10 @@ fun PlayerController(
                             trackPlayViewModel.pauseTrack()
                         } else {
                             if (currentTrack == null && trackPlayViewModel.playerTrackList.value.isNotEmpty()) {
-                                // 트랙이 없을 경우 첫 번째 트랙 재생
-                                trackPlayViewModel.playTrack(trackPlayViewModel.playerTrackList.value[0])
+                                coroutineScope.launch {
+                                    // 트랙이 없을 경우 첫 번째 트랙 재생
+                                    trackPlayViewModel.playTrack(trackPlayViewModel.playerTrackList.value[0])
+                                }
                             } else if (currentTrack != null) {
                                 trackPlayViewModel.resumeTrack()
                             }
@@ -412,7 +419,9 @@ fun PlayerController(
                     )
                 }
                 IconButton(onClick = {
-                    trackPlayViewModel.nextTrack()
+                    coroutineScope.launch {
+                        trackPlayViewModel.nextTrack()
+                    }
                 }) {
                     Icon(
                         imageVector = Icons.Rounded.FastForward,

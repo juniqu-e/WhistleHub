@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
@@ -87,8 +88,19 @@ class TrackPlayViewModel @Inject constructor(
                 if (state == Player.STATE_ENDED) {
                     _playerPosition.value = 0L
                     _trackDuration.value = 0L
-                    nextTrack() // 트랙이 끝나면 다음 곡 자동 재생
+                    viewModelScope.launch {
+                        nextTrack() // 트랙이 끝나면 다음 곡 자동 재생
+                    }
                 }
+                when (state) {
+                    Player.STATE_IDLE -> Log.d("ExoPlayer", "IDLE 상태")
+                    Player.STATE_BUFFERING -> Log.d("ExoPlayer", "버퍼링 중")
+                    Player.STATE_READY -> Log.d("ExoPlayer", "준비 완료, 재생 가능")
+                    Player.STATE_ENDED -> Log.d("ExoPlayer", "재생 완료")
+                }
+            }
+            override fun onPlayerError(error: PlaybackException) {
+                Log.e("ExoPlayer", "재생 오류 발생: ${error.message}")
             }
         })
         viewModelScope.launch {
@@ -100,18 +112,19 @@ class TrackPlayViewModel @Inject constructor(
         }
     }
 
-    fun seekTo(position: Long) {
+    suspend fun seekTo(position: Long) {
         exoPlayer.seekTo(position)
     }
 
-    fun playTrack(track: TrackResponse.GetTrackDetailResponse) {
-        viewModelScope.launch {
+    suspend fun playTrack(track: TrackResponse.GetTrackDetailResponse) {
+        try {
             val trackData = trackService.playTrack(trackId = track.trackId.toString())
 
             if (trackData != null) {
                 val mediaItem = MediaItem.fromUri(byteArrayToUri(context, trackData) ?: Uri.EMPTY)
                 exoPlayer.setMediaItem(mediaItem)
                 exoPlayer.prepare()
+                exoPlayer.playWhenReady = true
                 exoPlayer.play()
 
                 _currentTrack.value = track
@@ -120,14 +133,16 @@ class TrackPlayViewModel @Inject constructor(
                 // 플레이어 트랙 리스트 업데이트
                 val existingIndex = _playerTrackList.value.indexOfFirst { it.trackId == track.trackId }
                 if (existingIndex == -1) {
-                    _playerTrackList.value = _playerTrackList.value + track
+                    _playerTrackList.value += track
                 }
             }
-        }
-        val existingIndex = _playerTrackList.value.indexOfFirst { it.trackId == track.trackId }
+            val existingIndex = _playerTrackList.value.indexOfFirst { it.trackId == track.trackId }
 
-        if (existingIndex == -1) { // 플레이어에 없는 경우 추가
-            _playerTrackList.value = _playerTrackList.value + track
+            if (existingIndex == -1) { // 플레이어에 없는 경우 추가
+                _playerTrackList.value += track
+            }
+        } catch (e: Exception) {
+            Log.e("TrackPlayViewModel", "Error playing track: ${e.message}")
         }
     }
 
@@ -153,7 +168,7 @@ class TrackPlayViewModel @Inject constructor(
         _isPlaying.value = false
     }
 
-    fun previousTrack() {
+    suspend fun previousTrack() {
         val currentIndex = _playerTrackList.value.indexOfFirst { it.trackId == _currentTrack.value?.trackId }
         if (currentIndex > 0) {
             playTrack(_playerTrackList.value[currentIndex - 1])
@@ -163,7 +178,7 @@ class TrackPlayViewModel @Inject constructor(
         }
     }
 
-    fun nextTrack() {
+    suspend fun nextTrack() {
         val currentIndex = _playerTrackList.value.indexOfFirst { it.trackId == _currentTrack.value?.trackId }
         if (currentIndex != -1 && currentIndex < _playerTrackList.value.size - 1) {
             playTrack(_playerTrackList.value[currentIndex + 1])
