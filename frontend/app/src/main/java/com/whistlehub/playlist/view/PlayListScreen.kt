@@ -49,6 +49,9 @@ fun PlayListScreen(navController: NavHostController, playlistViewModel: Playlist
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
 
     playlistViewModel.getPlaylists()
+//    LaunchedEffect(Unit) {
+//        // 플레이리스트 목록을 가져옴
+//    }
     val playlists = playlistViewModel.playlists.collectAsState()
 
     // 플레이리스트 화면
@@ -108,9 +111,7 @@ fun PlayListScreen(navController: NavHostController, playlistViewModel: Playlist
                 .fillMaxWidth()
                 .clickable {
                     // 플레이리스트 클릭 시 트랙 목록 받아옴
-                    playlistViewModel.getPlaylistInfo(playlist.playlistId)
-                    playlistViewModel.getPlaylistTrack(playlist.playlistId)
-                    navController.navigate(Screen.PlayListTrackList.route)
+                    navController.navigate(Screen.PlayListTrackList.route + "/${playlist.playlistId}")
                 },
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically) {
@@ -170,21 +171,29 @@ fun PlayListScreen(navController: NavHostController, playlistViewModel: Playlist
     }
 
     // CreatePlaylist Dialog
+    var playlistTitle by remember { mutableStateOf("") }
+    var playlistDescription by remember { mutableStateOf("") }
+
     if (showCreatePlaylistDialog) {
         AlertDialog(
             onDismissRequest = { showCreatePlaylistDialog = false },
             title = { Text(
-                text = "Create Playlist",
+                text = "플레이리스트 생성",
                 style = Typography.titleLarge,
                 color = CustomColors().Grey50,
             ) },
-            text = { CreatePlaylist() },
+            text = { CreatePlaylist(
+                onInputTitle = { playlistTitle = it},
+                onInputDescription = { playlistDescription = it },
+            ) },
             modifier = Modifier
                 .fillMaxWidth()
                 .background(CustomColors().Grey950),
             confirmButton = {
                 Button(
-                    onClick = { showCreatePlaylistDialog = false },
+                    onClick = {
+                        playlistViewModel.createPlaylist(name = playlistTitle, description = playlistDescription)
+                        showCreatePlaylistDialog = false },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = CustomColors().Mint500,
                         contentColor = CustomColors().Grey950,

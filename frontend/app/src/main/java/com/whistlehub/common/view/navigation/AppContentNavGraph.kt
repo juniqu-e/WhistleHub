@@ -50,8 +50,11 @@ fun AppContentNavGraph(
             FullPlayerScreen(navController = navController, paddingValues = paddingValues)
         }
         // 플레이리스트 트랙리스트 화면
-        composable(route = Screen.PlayListTrackList.route) {
-            PlaylistTrackListScreen()
+        composable(route = Screen.PlayListTrackList.route + "/{playlistId}") { backStackEntry ->
+            val playlistId = backStackEntry.arguments?.getString("playlistId")
+            if (playlistId != null) {
+                PlaylistTrackListScreen(playlistId.toInt())
+            }
         }
     }
 }

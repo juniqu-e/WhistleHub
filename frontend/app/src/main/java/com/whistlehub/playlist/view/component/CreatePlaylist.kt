@@ -6,11 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -22,20 +18,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.whistlehub.common.view.copmonent.ImageUpload
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 
 @Preview
 @Composable
-fun CreatePlaylist() {
+fun CreatePlaylist(
+    onInputTitle : (String) -> Unit = {},
+    onInputDescription : (String) -> Unit = {},
+) {
     var playlistTitle by remember { mutableStateOf("") }
     var playlistDescription by remember { mutableStateOf("") }
-    val radioOptions = listOf("Private", "Public")
-    val (selectedOption, onOptionSelected) = remember { mutableStateOf(radioOptions[0]) }
+//    val radioOptions = listOf("Private", "Public")
+//    val (selectedOption, onOptionSelected) = remember { mutableStateOf(radioOptions[0]) }
 
     Column(
         modifier = Modifier
@@ -43,7 +40,7 @@ fun CreatePlaylist() {
             .padding(10.dp)
     ) {
         // Image
-        ImageUpload {}
+//        ImageUpload {}
 
         // Title
         Row(
@@ -56,7 +53,9 @@ fun CreatePlaylist() {
         ) {
             TextField(
                 value = playlistTitle,
-                onValueChange = { playlistTitle = it },
+                onValueChange = {
+                    playlistTitle = it
+                    onInputTitle(it) },
                 modifier = Modifier.weight(1f),
                 placeholder = {
                     Text(
@@ -88,7 +87,8 @@ fun CreatePlaylist() {
         ) {
             TextField(
                 value = playlistDescription,
-                onValueChange = { playlistDescription = it },
+                onValueChange = { playlistDescription = it
+                                onInputDescription(it) },
                 modifier = Modifier.weight(1f),
                 placeholder = {
                     Text(
@@ -111,34 +111,34 @@ fun CreatePlaylist() {
         }
 
         // Private-Public
-        Row(Modifier.selectableGroup()) {
-            radioOptions.forEach { text ->
-                Row(
-                    Modifier
-                        .selectable(
-                            selected = (text == selectedOption),
-                            onClick = { onOptionSelected(text) },
-                            role = Role.RadioButton
-                        )
-                        .padding(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    RadioButton(
-                        selected = (text == selectedOption),
-                        onClick = null, // null recommended for accessibility with screen readers
-                        colors = RadioButtonDefaults.colors(
-                            selectedColor = CustomColors().Mint500,
-                            unselectedColor = CustomColors().Mint500
-                        )
-                    )
-                    Text(
-                        text = text,
-                        style = Typography.bodyMedium,
-                        color = CustomColors().Grey50
-                    )
-                }
-            }
-        }
+//        Row(Modifier.selectableGroup()) {
+//            radioOptions.forEach { text ->
+//                Row(
+//                    Modifier
+//                        .selectable(
+//                            selected = (text == selectedOption),
+//                            onClick = { onOptionSelected(text) },
+//                            role = Role.RadioButton
+//                        )
+//                        .padding(10.dp),
+//                    verticalAlignment = Alignment.CenterVertically,
+//                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+//                ) {
+//                    RadioButton(
+//                        selected = (text == selectedOption),
+//                        onClick = null, // null recommended for accessibility with screen readers
+//                        colors = RadioButtonDefaults.colors(
+//                            selectedColor = CustomColors().Mint500,
+//                            unselectedColor = CustomColors().Mint500
+//                        )
+//                    )
+//                    Text(
+//                        text = text,
+//                        style = Typography.bodyMedium,
+//                        color = CustomColors().Grey50
+//                    )
+//                }
+//            }
+//        }
     }
 }

@@ -1,5 +1,6 @@
 package com.whistlehub.playlist.view
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -37,9 +39,17 @@ import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 
 @Composable
 fun PlaylistTrackListScreen(
+    playlistId: Int,
     playlistViewModel: PlaylistViewModel = hiltViewModel(),
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
 ) {
+    LaunchedEffect(playlistId) {
+        Log.d("PlaylistTrackListScreen", "playlistId: $playlistId")
+        // 플레이리스트 트랙 목록을 가져옴
+        playlistViewModel.getPlaylistTrack(playlistId)
+        // 플레이리스트 정보를 가져옴
+        playlistViewModel.getPlaylistInfo(playlistId)
+    }
     val playlistTrack by playlistViewModel.playlistTrack.collectAsState()
     val playlistInfo by playlistViewModel.playlistInfo.collectAsState()
 
