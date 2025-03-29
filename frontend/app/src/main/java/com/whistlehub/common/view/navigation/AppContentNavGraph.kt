@@ -53,7 +53,7 @@ fun AppContentNavGraph(
         composable(route = Screen.PlayListTrackList.route + "/{playlistId}") { backStackEntry ->
             val playlistId = backStackEntry.arguments?.getString("playlistId")
             if (playlistId != null) {
-                PlaylistTrackListScreen(playlistId.toInt())
+                PlaylistTrackListScreen(playlistId.toInt(), navController)
             }
         }
     }

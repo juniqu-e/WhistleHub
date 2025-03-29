@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,15 +32,18 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.viewmodel.PlaylistViewModel
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun PlaylistTrackListScreen(
     playlistId: Int,
+    navController: NavHostController,
     playlistViewModel: PlaylistViewModel = hiltViewModel(),
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
 ) {
@@ -50,6 +54,7 @@ fun PlaylistTrackListScreen(
         // 플레이리스트 정보를 가져옴
         playlistViewModel.getPlaylistInfo(playlistId)
     }
+    val coroutineScope = rememberCoroutineScope()
     val playlistTrack by playlistViewModel.playlistTrack.collectAsState()
     val playlistInfo by playlistViewModel.playlistInfo.collectAsState()
 
@@ -90,7 +95,14 @@ fun PlaylistTrackListScreen(
                     contentDescription = "Delete",
                     modifier = Modifier
                         .size(24.dp)
-                        .clickable {},
+                        .clickable {
+                            coroutineScope.launch {
+                                Log.d("PlaylistTrackListScreen", "Delete Playlist: $playlistId")
+                                playlistViewModel.deletePlaylist(playlistId)
+                                // 플레이리스트 삭제 후, 이전 화면으로 돌아감
+                                navController.popBackStack()
+                            }
+                        },
                     tint = CustomColors().Grey50
                 )
             }

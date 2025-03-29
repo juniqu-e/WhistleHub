@@ -48,6 +48,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,6 +73,7 @@ import com.whistlehub.playlist.view.component.PlayerPlaylist
 import com.whistlehub.playlist.viewmodel.PlayerViewState
 import com.whistlehub.playlist.viewmodel.PlaylistViewModel
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,6 +84,7 @@ fun FullPlayerScreen(
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
     playlistViewModel: PlaylistViewModel = hiltViewModel(),
 ) {
+    val coroutineScope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showPlayerMenu by remember { mutableStateOf(false) }
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
@@ -182,8 +185,10 @@ fun FullPlayerScreen(
                 title = { Text("플레이리스트에 추가", style = Typography.titleLarge, color = CustomColors().Grey50) },
                 text = { AddToPlaylistDialog(
                     onPlaylistSelect = { playlistId ->
-                        playlistViewModel.addTrackToPlaylist(playlistId, currentTrack?.trackId ?: 0)
-                        showAddToPlaylistDialog = false
+                        coroutineScope.launch {
+                            playlistViewModel.addTrackToPlaylist(playlistId, currentTrack?.trackId ?: 0)
+                            showAddToPlaylistDialog = false
+                        }
                     }
                 ) },
                 modifier = Modifier.fillMaxWidth().background(CustomColors().Grey950),

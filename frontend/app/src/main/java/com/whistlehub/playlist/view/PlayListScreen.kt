@@ -1,5 +1,6 @@
 package com.whistlehub.playlist.view
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,10 +24,12 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,15 +46,16 @@ import com.whistlehub.common.view.theme.Pretendard
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.view.component.CreatePlaylist
 import com.whistlehub.playlist.viewmodel.PlaylistViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun PlayListScreen(navController: NavHostController, playlistViewModel: PlaylistViewModel = hiltViewModel()) {
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
-    playlistViewModel.getPlaylists()
-//    LaunchedEffect(Unit) {
-//        // 플레이리스트 목록을 가져옴
-//    }
+    LaunchedEffect(Unit) {
+        playlistViewModel.getPlaylists()
+    }
     val playlists = playlistViewModel.playlists.collectAsState()
 
     // 플레이리스트 화면
@@ -145,7 +149,13 @@ fun PlayListScreen(navController: NavHostController, playlistViewModel: Playlist
                     tint = CustomColors().Grey50,
                     modifier = Modifier
                         .size(24.dp)
-                        .clickable {}
+                        .clickable {
+                            // 플레이리스트 삭제
+                            coroutineScope.launch {
+                                Log.d("delete", "플레이리스트 삭제")
+                                playlistViewModel.deletePlaylist(playlist.playlistId)
+                            }
+                        }
                 )
             }
         }
@@ -192,8 +202,10 @@ fun PlayListScreen(navController: NavHostController, playlistViewModel: Playlist
             confirmButton = {
                 Button(
                     onClick = {
-                        playlistViewModel.createPlaylist(name = playlistTitle, description = playlistDescription)
-                        showCreatePlaylistDialog = false },
+                        coroutineScope.launch {
+                            playlistViewModel.createPlaylist(name = playlistTitle, description = playlistDescription)
+                            showCreatePlaylistDialog = false
+                        }},
                     colors = ButtonDefaults.buttonColors(
                         containerColor = CustomColors().Mint500,
                         contentColor = CustomColors().Grey950,
