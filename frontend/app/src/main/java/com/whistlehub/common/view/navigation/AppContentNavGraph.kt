@@ -10,6 +10,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.common.view.home.HomeScreen
+import com.whistlehub.common.view.login.LoginScreen
 import com.whistlehub.playlist.view.FullPlayerScreen
 import com.whistlehub.playlist.view.PlayListScreen
 import com.whistlehub.playlist.view.PlaylistTrackListScreen
@@ -72,6 +73,9 @@ fun AppContentNavGraph(
         // 비밀번호 변경 화면으로 이동
         composable(route = Screen.PasswordChange.route) {
             PasswordChangeScreen(navController = navController, logoutManager = logoutManager)
+        }
+        composable(route = Screen.Login.route) {
+            LoginScreen(navController = navController)
         }
 
         // 플레이어 화면

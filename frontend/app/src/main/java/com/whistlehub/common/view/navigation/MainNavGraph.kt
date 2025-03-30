@@ -53,7 +53,8 @@ fun MainNavGraph(
                         popUpTo("login") { inclusive = true }
                     }
 
-                }
+                },
+                navController = navController
             )
         }
         // 회원가입 정보 화면

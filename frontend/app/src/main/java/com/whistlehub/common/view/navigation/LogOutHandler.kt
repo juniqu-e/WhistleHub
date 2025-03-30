@@ -4,8 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavHostController
 import com.whistlehub.common.util.LogoutManager
-import com.whistlehub.common.viewmodel.LoginViewModel
-import kotlinx.coroutines.flow.SharedFlow
 
 /**
  * LogOutHandler는 UI 계층에서 중앙 집중식으로 로그아웃 이벤트를 구독하는 Composable입니다.
