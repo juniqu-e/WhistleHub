@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,7 +38,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,7 +51,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import com.whistlehub.common.data.remote.dto.response.ProfileResponse
 import com.whistlehub.common.util.LogoutManager
+import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.common.viewmodel.LoginViewModel
@@ -56,15 +65,30 @@ import kotlinx.coroutines.launch
 fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
     logoutManager: LogoutManager,
+    memberIdParam: Int?,
     navController: NavHostController
 ) {
+
     val customColors = CustomColors()
+    // 로그인한 유저의 memberId는 ViewModel에서 가져옵니다.
+    val currentUserId by viewModel.memberId.collectAsState()
+    // 로그인한 유저의 프로필을 보여줄 경우, memberIdParam이 null이면 ViewModel 내에서 로컬 저장된 값을 사용
+    val memberId = memberIdParam ?: currentUserId
+
     val profile by viewModel.profile.collectAsState()
+    val tracks by viewModel.tracks.collectAsState()
+    var currentPage by remember { mutableIntStateOf(0) }
+
+    val errorMessage by viewModel.errorMessage.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+
+
+
 
     // 화면이 처음 구성될 때 프로필 데이터를 로드합니다.
     LaunchedEffect(Unit) {
-        viewModel.loadProfile()
+        viewModel.loadProfile(memberId)
+        viewModel.loadTracks(memberId, page = currentPage, size = 9)
     }
 
     Scaffold(
@@ -72,7 +96,9 @@ fun ProfileScreen(
             TopAppBar(
                 title = { Text("Whistle Hub", color = customColors.Grey50) },
                 actions = {
-                    IconButton(onClick = { /* 메뉴 클릭 */ }) {
+                    IconButton(onClick = {
+                        navController.navigate(Screen.ProfileMenu.route)
+                    }) {
                         Icon(Icons.Default.Menu, contentDescription = "메뉴", tint = customColors.Grey50)
                     }
                     IconButton(onClick = {
@@ -101,60 +127,85 @@ fun ProfileScreen(
                     profileText = profile?.profileText ?: "",
                     followerCount = 1230, // 예시 데이터
                     followingCount = 4560, // 예시 데이터
-                    trackCount = 0 // tracks.size
+                    trackCount = tracks.size,
+                    showFollowButton = memberId != currentUserId
                 )
             }
 
             // 트랙 목록 렌더링 부분은 주석 처리합니다.
-            /*
-            items(tracks) { track ->
-                ProfileTrackItem(
-                    trackId = track.trackId,
-                    nickname = track.nickname,
-                    title = track.title,
-                    duration = track.duration,
-                    imageUrl = track.imageUrl
-                )
+            item {
+                Box(modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp) // 적절한 높이 설정
+                ) {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(3),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        this@LazyColumn.items(tracks) { track ->
+                            TrackGridItem(track = track, onClick = { /* 클릭 처리 */ })
+                        }
+                    }
+                }
             }
-            */
+            // 페이지 전환 버튼 영역
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    Button(
+                        onClick = {
+                            if (currentPage > 0) {
+                                currentPage--
+                                viewModel.loadTracks(memberId, page = currentPage, size = 9)
+                            }
+                        }
+                    ) {
+                        Text("이전")
+                    }
+                    Button(
+                        onClick = {
+                            currentPage++
+                            viewModel.loadTracks(memberId, page = currentPage, size = 9)
+                        }
+                    ) {
+                        Text("다음")
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-fun ProfileTrackItem(
-    trackId: Int,
-    nickname: String,
-    title: String,
-    duration: Int,
-    imageUrl: String?
+fun TrackGridItem(
+    track: ProfileResponse.GetMemberTracksResponse,
+    onClick: () -> Unit
 ) {
-    Row(
+    Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-            .clickable { /* 트랙 클릭 처리 */ },
-        verticalAlignment = Alignment.CenterVertically
+            .clickable { onClick() }
+            .padding(4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        imageUrl?.let {
+        track.imageUrl?.let {
             AsyncImage(
                 model = it,
-                contentDescription = title,
+                contentDescription = track.title,
                 modifier = Modifier
-                    .size(56.dp)
+                    .size(100.dp)
                     .clip(RoundedCornerShape(8.dp))
             )
         }
-        Spacer(modifier = Modifier.width(12.dp))
-        Column {
-            Text(title, style = Typography.titleMedium, color = CustomColors().Grey50)
-            Text(nickname, style = Typography.bodySmall, color = CustomColors().Grey400)
-            Text(
-                "${duration / 60}:${duration % 60}",
-                style = Typography.bodySmall,
-                color = CustomColors().Grey400
-            )
-        }
+        Text(
+            text = track.title,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 1
+        )
     }
 }
 
@@ -165,7 +216,8 @@ fun ProfileHeader(
     profileText: String,
     followerCount: Int,
     followingCount: Int,
-    trackCount: Int = 0
+    trackCount: Int = 0,
+    showFollowButton: Boolean = false
 ) {
     val colors = CustomColors()
     Column(
@@ -218,6 +270,13 @@ fun ProfileHeader(
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
+        // 팔로우 버튼 영역
+        if (showFollowButton) {
+            Button(onClick = { /* 팔로우 처리 */ }) {
+                Text(text = "팔로우")
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
         // 트랙, 팔로워, 팔로잉 통계 영역
         Row(
             modifier = Modifier.fillMaxWidth(),
