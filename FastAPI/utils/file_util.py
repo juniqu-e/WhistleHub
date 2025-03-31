@@ -6,6 +6,41 @@ import time
 from typing import Union
 
 
+def get_new_file_name(file_name: str):
+    """
+    새 파일 이름을 반환하는 함수
+
+    Params
+    ---
+    file_name: str
+        파일 이름
+    """
+    return f"{time.time_ns()}_{file_name}"
+
+def save_file_with_path(file_path: str, file: Union[str, bytes], save_mode: str = None):
+    """
+    파일을 특정 경로에 저장한 후 저장된 파일의 경로를 반환하는 함수
+
+    Params
+    ---
+    file_path: str
+        저장할 파일 경로
+    file: str, bytes
+        저장할 파일
+    save_mode: str
+        저장 모드
+    """
+    if isinstance(file, bytes):
+        save_mode = "wb" if save_mode is None else save_mode
+    else:
+        save_mode = "w" if save_mode is None else save_mode
+
+    with open(file_path, save_mode) as f:
+        f.write(file)
+
+    return file_path
+
+
 def get_new_file_path(file_name: str):
     """
     새 파일의 경로를 반환하는 함수
@@ -16,7 +51,6 @@ def get_new_file_path(file_name: str):
         파일 이름
     """
     return f"./app/files/{time.time_ns()}_{file_name}"
-
 
 def get_file_size(file_path: str):
     """
