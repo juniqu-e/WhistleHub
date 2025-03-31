@@ -14,4 +14,5 @@ public class TrackSearchResponseDto {
     String nickname;
     int duration;
     String imageUrl;
+    String soundUrl;
 }

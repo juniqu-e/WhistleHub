@@ -82,7 +82,6 @@ public class TrackService {
     }
 
 
-
     @Transactional
     public TrackResponseDto viewTrack(int trackId, int memberId) {
         Track track = trackRepository.findById(trackId).orElseThrow(
@@ -337,6 +336,7 @@ public class TrackService {
                     .trackId(track.getId())
                     .nickname(track.getMember().getNickname())
                     .imageUrl(track.getImageUrl())
+                    .soundUrl(track.getSoundUrl())
                     .duration(track.getDuration())
                     .build());
         }
