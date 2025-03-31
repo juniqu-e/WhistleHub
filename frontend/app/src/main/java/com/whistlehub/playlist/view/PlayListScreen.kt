@@ -143,7 +143,11 @@ fun PlayListScreen(navController: NavHostController, playlistViewModel: Playlist
                     tint = CustomColors().Grey50,
                     modifier = Modifier
                         .size(24.dp)
-                        .clickable {}
+                        .clickable {
+                            // 플레이리스트 수정
+                            navController.navigate(Screen.PlayListTrackList.route + "/${playlist.playlistId}")
+                            navController.navigate(Screen.PlayListEdit.route + "/${playlist.playlistId}")
+                        }
                 )
                 Icon(
                     Icons.Rounded.Delete,

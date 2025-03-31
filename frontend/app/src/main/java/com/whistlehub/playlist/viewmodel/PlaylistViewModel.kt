@@ -77,11 +77,10 @@ class PlaylistViewModel @Inject constructor(
 
     fun moveTrack(from: Int, to: Int) {
         viewModelScope.launch {
-        _playlistTrack.value = _playlistTrack.value.toMutableList().apply {
-            add(to, removeAt(from))
+            _playlistTrack.value = _playlistTrack.value.toMutableList().apply {
+                add(to, removeAt(from))
+            }
         }
-        // 서버 업데이트 로직 추가 (예: API 호출)
-    }
     }
 
     suspend fun addTrackToPlaylist(playlistId: Int, trackId: Int) {
@@ -137,6 +136,40 @@ class PlaylistViewModel @Inject constructor(
             }
         } catch (e: Exception) {
             Log.d("error", "Failed to delete playlist: ${e.message}")
+        }
+    }
+
+    suspend fun updatePlaylist(
+        playlistId: Int,
+        name: String,
+        description: String,
+        trackIds: List<Int> = emptyList(),
+    ) {
+        try {
+            val updatePlaylistResponse = playlistService.updatePlaylist(
+                request = PlaylistRequest.UpdatePlaylistRequest(
+                    playlistId = playlistId,
+                    name = name,
+                    description = description
+                )
+            )
+            if (trackIds.isNotEmpty()) {
+                playlistService.updatePlaylistTracks(
+                    request = PlaylistRequest.UpdatePlaylistTrackRequest(
+                        playlistId = playlistId,
+                        tracks = trackIds
+                    )
+                )
+            }
+            if (updatePlaylistResponse.code == "SU") {
+                Log.d("success", "Playlist updated successfully with ID $playlistId")
+                getPlaylistInfo(playlistId)
+                getPlaylistTrack(playlistId)
+            } else {
+                Log.d("error", "${updatePlaylistResponse.message}")
+            }
+        } catch (e: Exception) {
+            Log.d("error", "Failed to update playlist: ${e.message}")
         }
     }
 }
