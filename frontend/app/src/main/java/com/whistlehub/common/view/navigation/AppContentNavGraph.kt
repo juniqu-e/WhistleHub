@@ -3,6 +3,7 @@ package com.whistlehub.common.view.navigation
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -13,7 +14,9 @@ import com.whistlehub.common.view.home.HomeScreen
 import com.whistlehub.common.view.login.LoginScreen
 import com.whistlehub.playlist.view.FullPlayerScreen
 import com.whistlehub.playlist.view.PlayListScreen
+import com.whistlehub.playlist.view.PlaylistEditScreen
 import com.whistlehub.playlist.view.PlaylistTrackListScreen
+import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import com.whistlehub.profile.view.PasswordChangeScreen
 import com.whistlehub.profile.view.ProfileChangeScreen
 import com.whistlehub.profile.view.ProfileScreen
@@ -31,6 +34,7 @@ fun AppContentNavGraph(
     paddingValues: PaddingValues,
     modifier: Modifier = Modifier,
 ) {
+    val trackPlayViewModel = hiltViewModel<TrackPlayViewModel>()
     NavHost(
         navController = navController,
         startDestination = Screen.Home.route,
@@ -80,13 +84,20 @@ fun AppContentNavGraph(
 
         // 플레이어 화면
         composable(route = Screen.Player.route) {
-            FullPlayerScreen(navController = navController, paddingValues = paddingValues)
+            FullPlayerScreen(navController = navController, paddingValues = paddingValues, trackPlayViewModel = trackPlayViewModel)
         }
         // 플레이리스트 트랙리스트 화면
         composable(route = Screen.PlayListTrackList.route + "/{playlistId}") { backStackEntry ->
             val playlistId = backStackEntry.arguments?.getString("playlistId")
             if (playlistId != null) {
-                PlaylistTrackListScreen(playlistId.toInt())
+                PlaylistTrackListScreen(playlistId.toInt(), navController, trackPlayViewModel = trackPlayViewModel)
+            }
+        }
+        // 플레이리스트 편집 화면
+        composable(route = Screen.PlayListEdit.route + "/{playlistId}") { backStackEntry ->
+            val playlistId = backStackEntry.arguments?.getString("playlistId")
+            if (playlistId != null) {
+                PlaylistEditScreen(playlistId.toInt(), navController)
             }
         }
     }

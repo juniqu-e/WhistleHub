@@ -33,13 +33,19 @@ import com.whistlehub.common.view.theme.CustomColors
 
 @Composable
 fun ImageUpload(
-    onUploadClick: (Uri) -> Unit // 선택된 이미지 URI를 업로드하는 함수
+    onChangeImage: (Uri) -> Unit // 선택된 이미지 URI를 업로드하는 함수
 ) {
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
-    ) {
-        imageUri = it
+    ) { uri: Uri? ->
+        uri?.let {
+            imageUri = it
+            onChangeImage(it) // 선택된 이미지 URI를 업로드하는 함수 호출
+        } ?: run {
+            imageUri = null
+            onChangeImage(Uri.EMPTY) // 이미지가 선택되지 않았을 때 빈 URI 전달
+        }
     }
 
     Column(
@@ -70,6 +76,7 @@ fun ImageUpload(
             Button(
                 onClick = {
                     imageUri = null
+                    onChangeImage(Uri.EMPTY) // 이미지 삭제 시 빈 URI 전달
                 },
                 enabled = imageUri != null,
                 colors = ButtonDefaults.buttonColors(

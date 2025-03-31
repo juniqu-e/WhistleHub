@@ -42,9 +42,6 @@ fun AddToPlaylistDialog(
     onPlaylistSelect: (Int) -> Unit = {},
 ) {
     // Playlist에 추가하는 다이얼로그 UI
-
-    // 플레이리스트 목록 가져오기
-    playlistViewModel.getPlaylists() // 최신화
     val myPlaylists by playlistViewModel.playlists.collectAsState()
     var selectedPlaylist by remember { mutableStateOf(PlaylistResponse.GetMemberPlaylistsResponse(
         playlistId = 0,

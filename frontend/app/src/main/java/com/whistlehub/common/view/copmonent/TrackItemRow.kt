@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,9 +30,14 @@ import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
+import kotlinx.coroutines.launch
 
 @Composable
-fun TrackItemRow(track: TrackResponse.GetTrackDetailResponse, style: TrackItemStyle = TrackItemStyle.DEFAULT, trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
+fun TrackItemRow(track: TrackResponse.GetTrackDetailResponse,
+                 style: TrackItemStyle = TrackItemStyle.DEFAULT,
+                 trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
+) {
+    val coroutineScope = rememberCoroutineScope()
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
     val isPlaying by trackPlayViewModel.isPlaying.collectAsState(initial = false)
 
@@ -40,7 +46,9 @@ fun TrackItemRow(track: TrackResponse.GetTrackDetailResponse, style: TrackItemSt
             if (currentTrack?.trackId != track.trackId) {
                 trackPlayViewModel.stopTrack()
             }
-            trackPlayViewModel.playTrack(track)
+            coroutineScope.launch {
+                trackPlayViewModel.playTrack(track)
+            }
         }
         .fillMaxWidth()
         .padding(10.dp),
@@ -88,7 +96,11 @@ fun TrackItemRow(track: TrackResponse.GetTrackDetailResponse, style: TrackItemSt
                 )
             }
         } else {
-            IconButton({trackPlayViewModel.playTrack(track)}) {
+            IconButton({
+                coroutineScope.launch {
+                    trackPlayViewModel.playTrack(track)
+                }
+            }) {
                 Icon(
                     Icons.Filled.PlayArrow,
                     contentDescription = "Play",

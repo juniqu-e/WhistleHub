@@ -1,5 +1,6 @@
 package com.whistlehub.playlist.view.component
 
+import android.net.Uri
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,21 +19,32 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.whistlehub.common.util.uriToMultipartBodyPart
+import com.whistlehub.common.view.copmonent.ImageUpload
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
+import okhttp3.MultipartBody
 
 @Preview
 @Composable
 fun CreatePlaylist(
     onInputTitle : (String) -> Unit = {},
     onInputDescription : (String) -> Unit = {},
+    onInputImage : (MultipartBody.Part) -> Unit = {},
 ) {
     var playlistTitle by remember { mutableStateOf("") }
     var playlistDescription by remember { mutableStateOf("") }
-//    val radioOptions = listOf("Private", "Public")
-//    val (selectedOption, onOptionSelected) = remember { mutableStateOf(radioOptions[0]) }
+
+    val context = LocalContext.current
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    val handleImageSelected = { uri: Uri ->
+        selectedImageUri = uri
+        val multipartImage = uriToMultipartBodyPart(context, uri)
+        onInputImage(multipartImage)
+    }
 
     Column(
         modifier = Modifier
@@ -40,7 +52,9 @@ fun CreatePlaylist(
             .padding(10.dp)
     ) {
         // Image
-//        ImageUpload {}
+        ImageUpload(
+            onChangeImage = handleImageSelected
+        )
 
         // Title
         Row(
@@ -109,36 +123,5 @@ fun CreatePlaylist(
                 minLines = 5
             )
         }
-
-        // Private-Public
-//        Row(Modifier.selectableGroup()) {
-//            radioOptions.forEach { text ->
-//                Row(
-//                    Modifier
-//                        .selectable(
-//                            selected = (text == selectedOption),
-//                            onClick = { onOptionSelected(text) },
-//                            role = Role.RadioButton
-//                        )
-//                        .padding(10.dp),
-//                    verticalAlignment = Alignment.CenterVertically,
-//                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-//                ) {
-//                    RadioButton(
-//                        selected = (text == selectedOption),
-//                        onClick = null, // null recommended for accessibility with screen readers
-//                        colors = RadioButtonDefaults.colors(
-//                            selectedColor = CustomColors().Mint500,
-//                            unselectedColor = CustomColors().Mint500
-//                        )
-//                    )
-//                    Text(
-//                        text = text,
-//                        style = Typography.bodyMedium,
-//                        color = CustomColors().Grey50
-//                    )
-//                }
-//            }
-//        }
     }
 }

@@ -20,4 +20,5 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     data object Login : Screen("login", "로그인", Icons.Default.AccountCircle)
     data object Player : Screen("player", "플레이어", Icons.Default.MusicNote)
     data object PlayListTrackList : Screen("playlist_track_list", "플레이리스트 트랙리스트", Icons.Default.MusicNote)
+    data object PlayListEdit : Screen("playlist_edit", "플레이리스트 편집", Icons.Default.MusicNote)
 }
