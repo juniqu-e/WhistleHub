@@ -75,7 +75,7 @@ fun MainNavGraph(
         }
 
         composable(
-            route = "select_tags?userId={userId}&password={password}&email={email}&nickname={nickname}&gender={gender}&birth={birth}",
+            route = "selecttags/{userId}/{password}/{email}/{nickname}/{gender}/{birth}",
             arguments = listOf(
                 navArgument("userId") { type = NavType.StringType },
                 navArgument("password") { type = NavType.StringType },
@@ -111,13 +111,17 @@ fun MainNavGraph(
                         nickname = nickname,
                         birth = birth,
                         gender = genderString.first(),
-                        tags = selectedTags
+                        tagList = selectedTags
                     ) {
                         // 회원가입 성공 시 메인 화면으로 이동
                         navController.navigate("main") {
                             popUpTo("signup") { inclusive = true }
                         }
                     }
+                },
+                onBackClick = {
+                    // 뒤로가기 버튼 클릭 시 이전 화면으로 돌아감
+                    navController.popBackStack()
                 }
             )
         }

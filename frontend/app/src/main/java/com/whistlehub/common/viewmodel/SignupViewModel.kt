@@ -41,6 +41,11 @@ class SignUpViewModel @Inject constructor(
     private val _emailVerificationState = MutableStateFlow<EmailVerificationState>(EmailVerificationState.Idle)
     val emailVerificationState: StateFlow<EmailVerificationState> = _emailVerificationState
 
+    // 인증 요청이 한 번이라도 성공했는지 여부를 판별하는 계산 프로퍼티
+    val isEmailVerificationRequested: Boolean
+        get() = _emailVerificationState.value is EmailVerificationState.Sent ||
+                _emailVerificationState.value is EmailVerificationState.Verified
+
     // 아이디 중복 확인 API 호출
     fun checkDuplicateId(loginId: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
@@ -85,6 +90,7 @@ class SignUpViewModel @Inject constructor(
             try {
                 val response = authService.sendEmailVerification(email)
                 if (response.code == "SU") {
+                    // 요청이 성공하면 Sent 상태로 변경
                     _emailVerificationState.value = EmailVerificationState.Sent()
                 } else {
                     _emailVerificationState.value = EmailVerificationState.Error(response.message ?: "인증 코드 전송에 실패했습니다.")
@@ -102,7 +108,7 @@ class SignUpViewModel @Inject constructor(
             try {
                 val request = AuthRequest.ValidateEmailRequest(email, code)
                 val response = authService.validateEmailCode(request)
-                if (response.code == "SU" && (response.payload ?: false)) {
+                if ((response.code == "SU") || response.code == "AVE") {
                     _emailVerificationState.value = EmailVerificationState.Verified()
                 } else {
                     _emailVerificationState.value = EmailVerificationState.Error(response.message ?: "인증 코드 검증에 실패했습니다.")
@@ -158,13 +164,13 @@ class SignUpViewModel @Inject constructor(
         nickname: String,
         birth: String,
         gender: Char,
-        tags: List<Int>,
+        tagList: List<Int>,
         onSuccess: () -> Unit
     ) {
         viewModelScope.launch {
             _signUpState.value = SignUpState.Loading
             try {
-                val request = AuthRequest.RegisterRequest(loginId, password, email, nickname, gender, birth, tags)
+                val request = AuthRequest.RegisterRequest(loginId, password, email, nickname, gender, birth, tagList)
                 val response = authService.register(request)
                 if (response.code == "SU" && response.payload != null) {
                     _signUpState.value = SignUpState.Success("회원가입에 성공했습니다.")
