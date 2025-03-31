@@ -57,3 +57,4 @@ openl3==0.4.2
 soundfile==0.13.1
 pymilvus==2.5.5
 requests
+werkzeug
