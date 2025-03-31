@@ -392,20 +392,26 @@ public class TrackService {
 
     @Transactional
     public List<TrackSearchInfoDto> searchTrack(String keyword, int page, int size, String orderBy) {
-        if(orderBy.equalsIgnoreCase("ASC") && orderBy.equalsIgnoreCase("DESC")) {
-            log.warn("잘못된 방식의 정렬 파라미터");
-            throw new MissingParameterException();
+        if (keyword == null) {
+            keyword = "";
         }
-        List<Track> tracks = trackRepository.findAllByTitleContains(keyword, PageRequest.of(size, page, Sort.by(orderBy.toUpperCase())));
+        List<Track> tracks = null;
+        if (orderBy.equalsIgnoreCase("ASC")) {
+            tracks = trackRepository.findAllByTitleContains(keyword, PageRequest.of(page, size, Sort.by(Sort.Order.asc("createdAt"))));
+        } else if (orderBy.equalsIgnoreCase("DESC")) {
+            tracks = trackRepository.findAllByTitleContains(keyword, PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt"))));
+        }
+        log.info(tracks.toString());
+//        if(tracks == null) tracks = new ArrayList<>();
         List<TrackSearchInfoDto> result = new ArrayList<>();
-        for(Track track : tracks) {
-            TrackSearchInfoDto.builder()
+        for (Track track : tracks) {
+            result.add(TrackSearchInfoDto.builder()
                     .title(track.getTitle())
                     .trackId(track.getId())
                     .nickname(track.getMember().getNickname())
                     .imageUrl(track.getImageUrl())
                     .duration(track.getDuration())
-                    .build();
+                    .build());
         }
         return result;
     }

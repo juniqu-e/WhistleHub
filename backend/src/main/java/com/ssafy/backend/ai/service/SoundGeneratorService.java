@@ -29,12 +29,17 @@ public class SoundGeneratorService {
     // 악기 이름과 MIDI 프로그램 번호 매핑 테이블
     private static final Map<String, Integer> INSTRUMENT_MAP = new HashMap<>();
 
+    // 드럼 노트와 설명 매핑
+    private static final Map<Integer, String> DRUM_NOTE_MAP = new HashMap<>();
+
     static {
+        // 일반 악기 매핑
         INSTRUMENT_MAP.put("piano", 0);
         INSTRUMENT_MAP.put("acoustic_piano", 0);
         INSTRUMENT_MAP.put("grand_piano", 0);
         INSTRUMENT_MAP.put("electric_piano", 4);
         INSTRUMENT_MAP.put("acoustic_guitar", 24);
+        INSTRUMENT_MAP.put("acousticguitar(nylon)", 24);
         INSTRUMENT_MAP.put("electric_guitar", 27);
         INSTRUMENT_MAP.put("bass", 33);
         INSTRUMENT_MAP.put("acoustic_bass", 32);
@@ -47,7 +52,26 @@ public class SoundGeneratorService {
         INSTRUMENT_MAP.put("tenor_sax", 66);
         INSTRUMENT_MAP.put("alto_sax", 65);
         INSTRUMENT_MAP.put("flute", 73);
-        INSTRUMENT_MAP.put("drums", 118);
+        INSTRUMENT_MAP.put("drums", 0); // 드럼 트랙에는 프로그램 변경이 필요 없음 (채널 9 사용)
+
+        // 드럼 키트 노트 매핑 (GM 표준)
+        DRUM_NOTE_MAP.put(35, "Acoustic Bass Drum");
+        DRUM_NOTE_MAP.put(36, "Bass Drum 1");
+        DRUM_NOTE_MAP.put(37, "Side Stick");
+        DRUM_NOTE_MAP.put(38, "Acoustic Snare");
+        DRUM_NOTE_MAP.put(39, "Hand Clap");
+        DRUM_NOTE_MAP.put(40, "Electric Snare");
+        DRUM_NOTE_MAP.put(41, "Low Floor Tom");
+        DRUM_NOTE_MAP.put(42, "Closed Hi-Hat");
+        DRUM_NOTE_MAP.put(43, "High Floor Tom");
+        DRUM_NOTE_MAP.put(44, "Pedal Hi-Hat");
+        DRUM_NOTE_MAP.put(45, "Low Tom");
+        DRUM_NOTE_MAP.put(46, "Open Hi-Hat");
+        DRUM_NOTE_MAP.put(47, "Low-Mid Tom");
+        DRUM_NOTE_MAP.put(48, "Hi-Mid Tom");
+        DRUM_NOTE_MAP.put(49, "Crash Cymbal 1");
+        DRUM_NOTE_MAP.put(50, "High Tom");
+        DRUM_NOTE_MAP.put(51, "Ride Cymbal 1");
     }
 
     public InputStream generateSound(SoundGenerationRequest request) {
@@ -78,8 +102,8 @@ public class SoundGeneratorService {
                     "-F",
                     tempWavFile.getAbsolutePath(),
                     "-r", "44100",
-                    "--reverb", "0", // 리버브 비활성화
-                    "--chorus", "0" // 코러스 비활성화
+                    "--reverb", "0.3", // 리버브 약간 추가
+                    "--chorus", "0.2"  // 코러스 약간 추가
             );
 
             Process process = pb.start();
@@ -95,6 +119,7 @@ public class SoundGeneratorService {
             throw new RuntimeException("음원 생성 실패", e);
         }
     }
+
     /**
      * AIGeneratedSoundData의 길이 검증 및 조정
      */
@@ -116,7 +141,7 @@ public class SoundGeneratorService {
         }
 
         // 생성된 데이터가 예상 길이와 5% 이상 차이가 있는 경우 조정
-        double difference = Math.abs(1.0 - (double)actualEndTick / expectedTotalTicks);
+        double difference = Math.abs(1.0 - (double) actualEndTick / expectedTotalTicks);
         if (difference > 0.05) {
             log.info("조정 필요: 예상 길이 {} 틱, 실제 길이 {} 틱", expectedTotalTicks, actualEndTick);
 
@@ -149,6 +174,7 @@ public class SoundGeneratorService {
             log.info("노트 데이터 조정 완료. 스케일링 비율: {}", scaleFactor);
         }
     }
+
     /**
      * WAV 파일 길이 조정
      */
@@ -212,22 +238,43 @@ public class SoundGeneratorService {
 
     private Sequence createMidiSequence(AIGeneratedSoundData soundData, int tempo) throws InvalidMidiDataException {
         Sequence sequence = new Sequence(Sequence.PPQ, 480);
+
+        // 템포 트랙 생성
         Track tempoTrack = sequence.createTrack();
         setTempo(tempoTrack, tempo);
 
+        // 모든 트랙 생성
         for (int i = 0; i < soundData.getTracks().size(); i++) {
             AIGeneratedSoundData.Track trackData = soundData.getTracks().get(i);
             Track track = sequence.createTrack();
-            int channel = determineChannel(trackData, i);
-            setInstrument(track, channel, trackData.getInstrument());
+
+            // 드럼 트랙인지 확인
+            boolean isDrumTrack = isDrumTrack(trackData);
+
+            // 채널 결정 (드럼 트랙은 채널 9 사용)
+            int channel = determineChannel(trackData, i, isDrumTrack);
+
+            // 악기 설정 (드럼 트랙은 프로그램 변경 없음)
+            if (!isDrumTrack) {
+                setInstrument(track, channel, trackData.getInstrument());
+            } else {
+                // 드럼 트랙에 대한 트랙 이름 메타 이벤트 추가
+                MetaMessage trackNameMessage = new MetaMessage(0x03, "Drum Kit".getBytes(), "Drum Kit".length());
+                track.add(new MidiEvent(trackNameMessage, 0));
+            }
+
+            // 볼륨 및 팬 설정
             setVolume(track, channel, trackData.getVolume());
             setPan(track, channel, trackData.getPan());
+
+            // 컨트롤 변경 및 노트 추가
             addControlChanges(track, channel, trackData.getControlChanges());
-            addNotes(track, channel, trackData.getNotes());
+            addNotes(track, channel, trackData.getNotes(), isDrumTrack);
         }
 
         return sequence;
     }
+
 
     private void setTempo(Track track, int tempo) throws InvalidMidiDataException {
         int mpqn = 60000000 / tempo;
@@ -239,12 +286,39 @@ public class SoundGeneratorService {
         track.add(new MidiEvent(tempoMessage, 0));
     }
 
-    private int determineChannel(AIGeneratedSoundData.Track trackData, int trackIndex) {
+    /**
+     * 주어진 트랙이 드럼 트랙인지 확인
+     */
+    private boolean isDrumTrack(AIGeneratedSoundData.Track track) {
+        // MIDI 채널이 9(0-based)인 경우 드럼 트랙으로 간주
+        if (track.getMidiChannel() == 9) {
+            return true;
+        }
+
+        // 악기 이름으로 드럼 트랙 식별
+        String instrument = track.getInstrument().toLowerCase();
+        return instrument.contains("drum") ||
+                instrument.contains("percussion") ||
+                instrument.contains("kit") ||
+                instrument.contains("beat");
+    }
+
+    private int determineChannel(AIGeneratedSoundData.Track trackData, int trackIndex, boolean isDrumTrack) {
+        // 드럼 트랙은 항상 채널 9 사용
+        if (isDrumTrack) {
+            return 9;
+        }
+
+        // 사용자 지정 채널 확인
         int channel = trackData.getMidiChannel();
-        if (channel == 9 && !trackData.getInstrument().toLowerCase().contains("drum")) {
-            channel = trackIndex % 15;
+
+        // 채널 9는 드럼용으로 예약되어 있으므로, 다른 악기에서는 사용 불가
+        if (channel == 9) {
+            channel = (trackIndex % 15); // 0-8, 10-15 범위의 채널 할당
+            if (channel >= 9) channel++; // 9보다 크거나 같으면 1을 더해 채널 9를 건너뜀
             log.warn("채널 9는 드럼용으로 예약되어 있어 {} 악기에 채널 {}를 할당합니다.", trackData.getInstrument(), channel);
         }
+
         return channel;
     }
 
@@ -274,14 +348,28 @@ public class SoundGeneratorService {
         }
     }
 
-    private void addNotes(Track track, int channel, java.util.List<AIGeneratedSoundData.Note> notes) throws InvalidMidiDataException {
+    private void addNotes(Track track, int channel, java.util.List<AIGeneratedSoundData.Note> notes, boolean isDrumTrack) throws InvalidMidiDataException {
         for (AIGeneratedSoundData.Note note : notes) {
+            // 드럼 트랙인 경우 노트 매핑 로그 추가
+            if (isDrumTrack && DRUM_NOTE_MAP.containsKey(note.getPitch())) {
+                log.debug("드럼 노트 추가: {} (MIDI 노트 {}), 시작 틱: {}, 길이: {}, 강도: {}",
+                        DRUM_NOTE_MAP.get(note.getPitch()),
+                        note.getPitch(),
+                        note.getStartTick(),
+                        note.getDuration(),
+                        note.getVelocity());
+            }
+
+            // Note On 이벤트 추가
             ShortMessage noteOn = new ShortMessage(ShortMessage.NOTE_ON, channel, note.getPitch(), note.getVelocity());
             track.add(new MidiEvent(noteOn, note.getStartTick()));
+
+            // Note Off 이벤트 추가
             ShortMessage noteOff = new ShortMessage(ShortMessage.NOTE_OFF, channel, note.getPitch(), 0);
             track.add(new MidiEvent(noteOff, note.getStartTick() + note.getDuration()));
         }
     }
+
 
     private int getInstrumentNumber(String instrumentName) {
         if (instrumentName == null || instrumentName.isEmpty()) {
