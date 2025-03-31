@@ -4,6 +4,7 @@ import com.ssafy.backend.ai.service.Neo4jContentRetrieverService;
 import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
 import com.ssafy.backend.track.service.TrackService;
+import com.ssafy.backend.workstation.service.WorkstationService;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
@@ -27,21 +28,24 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/workstation")
 public class WorkstationController {
     private final TrackService trackService;
+    private final WorkstationService workstationService;
     private final Neo4jContentRetrieverService neo4jContentRetrieverService;
+
     @PostMapping()
     public ApiResponse<?> createTrack(TrackUploadRequestDto trackUploadRequestDto) {
         return new ApiResponse.builder<Object>()
-                .payload(trackService.createTrack(trackUploadRequestDto))
+                .payload(workstationService.createTrack(trackUploadRequestDto))
                 .build();
     }
 
     @GetMapping("/import")
-    public ApiResponse<?> importTrack() {
+    public ApiResponse<?> importTrack(int trackId) {
         return new ApiResponse.builder<Object>()
-                .payload(null)
+                .payload(workstationService.importTrack(trackId))
                 .build();
     }
-//    @GetMapping("/ai")
+
+    //    @GetMapping("/ai")
 //    public ApiResponse<?> getAi() {
 //        ChatLanguageModel gemini = GoogleAiGeminiChatModel.builder()
 //                .apiKey("AIzaSyDdQa4WGgijoYy01w1ZV4i56vBYNEn_JYc")
