@@ -11,6 +11,7 @@ import com.ssafy.backend.graph.model.entity.type.WeightType;
 import com.ssafy.backend.graph.service.DataCollectingService;
 import com.ssafy.backend.mysql.entity.*;
 import com.ssafy.backend.mysql.repository.*;
+import com.ssafy.backend.openl3.service.Openl3Service;
 import com.ssafy.backend.track.dto.request.TrackImageUploadRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUpdateRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
@@ -55,6 +56,7 @@ public class TrackService {
     private final S3Service s3Service;
 
     private final AuthService authService;
+    private final Openl3Service openl3Service;
 
     /**
      * 트랙 음원 데이터를 반환
@@ -131,6 +133,8 @@ public class TrackService {
         // 1-4-1. Track 노드 생성 및 태그 연결
         dataCollectingService.createTrack(t.getId(), Arrays.stream(trackUploadRequestDto.getTags()).toList());
         // 1-4-2. TODO: FastAPI로 음원 보내기
+        openl3Service.uploadAndFindSimilar(trackUploadRequestDto.getTrackSoundFile().getResource(), t.getId(), 10);
+
         // 2. 레이어 목록 저장
         int layerSize = trackUploadRequestDto.getLayerName().length;
         for (int i = 0; i < layerSize; i++) {
@@ -388,20 +392,26 @@ public class TrackService {
 
     @Transactional
     public List<TrackSearchInfoDto> searchTrack(String keyword, int page, int size, String orderBy) {
-        if(orderBy.equalsIgnoreCase("ASC") && orderBy.equalsIgnoreCase("DESC")) {
-            log.warn("잘못된 방식의 정렬 파라미터");
-            throw new MissingParameterException();
+        if (keyword == null) {
+            keyword = "";
         }
-        List<Track> tracks = trackRepository.findAllByTitleContains(keyword, PageRequest.of(size, page, Sort.by(orderBy.toUpperCase())));
+        List<Track> tracks = null;
+        if (orderBy.equalsIgnoreCase("ASC")) {
+            tracks = trackRepository.findAllByTitleContains(keyword, PageRequest.of(page, size, Sort.by(Sort.Order.asc("createdAt"))));
+        } else if (orderBy.equalsIgnoreCase("DESC")) {
+            tracks = trackRepository.findAllByTitleContains(keyword, PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt"))));
+        }
+        log.info(tracks.toString());
+//        if(tracks == null) tracks = new ArrayList<>();
         List<TrackSearchInfoDto> result = new ArrayList<>();
-        for(Track track : tracks) {
-            TrackSearchInfoDto.builder()
+        for (Track track : tracks) {
+            result.add(TrackSearchInfoDto.builder()
                     .title(track.getTitle())
                     .trackId(track.getId())
                     .nickname(track.getMember().getNickname())
                     .imageUrl(track.getImageUrl())
                     .duration(track.getDuration())
-                    .build();
+                    .build());
         }
         return result;
     }

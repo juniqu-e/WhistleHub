@@ -8,6 +8,7 @@ import java.time.Instant;
 
 @Getter
 @Setter
+@ToString
 @Entity
 @Table(name = "track")
 @Builder

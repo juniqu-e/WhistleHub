@@ -24,11 +24,11 @@ public class AiController {
 
     @GetMapping("/generate")
     public ResponseEntity generate() {
-        String genre = "rock";
-        String mood = "danger";
-        int tempo = 120; //
-        int durationSeconds = (16 * 60) / tempo;
-        String instruments = "drums";
+        String genre = "jazz";
+        String mood = "happy";
+        int tempo = 90; //
+        int durationSeconds = 8;
+        String instruments = "guitar";
         String additionalNotes = "none";
 
         SoundGenerationRequest request = new SoundGenerationRequest(genre, mood, durationSeconds, tempo, instruments, additionalNotes);
