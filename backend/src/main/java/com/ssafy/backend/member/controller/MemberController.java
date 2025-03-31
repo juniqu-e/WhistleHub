@@ -188,4 +188,23 @@ public class MemberController {
                 .payload(result)
                 .build();
     }
+
+    /**
+     *  회원의 좋아요 목록 가져오기
+     *
+     * @param memberId 좋아요 목록을 가져올 회원 아이디 -> 없다면 자기 자신의 좋아요 목록 가져오기
+     * @param page     페이지 번호
+     * @param size     페이지 사이즈
+     * @return 좋아요 목록
+     */
+    @GetMapping("/like")
+    public ApiResponse<?> getLike(@RequestParam(value = "memberId") Integer memberId,
+                                  @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
+                                  @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
+        List<TrackInfo> result = memberService.getLike(memberId, PageRequest.of(page, size));
+        return new ApiResponse.builder<List<TrackInfo>>()
+                .payload(result)
+                .build();
+    }
+
 }

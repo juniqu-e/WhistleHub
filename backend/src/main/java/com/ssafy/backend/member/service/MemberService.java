@@ -11,9 +11,11 @@ import com.ssafy.backend.member.model.request.UpdatePasswordRequestDto;
 import com.ssafy.backend.member.model.request.UploadProfileImageRequestDto;
 import com.ssafy.backend.member.model.response.MemberDetailResponseDto;
 import com.ssafy.backend.mysql.entity.Follow;
+import com.ssafy.backend.mysql.entity.Like;
 import com.ssafy.backend.mysql.entity.Member;
 import com.ssafy.backend.mysql.entity.Track;
 import com.ssafy.backend.mysql.repository.FollowRepository;
+import com.ssafy.backend.mysql.repository.LikeRepository;
 import com.ssafy.backend.mysql.repository.MemberRepository;
 import com.ssafy.backend.mysql.repository.TrackRepository;
 import com.ssafy.backend.playlist.dto.TrackInfo;
@@ -47,6 +49,7 @@ public class MemberService {
     private final PasswordEncoder passwordEncoder;
     private final FollowRepository followRepository;
     private final TrackRepository trackRepository;
+    private final LikeRepository likeRepository;
 
     /**
      * 회원 정보 조회
@@ -178,6 +181,10 @@ public class MemberService {
             memberInfoList.add(memberInfo);
         }
 
+        if(memberInfoList.isEmpty()){
+            throw new NotFoundPageException();
+        }
+
         return memberInfoList;
     }
 
@@ -214,6 +221,10 @@ public class MemberService {
             followerInfoList.add(memberInfo);
         }
 
+        if(followerInfoList.isEmpty()){
+            throw new NotFoundPageException();
+        }
+
         return followerInfoList;
     }
 
@@ -244,6 +255,10 @@ public class MemberService {
                     .build();
 
             followingInfoList.add(memberInfo);
+        }
+
+        if(followingInfoList.isEmpty()){
+            throw new NotFoundPageException();
         }
 
         return followingInfoList;
@@ -321,6 +336,57 @@ public class MemberService {
                     .build();
 
             trackInfoList.add(trackInfo);
+        }
+
+        if(trackInfoList.isEmpty()){
+            throw new NotFoundPageException();
+        }
+
+        return trackInfoList;
+    }
+
+    /**
+     * 회원의 좋아요 트랙 목록 가져오기
+     * @param memberId 트랙 목록을 가져올 회원 ID
+     * @param pageRequest 페이지 요청
+     * @return 트랙 정보 리스트
+     */
+    public List<TrackInfo> getLike(Integer memberId, PageRequest pageRequest) {
+        // 회원의 트랙 목록 가져오기
+        Member requestMember = authService.getMember();
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> {
+                    log.warn("해당하는 회원이 없습니다. memberId : {}", memberId);
+                    return new NotFoundMemberException();
+                });
+        List<Like> likeList;
+
+        // 트랙 목록 조회
+        if(requestMember.getId().equals(member.getId())){
+            likeList = likeRepository.findByMemberId(member.getId(), pageRequest);
+        }else{
+            log.warn("권한이 없는 회원입니다. memberId : {}", requestMember.getId());
+            throw new NotPermittedException();
+        }
+
+        // 트랙 정보 리스트 생성
+        List<TrackInfo> trackInfoList = new LinkedList<>();
+        for (Like like : likeList) {
+            Track track = like.getTrack();
+
+            TrackInfo trackInfo = TrackInfo.builder()
+                    .trackId(track.getId())
+                    .title(track.getTitle())
+                    .nickname(member.getNickname())
+                    .duration(track.getDuration())
+                    .imageUrl(track.getImageUrl())
+                    .build();
+
+            trackInfoList.add(trackInfo);
+        }
+
+        if(trackInfoList.isEmpty()){
+            throw new NotFoundPageException();
         }
 
         return trackInfoList;
