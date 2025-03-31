@@ -20,11 +20,11 @@ import java.util.Optional;
 public interface TagNodeRepository extends Neo4jRepository<TagNode, Integer> {
 //    Optional<TagNode> findByTagId(@Param("tagId") int tagId);
 
-    @Query("MERGE (t:Tag {tagId: $tagId}) RETURN t")
+    @Query("MERGE (t:Tag {id: $tagId}) RETURN t")
     void upsertTag(int tagId, String name);
 
     // 트랙에 연결된 모든 태그 노드를 조회하는 메소드
-    @Query("MATCH (t:Track)-[:HAS_TAG]->(tag:Tag) WHERE t.trackId = $trackId RETURN tag")
+    @Query("MATCH (t:Track)-[:HAS_TAG]->(tag:Tag) WHERE t.id = $trackId RETURN tag")
     List<TagNode> findTagsByTrackId(int trackId);
 }
 
