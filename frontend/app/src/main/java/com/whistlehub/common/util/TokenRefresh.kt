@@ -1,5 +1,7 @@
 package com.whistlehub.common.util
 
+import android.util.Log
+import com.whistlehub.common.data.local.room.UserRepository
 import com.whistlehub.common.data.remote.dto.request.AuthRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
 import com.whistlehub.common.data.repository.ApiRepository
@@ -12,19 +14,27 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- Token Refresh 파일은 액세스 토큰 만료 시 토큰을 갱신하는 클래스입니다.
- 토큰 갱신에 실패하면 로그아웃 처리를 진행합니다.
- **/
+ * TokenRefresh 클래스는 액세스 토큰 만료 시 리프레시 토큰을 사용해 토큰을 갱신하는 기능을 제공합니다.
+ * 만약 리프레시 토큰 갱신에 실패하면, 로그아웃 처리를 진행하여 토큰뿐 아니라 로컬에 저장된 유저 정보도 삭제합니다.
+ *
+ * 주요 특징:
+ * - 토큰 갱신 요청에 성공하면 새로운 액세스 토큰과 리프레시 토큰을 저장합니다.
+ * - 토큰 갱신 요청에 실패하거나 예외가 발생하면, triggerLogout()을 호출하여
+ *   tokenManager.clearTokens()와 함께 userRepository.clearUser()를 호출합니다.
+ */
 
 @Singleton
 class TokenRefresh @Inject constructor(
     private val tokenManager: TokenManager,
-    private val authService: AuthService
+    private val authService: AuthService,
+    private val logoutManager: LogoutManager,
+    private val userRepository: UserRepository
 ) : ApiRepository() {
 
     // 에러 코드 상수 (백엔드에서 정의한 코드)
     private companion object {
-        const val CODE_TOKEN_EXPIRED = "AF" // Access Failure 액세스 토큰 만료 시
+        const val CODE_TOKEN_EXPIRED = "EAT" // Expired Access Token
+        const val CODE_TOKEN_INVALID = "IAT" // Invalid Access Token
         const val CODE_PERMISSION_DENIED = "NP" // Not Permitted 권한 없음 시
     }
 
@@ -54,6 +64,21 @@ class TokenRefresh @Inject constructor(
                 triggerLogout()
                 return response
             }
+
+            // 잘못된 토큰인지 확인
+            if (isTokenInvalidError(response)) {
+                // 만료 되었다면 토큰 갱신 시도
+                val refreshSuccess = refreshToken()
+
+                // 토큰 갱신에 성공한 경우 API 재시도
+                if (refreshSuccess) {
+                    return super.executeApiCall(call)
+                }
+                // 토큰 갱신 실패 시 로그아웃 처리
+                triggerLogout()
+                return response
+            }
+
 
             // 응답이 권한 없음 인지 확인
             if (isPermissionDeniedError(response)) {
@@ -85,13 +110,21 @@ class TokenRefresh @Inject constructor(
             return response
         } catch (e: Exception) {
             // 예외 처리 로직
+            Log.e("TokenRefresh", "Exception in executeApiCall: ${e.message}")
             throw e
         }
     }
 
-    // 토큰 만료 에러(AF)인지 확인하는 함수
+    // 토큰 만료 에러(EAT)인지 확인하는 함수
     private fun <T> isTokenExpiredError(response: ApiResponse<T>): Boolean {
+        Log.d("TokenRefresh", "isTokenExpiredError: returning true for testing purposes")
         return response.code == CODE_TOKEN_EXPIRED
+    }
+
+    // 잘못된 토큰(IAT)인지 확인하는 함수
+    private fun <T> isTokenInvalidError(response: ApiResponse<T>): Boolean {
+        Log.d("TokenRefresh", "isTokenExpiredError: returning true for testing purposes")
+        return response.code == CODE_TOKEN_INVALID
     }
 
     // 권한 없음 에러(NP)인지 확인하는 함수
@@ -103,6 +136,7 @@ class TokenRefresh @Inject constructor(
     private fun refreshToken(): Boolean {
         // 리프레시 토큰 정의, 만료될 시 null 반환
         val refreshToken = tokenManager.getRefreshToken() ?: return false
+
 
         return runBlocking {
             try {
@@ -135,7 +169,10 @@ class TokenRefresh @Inject constructor(
     private fun triggerLogout() {
         tokenManager.clearTokens()
         runBlocking {
+            userRepository.clearUser()
             _logoutEventFlow.emit(Unit)
+            // LogoutManager를 통해 전역 로그아웃 이벤트 전달
+            logoutManager.emitLogout()
         }
     }
 }
