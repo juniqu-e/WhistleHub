@@ -85,7 +85,7 @@ object RepositoryModule {
         playlistApi: PlaylistApi,
         tokenRefresh: TokenRefresh
     ): PlaylistService {
-        return PlaylistService(playlistApi)
+        return PlaylistService(playlistApi, tokenRefresh)
     }
 
     @Provides
@@ -94,7 +94,7 @@ object RepositoryModule {
         trackApi: TrackApi,
         tokenRefresh: TokenRefresh
     ): TrackService {
-        return TrackService(trackApi)
+        return TrackService(trackApi, tokenRefresh)
     }
 
     @Provides
@@ -103,7 +103,7 @@ object RepositoryModule {
         workstationApi: WorkstationApi,
         tokenRefresh: TokenRefresh
     ): WorkstationService {
-        return WorkstationService(workstationApi)
+        return WorkstationService(workstationApi, tokenRefresh)
     }
 
     @Provides
@@ -112,6 +112,6 @@ object RepositoryModule {
         rankingApi: RankingApi,
         tokenRefresh: TokenRefresh
     ): RankingService {
-        return RankingService(rankingApi)
+        return RankingService(rankingApi, tokenRefresh)
     }
 }
