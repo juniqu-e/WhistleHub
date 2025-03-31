@@ -99,7 +99,7 @@ fun MiniPlayerBar(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = currentTrack?.artistInfo?.nickname ?: "Unknown Album",
+                    text = currentTrack?.artist?.nickname ?: "Unknown Artist",
                     style = Typography.bodyLarge,
                     color = CustomColors().Grey400,
                 )
