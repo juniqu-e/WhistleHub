@@ -3,6 +3,7 @@ package com.ssafy.backend.track.service;
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.error.exception.MissingParameterException;
 import com.ssafy.backend.common.error.exception.NotFoundLayerException;
+import com.ssafy.backend.common.error.exception.NotFoundMemberException;
 import com.ssafy.backend.common.error.exception.TrackNotFoundException;
 import com.ssafy.backend.common.service.S3Service;
 import com.ssafy.backend.common.util.S3FileKeyExtractor;
@@ -47,6 +48,8 @@ public class TrackService {
     private final LikeRepository likeRepository;
     private final SamplingRepository samplingRepository;
     private final ReportRepository reportRepository;
+    private final MemberRepository memberRepository;
+    private final ListenRecoredRepository listenRecoredRepository;
 
     private final DataCollectingService dataCollectingService;
     private final S3Service s3Service;
@@ -157,9 +160,7 @@ public class TrackService {
                     return new TrackNotFoundException("Track not found"); // TODO: 커스텀 예외로 교체
                 });
         // visibility - public 여부 true -> 본인만 볼 수 있음
-        // block - 정지 여부 true -> 본인만 볼 수 있음
-        // enabled - 소프트 삭제 여부 true -> 조회 불가
-        if (track.getBlocked() || track.getVisibility()) {
+        if (!track.getVisibility()) {
             if (track.getMember().getId() != memberId) {
                 log.info("{}번 트랙은 회원이 조회할 수 없는 데이터", memberId);
                 throw new TrackNotFoundException(""); // TODO: 커스텀으로 교체
@@ -170,10 +171,21 @@ public class TrackService {
             log.info("{}번 회원이 삭제된 트랙({})을 조회", memberId, track.getId());
             throw new TrackNotFoundException(""); // TODO: 커스텀으로 교체
         }
-
+        Member member = memberRepository.findById(memberId).orElseThrow(
+                () -> {
+                    log.warn("{}번 회원은 존재하지 않음", memberId);
+                    return new NotFoundMemberException();
+                }
+        );
         // 조회수 증가
         int viewCount = track.getViewCount();
         track.setViewCount(viewCount + 1);
+        ListenRecord listenRecord = ListenRecord.builder()
+                .member(member)
+                .track(track)
+                .build();
+
+        listenRecoredRepository.save(listenRecord);
 
         // 가져와야 하는 데이터
         // isLike 좋아요 누른 여부

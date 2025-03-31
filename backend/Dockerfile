@@ -23,7 +23,9 @@ FROM openjdk:17-slim
 WORKDIR /app
 
 RUN apt-get update && \
-    apt-get install -y ffmpeg
+    apt-get install -y ffmpeg fluidsynth
+
+COPY src/main/resources/1mgm.sf2 .
 
 # 빌드 스테이지에서 생성된 JAR 파일 복사
 COPY --from=build /app/build/libs/*.jar app.jar
