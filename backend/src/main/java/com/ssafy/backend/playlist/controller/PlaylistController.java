@@ -61,7 +61,7 @@ public class PlaylistController {
     @PutMapping()
     public ApiResponse<?> updatePlaylist(@RequestBody ModifyPlaylistRequestDto requestDto) {
         if(requestDto.getName() == null || requestDto.getName().isEmpty()
-                || requestDto.getDescription() == null || requestDto.getDescription().isEmpty()) {
+                || requestDto.getDescription() == null) {
             throw new MissingParameterException();
         }
 
