@@ -15,11 +15,23 @@ FROM python:3.11-slim
 
 WORKDIR /FastAPI/
 
+# Install ffmpeg with full codec support
 RUN apt-get update && \
-    apt-get install -y ffmpeg
+    apt-get install -y --no-install-recommends \
+    ffmpeg \
+    libsndfile1 \
+    libavcodec-extra \
+    libavformat-extra \
+    libavutil-dev \
+    libavfilter-dev \
+    libgfortran5 && \
+    rm -rf /var/lib/apt/lists/*
 
 # builder 단계에서 설치된 패키지를 그대로 복사
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+
+# builder 단계에서 설치된 실행 파일(예: celery 명령어) 복사
+COPY --from=builder /usr/local/bin /usr/local/bin
 
 # 소스 코드 복사
 COPY config/ ./config/

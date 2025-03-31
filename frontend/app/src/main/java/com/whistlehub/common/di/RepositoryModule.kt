@@ -15,6 +15,7 @@ import com.whistlehub.common.data.repository.ProfileService
 import com.whistlehub.common.data.repository.RankingService
 import com.whistlehub.common.data.repository.TrackService
 import com.whistlehub.common.data.repository.WorkstationService
+import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.common.util.TokenRefresh
 import dagger.Module
 import dagger.Provides
@@ -44,9 +45,11 @@ object RepositoryModule {
     @Singleton
     fun provideTokenRefresh(
         authApi: AuthApi,
-        tokenManager: com.whistlehub.common.util.TokenManager
+        tokenManager: com.whistlehub.common.util.TokenManager,
+        logoutManager: LogoutManager,
+        userRepository: UserRepository
     ): TokenRefresh {
-        return TokenRefresh(tokenManager, AuthService(authApi))
+        return TokenRefresh(tokenManager, AuthService(authApi), logoutManager, userRepository)
     }
 
 
@@ -73,7 +76,7 @@ object RepositoryModule {
         profileApi: ProfileApi,
         tokenRefresh: TokenRefresh
     ): ProfileService {
-        return ProfileService(profileApi)
+        return ProfileService(profileApi, tokenRefresh)
     }
 
     @Provides
@@ -82,7 +85,7 @@ object RepositoryModule {
         playlistApi: PlaylistApi,
         tokenRefresh: TokenRefresh
     ): PlaylistService {
-        return PlaylistService(playlistApi)
+        return PlaylistService(playlistApi, tokenRefresh)
     }
 
     @Provides
@@ -91,7 +94,7 @@ object RepositoryModule {
         trackApi: TrackApi,
         tokenRefresh: TokenRefresh
     ): TrackService {
-        return TrackService(trackApi)
+        return TrackService(trackApi, tokenRefresh)
     }
 
     @Provides
@@ -100,7 +103,7 @@ object RepositoryModule {
         workstationApi: WorkstationApi,
         tokenRefresh: TokenRefresh
     ): WorkstationService {
-        return WorkstationService(workstationApi)
+        return WorkstationService(workstationApi, tokenRefresh)
     }
 
     @Provides
@@ -109,6 +112,6 @@ object RepositoryModule {
         rankingApi: RankingApi,
         tokenRefresh: TokenRefresh
     ): RankingService {
-        return RankingService(rankingApi)
+        return RankingService(rankingApi, tokenRefresh)
     }
 }
