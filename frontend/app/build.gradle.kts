@@ -97,3 +97,37 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }
+
+//
+val generateRawWavList by tasks.registering {
+    group = "whistlehub"
+    description = "Generates list of .wav file names from res/raw directory"
+
+    doLast {
+        val rawDir = file("src/main/res/raw")
+        val outputFile = file("src/main/java/com/whistlehub/common/util/RawWavList.kt")
+
+        val wavFiles = rawDir.listFiles { _, name ->
+            name.endsWith(".wav", ignoreCase = true)
+        }?.map { it.nameWithoutExtension } ?: emptyList()
+
+        val content = buildString {
+            appendLine("package com.whistlehub.common.util")
+            appendLine()
+            appendLine("// Auto-generated file. Do not edit manually.")
+            appendLine("val rawWavList = listOf(")
+            wavFiles.forEach { name ->
+                appendLine("    \"$name\",")
+            }
+            appendLine(")")
+        }
+
+        outputFile.parentFile.mkdirs()
+        outputFile.writeText(content)
+        println("✅ RawWavList.kt generated with ${wavFiles.size} entries.")
+    }
+}
+
+tasks.named("preBuild") {
+    dependsOn(generateRawWavList)
+}
