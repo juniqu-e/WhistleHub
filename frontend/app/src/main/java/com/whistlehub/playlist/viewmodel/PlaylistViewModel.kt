@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.MultipartBody
 import javax.inject.Inject
 
 @HiltViewModel
@@ -30,8 +31,8 @@ class PlaylistViewModel @Inject constructor(
     val playlistTrack: StateFlow<List<PlaylistResponse.PlaylistTrackResponse>> get() = _playlistTrack
 
 
-    fun getPlaylists() {
-        viewModelScope.launch(Dispatchers.IO) {
+    suspend fun getPlaylists() {
+        try {
             val user = userRepository.getUser() // 사용자 정보 가져오기
 
             // 사용자 정보가 없을 경우 기본값으로 1(테스트계정 ID) 사용
@@ -43,6 +44,8 @@ class PlaylistViewModel @Inject constructor(
             withContext(Dispatchers.Main) {
                 _playlists.emit(playlistResponse.payload ?: emptyList())
             }
+        } catch (e: Exception) {
+            Log.d("error", "Failed to get playlists: ${e.message}")
         }
     }
 
@@ -72,8 +75,16 @@ class PlaylistViewModel @Inject constructor(
         }
     }
 
-    fun addTrackToPlaylist(playlistId: Int, trackId: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
+    fun moveTrack(from: Int, to: Int) {
+        viewModelScope.launch {
+            _playlistTrack.value = _playlistTrack.value.toMutableList().apply {
+                add(to, removeAt(from))
+            }
+        }
+    }
+
+    suspend fun addTrackToPlaylist(playlistId: Int, trackId: Int) {
+        try {
             val addTrackResponse = playlistService.addTrackToPlaylist(
                 PlaylistRequest.AddTrackToPlaylistRequest(
                     playlistId = playlistId,
@@ -85,19 +96,23 @@ class PlaylistViewModel @Inject constructor(
             } else {
                 Log.d("error", "${addTrackResponse.message}")
             }
+        } catch (e: Exception) {
+            Log.d("error", "Failed to add track to playlist: ${e.message}")
         }
     }
 
-    fun createPlaylist(
+    suspend fun createPlaylist(
         name: String = "New Playlist",
         description: String? = null,
-        trackIds: List<Int>? = null
+        trackIds: List<Int>? = null,
+        image: MultipartBody.Part? = null
     ) {
-        viewModelScope.launch(Dispatchers.IO) {
+        try {
             val createPlaylistResponse = playlistService.createPlaylist(
                 name = name,
                 description = description,
-                trackIds = trackIds
+                trackIds = trackIds,
+                image = image
             )
             if (createPlaylistResponse.code == "SU") {
                 Log.d("success", "Playlist created successfully with ID ${createPlaylistResponse.payload}")
@@ -105,6 +120,56 @@ class PlaylistViewModel @Inject constructor(
             } else {
                 Log.d("error", "${createPlaylistResponse.message}")
             }
+        } catch (e: Exception) {
+            Log.d("error", "Failed to create playlist: ${e.message}")
+        }
+    }
+
+    suspend fun deletePlaylist(playlistId: Int) {
+        try {
+            val deletePlaylistResponse = playlistService.deletePlaylist(playlistId)
+            if (deletePlaylistResponse.code == "SU") {
+                Log.d("success", "Playlist deleted successfully with ID $playlistId")
+                getPlaylists() // 플레이리스트 목록 갱신
+            } else {
+                Log.d("error", "${deletePlaylistResponse.message}")
+            }
+        } catch (e: Exception) {
+            Log.d("error", "Failed to delete playlist: ${e.message}")
+        }
+    }
+
+    suspend fun updatePlaylist(
+        playlistId: Int,
+        name: String,
+        description: String,
+        trackIds: List<Int> = emptyList(),
+    ) {
+        try {
+            val updatePlaylistResponse = playlistService.updatePlaylist(
+                request = PlaylistRequest.UpdatePlaylistRequest(
+                    playlistId = playlistId,
+                    name = name,
+                    description = description
+                )
+            )
+            if (trackIds.isNotEmpty()) {
+                playlistService.updatePlaylistTracks(
+                    request = PlaylistRequest.UpdatePlaylistTrackRequest(
+                        playlistId = playlistId,
+                        tracks = trackIds
+                    )
+                )
+            }
+            if (updatePlaylistResponse.code == "SU") {
+                Log.d("success", "Playlist updated successfully with ID $playlistId")
+                getPlaylistInfo(playlistId)
+                getPlaylistTrack(playlistId)
+            } else {
+                Log.d("error", "${updatePlaylistResponse.message}")
+            }
+        } catch (e: Exception) {
+            Log.d("error", "Failed to update playlist: ${e.message}")
         }
     }
 }

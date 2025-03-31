@@ -11,8 +11,8 @@
 
 
 struct PatternBlock {
-    int start;   // 시작 마디 번호
-    int length;  // 마디 길이
+    float start;   // 시작 마디 번호
+    float length;  // 마디 길이
 };
 
 struct Layer {
@@ -28,6 +28,11 @@ struct Layer {
     // 재생 상태 관리
     bool isActive = false;
     int currentSampleIndex = 0;
+};
+
+struct LayerAudioInfo {
+    std::string path;
+    std::vector <PatternBlock> patternBlock;
 };
 
 #endif //WHISTLEHUB_AUDIOLAYER_H

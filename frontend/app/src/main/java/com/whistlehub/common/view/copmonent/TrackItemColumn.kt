@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,17 +21,22 @@ import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun TrackItemColumn(
     track: TrackResponse.GetTrackDetailResponse,
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
 ) {
+    val coroutineScope = rememberCoroutineScope()
+
     Column(
         Modifier
             .fillMaxWidth()
             .clickable {
-                trackPlayViewModel.playTrack(track)
+                coroutineScope.launch {
+                    trackPlayViewModel.playTrack(track)
+                }
             }, verticalArrangement = Arrangement.Top, horizontalAlignment = Alignment.Start
     ) {
         AsyncImage(

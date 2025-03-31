@@ -21,7 +21,7 @@ public class TrackResponseDto {
     Integer likeCount;
     Integer viewCount;
     String createdAt;
-    List<TrackInfoDto> sourceTracks;
-    List<TrackInfoDto> importTracks;
+    List<TrackInfo> sourceTracks;
+    List<TrackInfo> importTracks;
     List<TagInfo> tags;
 }

@@ -19,14 +19,16 @@ interface WorkstationApi {
     suspend fun uploadTrack(
         @Body request: WorkstationRequest.UploadTrackRequest
     ): Response<ApiResponse<Int>>
+
     // 레이어 업로드
     @Multipart
     @POST("workstation/layer")
     suspend fun uploadLayerFile(
         @Part file: MultipartBody.Part,
     ): Response<ApiResponse<Int>>
+
     // 트랙 임포트
-    @POST("workstation/import")
+    @GET("workstation/import")
     suspend fun importTrack(
         @Body request: WorkstationRequest.ImportTrackRequest
     ): Response<ApiResponse<WorkstationResponse.ImportTrackResponse>>
