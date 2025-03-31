@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.viewmodel.PlaylistViewModel
@@ -71,45 +72,78 @@ fun PlaylistTrackListScreen(
 
     LazyColumn(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
-            Row(
-                Modifier.fillMaxWidth(),
+            Row(Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(15.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text(
-                    playlistInfo?.name ?: "Playlist Name",
-                    style = Typography.titleLarge,
-                    fontSize = Typography.displaySmall.fontSize,
-                    modifier = Modifier.weight(1f)
-                )
-                Icon(
-                    Icons.Rounded.PlayArrow,
-                    contentDescription = "Play",
+                AsyncImage(
+                    model = playlistInfo?.imageUrl,
+                    contentDescription = "Playlist Image",
                     modifier = Modifier
-                        .size(30.dp)
-                        .clickable {
-                            showPlayPlaylistDialog = true
-                        },
-                    tint = CustomColors().Mint500
+                        .size(50.dp)
+                        .clip(RoundedCornerShape(5.dp)),
+                    error = null,
+                    contentScale = ContentScale.Crop
                 )
-                Icon(
-                    Icons.Rounded.Edit,
-                    contentDescription = "Edit",
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable {},
-                    tint = CustomColors().Grey50
-                )
-                Icon(
-                    Icons.Rounded.Delete,
-                    contentDescription = "Delete",
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable {
-                            showDeletePlaylistDialog = true
-                        },
-                    tint = CustomColors().Grey50
-                )
+                Column {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(15.dp)
+                    ) {
+                        Text(
+                            playlistInfo?.name ?: "Playlist Name",
+                            style = Typography.titleLarge,
+                            fontSize = Typography.displaySmall.fontSize,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Icon(
+                            Icons.Rounded.PlayArrow,
+                            contentDescription = "Play",
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clickable {
+                                    showPlayPlaylistDialog = true
+                                },
+                            tint = CustomColors().Mint500
+                        )
+                        Icon(
+                            Icons.Rounded.Edit,
+                            contentDescription = "Edit",
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clickable {
+                                    navController.navigate(Screen.PlayListEdit.route + "/$playlistId")
+                                },
+                            tint = CustomColors().Grey50
+                        )
+                        Icon(
+                            Icons.Rounded.Delete,
+                            contentDescription = "Delete",
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clickable {
+                                    showDeletePlaylistDialog = true
+                                },
+                            tint = CustomColors().Grey50
+                        )
+                    }
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Text(
+                            playlistInfo?.description ?: "",
+                            style = Typography.bodyLarge,
+                            color = CustomColors().Grey200,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
             }
         }
         items(playlistTrack.size) { index ->

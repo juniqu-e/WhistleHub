@@ -10,6 +10,7 @@ import androidx.navigation.compose.composable
 import com.whistlehub.common.view.home.HomeScreen
 import com.whistlehub.playlist.view.FullPlayerScreen
 import com.whistlehub.playlist.view.PlayListScreen
+import com.whistlehub.playlist.view.PlaylistEditScreen
 import com.whistlehub.playlist.view.PlaylistTrackListScreen
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import com.whistlehub.profile.view.ProfileScreen
@@ -57,6 +58,13 @@ fun AppContentNavGraph(
             val playlistId = backStackEntry.arguments?.getString("playlistId")
             if (playlistId != null) {
                 PlaylistTrackListScreen(playlistId.toInt(), navController, trackPlayViewModel = trackPlayViewModel)
+            }
+        }
+        // 플레이리스트 편집 화면
+        composable(route = Screen.PlayListEdit.route + "/{playlistId}") { backStackEntry ->
+            val playlistId = backStackEntry.arguments?.getString("playlistId")
+            if (playlistId != null) {
+                PlaylistEditScreen(playlistId.toInt(), navController)
             }
         }
     }

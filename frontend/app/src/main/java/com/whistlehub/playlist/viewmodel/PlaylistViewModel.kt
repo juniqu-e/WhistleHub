@@ -2,6 +2,7 @@ package com.whistlehub.playlist.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.whistlehub.common.data.local.room.UserRepository
 import com.whistlehub.common.data.remote.dto.request.PlaylistRequest
 import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
@@ -10,6 +11,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MultipartBody
 import javax.inject.Inject
@@ -71,6 +73,15 @@ class PlaylistViewModel @Inject constructor(
         } catch (e: Exception) {
             Log.d("error", "Failed to get playlist tracks: ${e.message}")
         }
+    }
+
+    fun moveTrack(from: Int, to: Int) {
+        viewModelScope.launch {
+        _playlistTrack.value = _playlistTrack.value.toMutableList().apply {
+            add(to, removeAt(from))
+        }
+        // 서버 업데이트 로직 추가 (예: API 호출)
+    }
     }
 
     suspend fun addTrackToPlaylist(playlistId: Int, trackId: Int) {
