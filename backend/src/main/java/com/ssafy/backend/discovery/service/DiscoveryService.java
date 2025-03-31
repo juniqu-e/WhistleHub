@@ -1,5 +1,6 @@
 package com.ssafy.backend.discovery.service;
 
+import com.ssafy.backend.ai.service.Neo4jContentRetrieverService;
 import com.ssafy.backend.auth.model.common.TagDto;
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.error.exception.NotFoundException;
@@ -8,8 +9,10 @@ import com.ssafy.backend.graph.model.entity.TagNode;
 import com.ssafy.backend.graph.service.RelationshipService;
 import com.ssafy.backend.mysql.entity.Member;
 import com.ssafy.backend.mysql.entity.Tag;
+import com.ssafy.backend.mysql.entity.Track;
 import com.ssafy.backend.mysql.repository.LikeRepository;
 import com.ssafy.backend.mysql.repository.TagRepository;
+import com.ssafy.backend.mysql.repository.TrackRepository;
 import com.ssafy.backend.playlist.dto.TrackInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +33,8 @@ public class DiscoveryService {
     private final RelationshipService relationshipService;
     private final AuthService authService;
     private final TagRepository tagRepository;
+    private final Neo4jContentRetrieverService neo4jContentRetrieverService;
+    private final TrackRepository trackRepository;
 
     /**
      * <pre>좋아요 랭킹 조회</pre>
@@ -86,6 +91,27 @@ public class DiscoveryService {
         return resultList;
     }
 
+    public List<TrackInfo> getTagRecommend(int tagId, int size) {
+        Member member = authService.getMember();
+
+        List<Integer> trackIds = neo4jContentRetrieverService.retrieveTrackByMemberIdAndTagId(member.getId(), 1, 10);
+        List<Track> trackList = trackRepository.findAllById(trackIds);
+
+        List<TrackInfo> result = new ArrayList<>();
+
+        for (Track track : trackList) {
+            TrackInfo trackInfo = TrackInfo.builder()
+                    .trackId(track.getId())
+                    .title(track.getTitle())
+                    .nickname(track.getMember().getNickname())
+                    .imageUrl(track.getImageUrl())
+                    .duration(track.getDuration())
+                    .build();
+
+            result.add(trackInfo);
+        }
+        return result;
+    }
     /**
      * <pre>기간 시작일자</pre>
      * 기간에 따라 시작일자를 계산한다.
