@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
+import okhttp3.MultipartBody
 import javax.inject.Inject
 
 @HiltViewModel
@@ -93,13 +94,15 @@ class PlaylistViewModel @Inject constructor(
     suspend fun createPlaylist(
         name: String = "New Playlist",
         description: String? = null,
-        trackIds: List<Int>? = null
+        trackIds: List<Int>? = null,
+        image: MultipartBody.Part? = null
     ) {
         try {
             val createPlaylistResponse = playlistService.createPlaylist(
                 name = name,
                 description = description,
-                trackIds = trackIds
+                trackIds = trackIds,
+                image = image
             )
             if (createPlaylistResponse.code == "SU") {
                 Log.d("success", "Playlist created successfully with ID ${createPlaylistResponse.payload}")

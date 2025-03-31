@@ -46,6 +46,7 @@ import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.view.component.CreatePlaylist
 import com.whistlehub.playlist.viewmodel.PlaylistViewModel
 import kotlinx.coroutines.launch
+import okhttp3.MultipartBody
 
 @Composable
 fun PlayListScreen(navController: NavHostController, playlistViewModel: PlaylistViewModel = hiltViewModel()) {
@@ -182,6 +183,7 @@ fun PlayListScreen(navController: NavHostController, playlistViewModel: Playlist
     // CreatePlaylist Dialog
     var playlistTitle by remember { mutableStateOf("") }
     var playlistDescription by remember { mutableStateOf("") }
+    var playlistImage by remember { mutableStateOf<MultipartBody.Part?>(null) }
 
     if (showCreatePlaylistDialog) {
         AlertDialog(
@@ -194,6 +196,9 @@ fun PlayListScreen(navController: NavHostController, playlistViewModel: Playlist
             text = { CreatePlaylist(
                 onInputTitle = { playlistTitle = it},
                 onInputDescription = { playlistDescription = it },
+                onInputImage = {
+                    playlistImage = it
+                }
             ) },
             modifier = Modifier
                 .fillMaxWidth()
@@ -202,7 +207,11 @@ fun PlayListScreen(navController: NavHostController, playlistViewModel: Playlist
                 Button(
                     onClick = {
                         coroutineScope.launch {
-                            playlistViewModel.createPlaylist(name = playlistTitle, description = playlistDescription)
+                            playlistViewModel.createPlaylist(
+                                name = playlistTitle,
+                                description = playlistDescription,
+                                image = playlistImage
+                            )
                             showCreatePlaylistDialog = false
                         }},
                     colors = ButtonDefaults.buttonColors(
