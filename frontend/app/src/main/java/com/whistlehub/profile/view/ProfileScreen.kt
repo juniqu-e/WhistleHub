@@ -17,7 +17,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -43,6 +46,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,6 +62,8 @@ import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.common.viewmodel.LoginViewModel
 import com.whistlehub.profile.viewmodel.ProfileViewModel
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,6 +88,12 @@ fun ProfileScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
+    // 로딩 상태 플래그
+    var isLoading by remember { mutableStateOf(false) }
+
+    // LazyVerticalGrid의 스크롤 상태
+    val gridState: LazyGridState = rememberLazyGridState()
+
 
 
 
@@ -89,6 +101,21 @@ fun ProfileScreen(
     LaunchedEffect(Unit) {
         viewModel.loadProfile(memberId)
         viewModel.loadTracks(memberId, page = currentPage, size = 9)
+    }
+
+    // 스크롤 상태를 감시해서 마지막 아이템이 보이면 다음 페이지를 로드
+    LaunchedEffect(gridState) {
+        snapshotFlow { gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .map { it ?: 0 }
+            .distinctUntilChanged()
+            .collect { lastVisibleIndex ->
+                if (lastVisibleIndex >= tracks.size - 1 && !isLoading) {
+                    isLoading = true
+                    currentPage++
+                    viewModel.loadTracks(memberId, page = currentPage, size = 9)
+                    isLoading = false
+                }
+            }
     }
 
     Scaffold(
@@ -112,15 +139,16 @@ fun ProfileScreen(
             )
         },
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(8.dp)
+        LazyVerticalGrid(
+            state = gridState,
+            columns = GridCells.Fixed(3),
+            modifier = Modifier.padding(innerPadding),
+            contentPadding = PaddingValues(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // 헤더 영역
-            item {
+            // 프로필 헤더를 그리드의 첫 아이템으로 추가 (전체 폭 사용)
+            item(span = { GridItemSpan(maxCurrentLineSpan) }) {
                 ProfileHeader(
                     profileImage = profile?.profileImage,
                     nickname = profile?.nickname ?: "Loading...",
@@ -131,50 +159,15 @@ fun ProfileScreen(
                     showFollowButton = memberId != currentUserId
                 )
             }
-
-            // 트랙 목록 렌더링 부분은 주석 처리합니다.
-            item {
-                Box(modifier = Modifier
-                    .fillMaxWidth()
-                    .height(400.dp) // 적절한 높이 설정
-                ) {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(3),
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        this@LazyColumn.items(tracks) { track ->
-                            TrackGridItem(track = track, onClick = { /* 클릭 처리 */ })
-                        }
-                    }
-                }
+            // 트랙 아이템들 렌더링
+            items(count = tracks.size) { index ->
+                val track = tracks[index]
+                TrackGridItem(track = track, onClick = { /* 트랙 클릭 처리 */ })
             }
-            // 페이지 전환 버튼 영역
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    Button(
-                        onClick = {
-                            if (currentPage > 0) {
-                                currentPage--
-                                viewModel.loadTracks(memberId, page = currentPage, size = 9)
-                            }
-                        }
-                    ) {
-                        Text("이전")
-                    }
-                    Button(
-                        onClick = {
-                            currentPage++
-                            viewModel.loadTracks(memberId, page = currentPage, size = 9)
-                        }
-                    ) {
-                        Text("다음")
-                    }
+            // 로딩 인디케이터 (옵션)
+            if (isLoading) {
+                item(span = { GridItemSpan(maxCurrentLineSpan) }) {
+                    Text("Loading...", modifier = Modifier.padding(16.dp))
                 }
             }
         }

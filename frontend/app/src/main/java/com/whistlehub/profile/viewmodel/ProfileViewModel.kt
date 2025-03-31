@@ -55,7 +55,7 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun loadTracks(memberId: Int, page: Int, size: Int = 9) {
+    fun loadTracks(memberId: Int, page: Int = 0, size: Int = 9) {
         viewModelScope.launch {
             val user = userRepository.getUser()
             if (user == null) {

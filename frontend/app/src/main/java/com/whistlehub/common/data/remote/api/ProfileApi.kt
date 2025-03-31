@@ -48,12 +48,12 @@ interface ProfileApi {
         @Query("page") page: Int, // 페이지
         @Query("size") size: Int, // 페이지 크기
     ): Response<ApiResponse<List<ProfileResponse.SearchProfileResponse>>>
-    // 멤버의 플레이리스트 조회 (memberId가 생략 된 경우 AccessToken의 memberId 조회)
+    // 멤버의 플레이리스트 조회
     @GET("member/playlist")
     suspend fun getMemberPlaylists(
         @Query("memberId") memberId: Int
     ): Response<ApiResponse<List<ProfileResponse.GetMemberPlaylistsResponse>>>
-    // 멤버의 트랙 조회 (memberId가 생략 된 경우 AccessToken의 memberId 조회)
+    // 멤버의 트랙 조회
     @GET("member/track")
     suspend fun getMemberTracks(
         @Query("memberId") memberId: Int,
