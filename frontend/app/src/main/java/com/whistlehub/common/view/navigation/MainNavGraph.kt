@@ -16,6 +16,7 @@ import com.whistlehub.common.view.login.LoginScreen
 import com.whistlehub.common.view.signup.SelectTagsScreen
 import com.whistlehub.common.view.signup.SignUpScreen
 import com.whistlehub.common.viewmodel.LoginViewModel
+import com.whistlehub.common.viewmodel.SignUpState
 import com.whistlehub.common.viewmodel.SignUpViewModel
 
 /**
@@ -94,6 +95,15 @@ fun MainNavGraph(
 
             // Composable 컨텍스트에서 미리 ViewModel 인스턴스를 생성합니다.
             val signUpViewModel: SignUpViewModel = hiltViewModel()
+
+            // 회원가입 상태를 관찰하여 성공 시 네비게이션 처리
+            LaunchedEffect(signUpViewModel.signUpState) {
+                if (signUpViewModel.signUpState.value is SignUpState.Success) {
+                    navController.navigate("main") {
+                        popUpTo("signup") { inclusive = true }
+                    }
+                }
+            }
 
             SelectTagsScreen(
                 userId = userId,

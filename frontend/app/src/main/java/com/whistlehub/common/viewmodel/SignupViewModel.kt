@@ -21,7 +21,7 @@ sealed class SignUpState {
     data class Error(val message: String) : SignUpState()
 }
 
-// 이메일 인증 상태를 표현하는 sealed class (같은 파일 내에 정의)
+// 이메일 인증 상태를 표현하는 sealed class
 sealed class EmailVerificationState {
     object Idle : EmailVerificationState()
     object Sending : EmailVerificationState() // 인증 코드 전송 중
@@ -172,7 +172,7 @@ class SignUpViewModel @Inject constructor(
             try {
                 val request = AuthRequest.RegisterRequest(loginId, password, email, nickname, gender, birth, tagList)
                 val response = authService.register(request)
-                if (response.code == "SU" && response.payload != null) {
+                if (response.code == "SU") {
                     _signUpState.value = SignUpState.Success("회원가입에 성공했습니다.")
                     onSuccess()
                 } else {

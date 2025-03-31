@@ -19,6 +19,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.whistlehub.common.data.remote.dto.response.AuthResponse
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
+import com.whistlehub.common.viewmodel.SignUpState
 import com.whistlehub.common.viewmodel.SignUpViewModel
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
@@ -31,7 +32,7 @@ fun SelectTagsScreen(
     gender: Char,
     birth: String,
     onStartClick: (List<Int>) -> Unit = {},
-    onBackClick: () -> Unit = {} // 뒤로가기 기능을 위한 콜백 추가
+    onBackClick: () -> Unit = {}, // 뒤로가기 기능을 위한 콜백 추가
 ) {
     val colors = CustomColors()
     val viewModel: SignUpViewModel = hiltViewModel()
@@ -49,6 +50,7 @@ fun SelectTagsScreen(
     val selectedTags = remember { mutableStateListOf<Int>() }
     // 3개 이상 선택 여부에 따라 시작 버튼 활성/비활성
     val isStartEnabled = selectedTags.size >= 3
+
 
     Scaffold(
         topBar = {
