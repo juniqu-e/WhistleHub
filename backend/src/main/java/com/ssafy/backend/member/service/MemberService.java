@@ -345,7 +345,13 @@ public class MemberService {
         return trackInfoList;
     }
 
-    public List<TrackInfo> getLikeTrack(Integer memberId, PageRequest pageRequest) {
+    /**
+     * 회원의 좋아요 트랙 목록 가져오기
+     * @param memberId 트랙 목록을 가져올 회원 ID
+     * @param pageRequest 페이지 요청
+     * @return 트랙 정보 리스트
+     */
+    public List<TrackInfo> getLike(Integer memberId, PageRequest pageRequest) {
         // 회원의 트랙 목록 가져오기
         Member requestMember = authService.getMember();
         Member member = memberRepository.findById(memberId)
