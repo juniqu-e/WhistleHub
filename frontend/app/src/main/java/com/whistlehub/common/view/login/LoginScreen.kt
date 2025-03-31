@@ -33,6 +33,7 @@ import com.whistlehub.common.viewmodel.LoginState
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.navigation.NavHostController
 import com.whistlehub.common.view.theme.Typography
 
 
@@ -41,6 +42,7 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit = {},
     onSignUpClick: () -> Unit = {},
     onForgotPasswordClick: () -> Unit = {},
+    navController: NavHostController,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     // 키보드 자동으로 올라오게 하기

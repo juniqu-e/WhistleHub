@@ -15,6 +15,7 @@ import com.whistlehub.common.data.repository.ProfileService
 import com.whistlehub.common.data.repository.RankingService
 import com.whistlehub.common.data.repository.TrackService
 import com.whistlehub.common.data.repository.WorkstationService
+import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.common.util.TokenRefresh
 import dagger.Module
 import dagger.Provides
@@ -44,9 +45,11 @@ object RepositoryModule {
     @Singleton
     fun provideTokenRefresh(
         authApi: AuthApi,
-        tokenManager: com.whistlehub.common.util.TokenManager
+        tokenManager: com.whistlehub.common.util.TokenManager,
+        logoutManager: LogoutManager,
+        userRepository: UserRepository
     ): TokenRefresh {
-        return TokenRefresh(tokenManager, AuthService(authApi))
+        return TokenRefresh(tokenManager, AuthService(authApi), logoutManager, userRepository)
     }
 
 

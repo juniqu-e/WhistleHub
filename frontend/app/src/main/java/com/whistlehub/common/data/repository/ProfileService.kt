@@ -22,9 +22,9 @@ import javax.inject.Singleton
 class ProfileService @Inject constructor(
     private val profileApi: ProfileApi,
 ) : ApiRepository() {
-    // 프로필 조회 (memberId가 생략 된 경우 AccessToken의 memberId 조회)
+    // 프로필 조회
     suspend fun getProfile(
-        memberId: Int?
+        memberId: Int
     ): ApiResponse<ProfileResponse.GetProfileResponse> {
         return executeApiCall { profileApi.getProfile(memberId) }
     }
@@ -61,19 +61,19 @@ class ProfileService @Inject constructor(
     ): ApiResponse<List<ProfileResponse.SearchProfileResponse>> {
         return executeApiCall { profileApi.searchProfile(query, page, size) }
     }
-    // 멤버의 플레이리스트 조회 (memberId가 생략 된 경우 AccessToken의 memberId 조회)
+    // 멤버의 플레이리스트 조회
     suspend fun getMemberPlaylists(
-        memberId: Int? = null
+        memberId: Int
     ): ApiResponse<List<ProfileResponse.GetMemberPlaylistsResponse>> {
         return executeApiCall { profileApi.getMemberPlaylists(memberId) }
     }
-    // 멤버의 트랙 조회 (memberId가 생략 된 경우 AccessToken의 memberId 조회)
+    // 멤버의 트랙 조회
     suspend fun getMemberTracks(
-        memberId: Int? = null,
+        memberId: Int,
         page: Int,
-        orderby: String
+        size: Int
     ): ApiResponse<List<ProfileResponse.GetMemberTracksResponse>> {
-        return executeApiCall { profileApi.getMemberTracks(memberId, page, orderby) }
+        return executeApiCall { profileApi.getMemberTracks(memberId, page, size) }
     }
     // 팔로우
     suspend fun follow(
@@ -81,17 +81,17 @@ class ProfileService @Inject constructor(
     ): ApiResponse<Unit> {
         return executeApiCall { profileApi.follow(request) }
     }
-    // 멤버의 팔로워 목록 조회 (memberId가 생략 된 경우 AccessToken의 memberId 조회)
+    // 멤버의 팔로워 목록 조회
     suspend fun getFollowers(
-        memberId: Int? = null,
+        memberId: Int,
         page: Int
     ): ApiResponse<List<ProfileResponse.GetFollowersResponse>> {
         return executeApiCall { profileApi.getFollowers(memberId, page) }
     }
-    // 멤버의 팔로잉 목록 조회 (memberId가 생략 된 경우 AccessToken의 memberId 조회)
+    // 멤버의 팔로잉 목록 조회
     suspend fun getFollowings(
         token: String,
-        memberId: Int? = null,
+        memberId: Int,
         page: Int
     ): ApiResponse<List<ProfileResponse.GetFollowingsResponse>> {
         return executeApiCall { profileApi.getFollowings( memberId, page) }
