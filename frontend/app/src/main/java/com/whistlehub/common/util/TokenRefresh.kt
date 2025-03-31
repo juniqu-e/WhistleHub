@@ -1,6 +1,8 @@
 package com.whistlehub.common.util
 
 import android.util.Log
+import com.google.common.reflect.TypeToken
+import com.google.gson.Gson
 import com.whistlehub.common.data.local.room.UserRepository
 import com.whistlehub.common.data.remote.dto.request.AuthRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
@@ -16,13 +18,7 @@ import javax.inject.Singleton
 /**
  * TokenRefresh 클래스는 액세스 토큰 만료 시 리프레시 토큰을 사용해 토큰을 갱신하는 기능을 제공합니다.
  * 만약 리프레시 토큰 갱신에 실패하면, 로그아웃 처리를 진행하여 토큰뿐 아니라 로컬에 저장된 유저 정보도 삭제합니다.
- *
- * 주요 특징:
- * - 토큰 갱신 요청에 성공하면 새로운 액세스 토큰과 리프레시 토큰을 저장합니다.
- * - 토큰 갱신 요청에 실패하거나 예외가 발생하면, triggerLogout()을 호출하여
- *   tokenManager.clearTokens()와 함께 userRepository.clearUser()를 호출합니다.
  */
-
 @Singleton
 class TokenRefresh @Inject constructor(
     private val tokenManager: TokenManager,
@@ -31,134 +27,146 @@ class TokenRefresh @Inject constructor(
     private val userRepository: UserRepository
 ) : ApiRepository() {
 
-    // 에러 코드 상수 (백엔드에서 정의한 코드)
+    // 백엔드에서 정의한 에러 코드 상수
     private companion object {
-        const val CODE_TOKEN_EXPIRED = "EAT" // Expired Access Token
-        const val CODE_TOKEN_INVALID = "IAT" // Invalid Access Token
-        const val CODE_PERMISSION_DENIED = "NP" // Not Permitted 권한 없음 시
+        const val CODE_TOKEN_EXPIRED = "EAT" // 만료된 액세스 토큰
+        const val CODE_TOKEN_INVALID = "IAT" // 잘못된 액세스 토큰
+        const val CODE_PERMISSION_DENIED = "NP" // 권한 없음
+        // 리프레시 토큰 관련 오류 (로그아웃 처리)
+        const val CODE_REFRESH_ERROR_1 = "IRT"
+        const val CODE_REFRESH_ERROR_2 = "ERT"
+        const val CODE_SUCCESS = "SU" // 성공 코드
     }
 
     // 로그아웃 이벤트를 위한 Flow
     private val _logoutEventFlow = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val logoutEventFlow: SharedFlow<Unit> = _logoutEventFlow
 
-    // 액세스 토큰 만료 시 리프레시 토큰을 호출하는데 요청을 재시도하는 것을 막기 위한 변수
+    // 요청 재시도 여부를 추적하기 위한 맵
     private val permissionRetryMap = mutableMapOf<String, Boolean>()
+
+    // Public wrapper 메서드
+    suspend fun <T> execute(call: suspend () -> Response<ApiResponse<T>>): ApiResponse<T> {
+        return executeApiCall(call)
+    }
 
     // 모든 API 호출에 대한 토큰 갱신 처리
     override suspend fun <T> executeApiCall(call: suspend () -> Response<ApiResponse<T>>): ApiResponse<T> {
         try {
-            // API 호출 시도
+            Log.d("TokenRefresh", "Executing API call...")
             val response = super.executeApiCall(call)
+            Log.d("TokenRefresh", "Initial API response: code=${response.code}, body=$response")
 
-            // 응답이 액세스 토큰 만료 인지 확인
-            if (isTokenExpiredError(response)) {
-                // 만료 되었다면 토큰 갱신 시도
-                val refreshSuccess = refreshToken()
-
-                // 토큰 갱신에 성공한 경우 API 재시도
-                if (refreshSuccess) {
-                    return super.executeApiCall(call)
+            // 액세스 토큰 관련 에러 (EAT 또는 IAT) 처리
+            if (isTokenExpiredError(response) || isTokenInvalidError(response)) {
+                Log.d("TokenRefresh", "Detected token issue (code=${response.code}). Attempting token refresh...")
+                val currentRefreshToken = tokenManager.getRefreshToken()
+                if (currentRefreshToken == null) {
+                    Log.e("TokenRefresh", "No refresh token available.")
+                    return response
                 }
-                // 토큰 갱신 실패 시 로그아웃 처리
-                triggerLogout()
-                return response
+
+                val refreshRequest = AuthRequest.UpdateTokenRequest(currentRefreshToken)
+                Log.d("TokenRefresh", "Calling refresh API with refreshToken: $currentRefreshToken")
+
+                // AuthService가 ApiResponse를 직접 반환하는 경우
+                val refreshApiResponse = authService.updateToken(refreshRequest)
+                Log.d("TokenRefresh", "Refresh API response: code=${refreshApiResponse.code}, body=$refreshApiResponse")
+
+                when (refreshApiResponse.code.toString()) {
+                    CODE_SUCCESS -> {
+                        if (refreshApiResponse.payload != null) {
+                            with(refreshApiResponse.payload) {
+                                Log.d("TokenRefresh", "Refresh successful: new accessToken=$accessToken, new refreshToken=$refreshToken")
+                                tokenManager.saveTokens(this.accessToken, this.refreshToken)
+                            }
+                            Log.d("TokenRefresh", "Retrying original API call after token refresh...")
+                            val retryResponse = super.executeApiCall(call)
+                            Log.d("TokenRefresh", "Retry API response: code=${retryResponse.code}, body=$retryResponse")
+                            return retryResponse
+                        } else {
+                            Log.e("TokenRefresh", "Refresh API returned SU but payload is null.")
+                            tokenManager.clearTokens()
+                            return response
+                        }
+                    }
+                    CODE_REFRESH_ERROR_1, CODE_REFRESH_ERROR_2 -> {
+                        Log.e("TokenRefresh", "Refresh failed with code ${refreshApiResponse.code}. Triggering logout.")
+                        triggerLogout()
+                        return response
+                    }
+                    else -> {
+                        Log.e("TokenRefresh", "Unknown refresh response code: ${refreshApiResponse.code}")
+                        tokenManager.clearTokens()
+                        return response
+                    }
+                }
             }
 
-            // 잘못된 토큰인지 확인
-            if (isTokenInvalidError(response)) {
-                // 만료 되었다면 토큰 갱신 시도
-                val refreshSuccess = refreshToken()
-
-                // 토큰 갱신에 성공한 경우 API 재시도
-                if (refreshSuccess) {
-                    return super.executeApiCall(call)
-                }
-                // 토큰 갱신 실패 시 로그아웃 처리
-                triggerLogout()
-                return response
-            }
-
-
-            // 응답이 권한 없음 인지 확인
+            // 권한 없음 (NP) 처리
             if (isPermissionDeniedError(response)) {
-                // 요청의 고유 식별자 생성 -> 재시도 여부 확인을 위한 키
                 val requestId = System.nanoTime().toString()
-
-                // 이전에 재시도하지 않은 요청인 경우 한 번 더 시도
+                Log.d("TokenRefresh", "Permission denied (code=${response.code}). RequestId: $requestId. Retrying once...")
                 if (permissionRetryMap[requestId] != true) {
                     permissionRetryMap[requestId] = true
-
-                    // 재시도 요청
                     val retryResponse = super.executeApiCall(call)
-
-                    // 재시도 후 식별자 제거
                     permissionRetryMap.remove(requestId)
-
-                    // 재시도 후에도 권한 없음이면 로그아웃 처리
                     if (isPermissionDeniedError(retryResponse)) {
+                        Log.e("TokenRefresh", "Retry still permission denied. Triggering logout.")
                         triggerLogout()
                     }
-
+                    Log.d("TokenRefresh", "Retry API response for permission denied: code=${retryResponse.code}")
                     return retryResponse
                 } else {
-                    // 이미 재시도한 경우 로그아웃
+                    Log.e("TokenRefresh", "Already retried permission denied request. Triggering logout.")
                     triggerLogout()
                 }
             }
-            // 토큰 갱신 후 응답 처리
+
+            Log.d("TokenRefresh", "API call completed successfully with code=${response.code}")
             return response
         } catch (e: Exception) {
-            // 예외 처리 로직
             Log.e("TokenRefresh", "Exception in executeApiCall: ${e.message}")
             throw e
         }
     }
 
-    // 토큰 만료 에러(EAT)인지 확인하는 함수
+    // 에러 확인 함수들 (code가 Int일 경우 toString()으로 비교)
     private fun <T> isTokenExpiredError(response: ApiResponse<T>): Boolean {
-        Log.d("TokenRefresh", "isTokenExpiredError: returning true for testing purposes")
-        return response.code == CODE_TOKEN_EXPIRED
+        return response.code.toString() == CODE_TOKEN_EXPIRED
     }
 
-    // 잘못된 토큰(IAT)인지 확인하는 함수
     private fun <T> isTokenInvalidError(response: ApiResponse<T>): Boolean {
-        Log.d("TokenRefresh", "isTokenExpiredError: returning true for testing purposes")
-        return response.code == CODE_TOKEN_INVALID
+        return response.code.toString() == CODE_TOKEN_INVALID
     }
 
-    // 권한 없음 에러(NP)인지 확인하는 함수
     private fun <T> isPermissionDeniedError(response: ApiResponse<T>): Boolean {
-        return response.code == CODE_PERMISSION_DENIED
+        return response.code.toString() == CODE_PERMISSION_DENIED
     }
 
-    // 토큰 갱신을 통해 새로운 액세스 토큰을 받는 함수
-    private fun refreshToken(): Boolean {
-        // 리프레시 토큰 정의, 만료될 시 null 반환
-        val refreshToken = tokenManager.getRefreshToken() ?: return false
-
-
+    // 별도의 토큰 갱신 함수 (외부에서 직접 호출할 수 있음)
+    fun refreshToken(): Boolean {
+        val currentRefreshToken = tokenManager.getRefreshToken() ?: return false
         return runBlocking {
             try {
-                // 리프레시 토큰을 담아 API 요청을 하기 위한 객체 생성
-                val refreshRequest = AuthRequest.UpdateTokenRequest(refreshToken)
-                // 토큰 갱신 API 호출
-                val response = authService.updateToken(refreshRequest)
+                val refreshRequest = AuthRequest.UpdateTokenRequest(currentRefreshToken)
+                // AuthService가 ApiResponse를 직접 반환하는 경우
+                val refreshApiResponse = authService.updateToken(refreshRequest)
 
-                // 요청이 성공 하고 응답이 존재할 때
-                if (response.code == "SU" && response.payload != null) {
-                    with(response.payload) {
-                        // 새로운 액세스 토큰과 리프레시 토큰을 저장
-                        tokenManager.saveTokens(accessToken, refreshToken)
+                if (refreshApiResponse.code.toString() == CODE_SUCCESS && refreshApiResponse.payload != null) {
+                    with(refreshApiResponse.payload) {
+                        tokenManager.saveTokens(this.accessToken, this.refreshToken)
                     }
-                    true // 토큰 갱신 성공
+                    true
                 } else {
-                    // 토큰 갱신 실패 시 로그아웃 처리
+                    if (refreshApiResponse.code.toString() in listOf(CODE_REFRESH_ERROR_1, CODE_REFRESH_ERROR_2)) {
+                        triggerLogout()
+                    }
                     tokenManager.clearTokens()
-                    false // 토큰 갱신 실패
+                    false
                 }
             } catch (e: Exception) {
-                // 예외 발생 시 토큰 갱신 실패로 처리
+                Log.e("TokenRefresh", "Exception during token refresh: ${e.message}")
                 tokenManager.clearTokens()
                 false
             }
@@ -171,7 +179,6 @@ class TokenRefresh @Inject constructor(
         runBlocking {
             userRepository.clearUser()
             _logoutEventFlow.emit(Unit)
-            // LogoutManager를 통해 전역 로그아웃 이벤트 전달
             logoutManager.emitLogout()
         }
     }
