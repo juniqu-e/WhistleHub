@@ -76,7 +76,7 @@ object RepositoryModule {
         profileApi: ProfileApi,
         tokenRefresh: TokenRefresh
     ): ProfileService {
-        return ProfileService(profileApi)
+        return ProfileService(profileApi, tokenRefresh)
     }
 
     @Provides

@@ -18,20 +18,21 @@ import javax.inject.Singleton
 @Singleton
 class WorkstationService @Inject constructor(
     private val workstationApi: WorkstationApi,
+    private val tokenRefresh: TokenRefresh
 ) : ApiRepository() {
 
     // 트랙 업로드
     suspend fun uploadTrack(
         request: WorkstationRequest.UploadTrackRequest
     ): ApiResponse<Int> {
-        return executeApiCall { workstationApi.uploadTrack(request) }
+        return tokenRefresh.execute { workstationApi.uploadTrack(request) }
     }
 
     // 레이어 업로드
     suspend fun uploadLayerFile(
         file: MultipartBody.Part
     ): ApiResponse<Int> {
-        return executeApiCall { workstationApi.uploadLayerFile(file) }
+        return tokenRefresh.execute { workstationApi.uploadLayerFile(file) }
     }
 
     // 트랙 임포트
@@ -40,6 +41,6 @@ class WorkstationService @Inject constructor(
         layerIds: List<Int>
     ): ApiResponse<WorkstationResponse.ImportTrackResponse> {
         val request = WorkstationRequest.ImportTrackRequest(trackId, layerIds)
-        return executeApiCall { workstationApi.importTrack(request) }
+        return tokenRefresh.execute { workstationApi.importTrack(request) }
     }
 }
