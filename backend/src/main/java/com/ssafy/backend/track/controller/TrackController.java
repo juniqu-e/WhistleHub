@@ -66,7 +66,7 @@ public class TrackController {
         byte[] file = trackService.trackPlay(trackId);
         ByteArrayResource resource = new ByteArrayResource(file);
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("audio/mpeg"))
+                .contentType(MediaType.parseMediaType("audio/wav"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"audio.wav\"")
                 .body(resource);
     }
@@ -91,7 +91,7 @@ public class TrackController {
         byte[] file = trackService.layerPlay(layerId);
         ByteArrayResource resource = new ByteArrayResource(file);
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("audio/mpeg"))
+                .contentType(MediaType.parseMediaType("audio/wav"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"audio.wav\"")
                 .body(resource);
     }
