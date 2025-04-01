@@ -11,7 +11,7 @@ sealed class TrackResponse {
         val duration: Int,
         val imageUrl: String,
         val artist: ArtistInfo?,
-        val isLike: Boolean,
+        val isLiked: Boolean,
         val importCount: Int,
         val likeCount: Int,
         val viewCount: Int,
