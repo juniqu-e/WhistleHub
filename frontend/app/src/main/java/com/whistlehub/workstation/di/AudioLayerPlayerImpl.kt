@@ -21,6 +21,6 @@ class AudioLayerPlayerImpl @Inject constructor() : AudioLayerPlayer {
 
     private suspend fun playLayer(layer: Layer) {
         //오디오 엔진 호출
-        Log.d("Play", "Play" + layer.name)
+        Log.d("Play", "Play" + layer.name);
     }
 }

@@ -139,7 +139,7 @@ fun WorkStationScreen(navController: NavController) {
                 onDismiss = { showDialog = false },
                 onLayerAdded = { newLayer ->
                     viewModel.addLayer(newLayer)
-                },
+                }
             )
         }
 

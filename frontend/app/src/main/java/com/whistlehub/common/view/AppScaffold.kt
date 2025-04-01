@@ -31,12 +31,12 @@ fun AppScaffold(
     val activity = context as? Activity
     // 화면 방향 처리
     LaunchedEffect(currentRoute) {
-        if (currentRoute == Screen.DAW.route) {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        } else {
-            //세로 고정
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        }
+//        if (currentRoute == Screen.DAW.route) {
+//            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+//        } else {
+//            //세로 고정
+//            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+//        }
     }
 
     Scaffold(
