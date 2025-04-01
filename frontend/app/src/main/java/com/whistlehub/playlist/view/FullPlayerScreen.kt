@@ -68,12 +68,14 @@ import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.common.view.track.AddToPlaylistDialog
 import com.whistlehub.common.view.track.ReportDialog
 import com.whistlehub.common.view.track.TrackMenu
+import com.whistlehub.playlist.view.component.CreatePlaylist
 import com.whistlehub.playlist.view.component.PlayerComment
 import com.whistlehub.playlist.view.component.PlayerPlaylist
 import com.whistlehub.playlist.viewmodel.PlayerViewState
 import com.whistlehub.playlist.viewmodel.PlaylistViewModel
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import kotlinx.coroutines.launch
+import okhttp3.MultipartBody
 import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,6 +91,10 @@ fun FullPlayerScreen(
     var showPlayerMenu by remember { mutableStateOf(false) }
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
     var showReportDialog by remember { mutableStateOf(false) }
+    var showCreatePlaylistDialog by remember { mutableStateOf(false) }
+    var playlistTitle by remember { mutableStateOf("") }
+    var playlistDescription by remember { mutableStateOf("") }
+    var playlistImage by remember { mutableStateOf<MultipartBody.Part?>(null) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -103,40 +109,32 @@ fun FullPlayerScreen(
         val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
         val playerViewState by trackPlayViewModel.playerViewState.collectAsState(initial = PlayerViewState.PLAYING)
 
-        PlayerBackground(
-            Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .clickable {
-                    // 배경 클릭 시 트랙 재생/일시정지
-                    if (currentTrack != null && playerViewState == PlayerViewState.PLAYING) {
-                        if (trackPlayViewModel.isPlaying.value) {
-                            trackPlayViewModel.pauseTrack()
-                        } else {
-                            trackPlayViewModel.resumeTrack()
-                        }
-                    }
-                })
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .background(CustomColors().Grey700.copy(alpha = 0.3f)),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
+        PlayerBackground(Modifier.fillMaxSize().padding(innerPadding)
+            .clickable{
+            // 배경 클릭 시 트랙 재생/일시정지
+            if (currentTrack != null && playerViewState == PlayerViewState.PLAYING) {
+                if (trackPlayViewModel.isPlaying.value) {
+                    trackPlayViewModel.pauseTrack()
+                } else {
+                    trackPlayViewModel.resumeTrack()
+                }
+            }
+        })
+        Column(Modifier
+            .fillMaxSize()
+            .padding(innerPadding)
+            .background(CustomColors().Grey700.copy(alpha = 0.3f)),
+            verticalArrangement = Arrangement.SpaceBetween) {
             when (playerViewState) {
                 PlayerViewState.PLAYING -> {
                     TrackInfomation(Modifier.weight(1f))
                 }
-
                 PlayerViewState.PLAYLIST -> {
                     PlayerPlaylist(Modifier.weight(1f))
                 }
-
                 PlayerViewState.COMMENT -> {
                     PlayerComment(Modifier.weight(1f))
                 }
-
                 else -> Spacer(Modifier)
             }
             TrackInteraction(trackPlayViewModel)
@@ -145,8 +143,7 @@ fun FullPlayerScreen(
             ModalBottomSheet(
                 onDismissRequest = { showPlayerMenu = false },
                 sheetState = sheetState,
-                modifier = Modifier
-                    .wrapContentHeight()
+                modifier = Modifier.wrapContentHeight()
                     .background(CustomColors().Grey950.copy(alpha = 0.7f)),
             ) {
                 TrackMenu(onReportClick = {
@@ -161,17 +158,9 @@ fun FullPlayerScreen(
         if (showReportDialog) {
             AlertDialog(
                 onDismissRequest = { showReportDialog = false },
-                title = {
-                    Text(
-                        "신고하기",
-                        style = Typography.titleLarge,
-                        color = CustomColors().Grey50
-                    )
-                },
+                title = { Text("신고하기", style = Typography.titleLarge, color = CustomColors().Grey50) },
                 text = { ReportDialog() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(CustomColors().Grey950),
+                modifier = Modifier.fillMaxWidth().background(CustomColors().Grey950),
                 confirmButton = {
                     Button(
                         onClick = { showReportDialog = false },
@@ -199,31 +188,79 @@ fun FullPlayerScreen(
         if (showAddToPlaylistDialog) {
             AlertDialog(
                 onDismissRequest = { showAddToPlaylistDialog = false },
-                title = {
-                    Text(
-                        "플레이리스트에 추가",
-                        style = Typography.titleLarge,
-                        color = CustomColors().Grey50
-                    )
-                },
-                text = {
-                    AddToPlaylistDialog(
-                        onPlaylistSelect = { playlistId ->
-                            coroutineScope.launch {
-                                playlistViewModel.addTrackToPlaylist(
-                                    playlistId,
-                                    currentTrack?.trackId ?: 0
-                                )
-                                showAddToPlaylistDialog = false
-                            }
+                title = { Text("플레이리스트에 추가", style = Typography.titleLarge, color = CustomColors().Grey50) },
+                text = { AddToPlaylistDialog(
+                    onPlaylistSelect = { playlistId ->
+                        coroutineScope.launch {
+                            playlistViewModel.addTrackToPlaylist(playlistId, currentTrack?.trackId ?: 0)
+                            showAddToPlaylistDialog = false
                         }
-                    )
+                    },
+                    onCreatePlaylist = {
+                        showAddToPlaylistDialog = false
+                        showCreatePlaylistDialog = true
+                    }
+                ) },
+                modifier = Modifier.fillMaxWidth().background(CustomColors().Grey950),
+                confirmButton = {},
+                dismissButton = {}
+            )
+        }
+        if (showCreatePlaylistDialog) {
+            AlertDialog(
+                onDismissRequest = {
+                    showCreatePlaylistDialog = false
+                    showAddToPlaylistDialog = true
                 },
+                title = { Text(
+                    text = "플레이리스트 생성",
+                    style = Typography.titleLarge,
+                    color = CustomColors().Grey50,
+                ) },
+                text = { CreatePlaylist(
+                    onInputTitle = { playlistTitle = it},
+                    onInputDescription = { playlistDescription = it },
+                    onInputImage = {
+                        playlistImage = it
+                    }
+                ) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(CustomColors().Grey950),
-                confirmButton = {},
-                dismissButton = {}
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                playlistViewModel.createPlaylist(
+                                    name = playlistTitle,
+                                    description = playlistDescription,
+                                    image = playlistImage
+                                )
+                                showCreatePlaylistDialog = false
+                                showAddToPlaylistDialog = true
+                            }},
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = CustomColors().Mint500,
+                            contentColor = CustomColors().Grey950,
+                        )
+                    ) {
+                        Text("생성", style = Typography.bodyLarge)
+                    }
+                },
+                dismissButton = {
+                    Button(
+                        onClick = {
+                            showCreatePlaylistDialog = false
+                            showAddToPlaylistDialog = true
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = CustomColors().Grey400,
+                            contentColor = CustomColors().Grey50,
+                        )
+                    ) {
+                        Text("취소", style = Typography.bodyLarge)
+                    }
+                }
             )
         }
     }

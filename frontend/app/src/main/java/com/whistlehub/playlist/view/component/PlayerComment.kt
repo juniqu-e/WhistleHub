@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -117,20 +118,33 @@ fun PlayerComment(
             )
         } else {
             LazyColumn(Modifier.fillMaxWidth()) {
-            items(commentList!!.size) { index ->
-                    val comment = commentList!![index]
-                    // 댓글 항목을 표시하는 Composable 함수를 호출합니다.
-                    CommentItem(comment, userId = user?.memberId,
-                        onDelete = { id ->
-                            commentId = id
-                            showDeleteDialog = true
-                        },
-                        onUpdate = { id, comment ->
-                            coroutineScope.launch {
-                                trackPlayViewModel.updateTrackComment(id, comment)
+                if (commentList != null && commentList!!.isNotEmpty()) {
+                    // 댓글 목록을 반복하여 각 댓글 항목을 표시합니다.
+                    items(commentList!!.size) { index ->
+                        val comment = commentList!![index]
+                        // 댓글 항목을 표시하는 Composable 함수를 호출합니다.
+                        CommentItem(comment, userId = user?.memberId,
+                            onDelete = { id ->
+                                commentId = id
+                                showDeleteDialog = true
+                            },
+                            onUpdate = { id, comment ->
+                                coroutineScope.launch {
+                                    trackPlayViewModel.updateTrackComment(id, comment)
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
+                } else {
+                    item {
+                        Text(
+                            text = "댓글이 없습니다.",
+                            color = CustomColors().Grey50,
+                            style = Typography.bodyLarge,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         }
