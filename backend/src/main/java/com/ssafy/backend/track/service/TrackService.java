@@ -65,7 +65,7 @@ public class TrackService {
         Track track = trackRepository.findById(trackId).orElseThrow(
                 () -> {
                     log.warn("Track id {} not found", trackId);
-                    return new TrackNotFoundException("Track not found"); //TODO: 커스텀 예외 만들기
+                    return new TrackNotFoundException("Track not found");
                 }
         );
         return s3Service.downloadFile(S3FileKeyExtractor.extractS3FileKey(track.getSoundUrl()));
@@ -82,24 +82,25 @@ public class TrackService {
     }
 
 
+    /**
+     * 트랙 조회
+     * @param trackId 조회할 트랙 ID
+     * @return 응답 트랙 DTO (TrackResponseDto)
+     */
     @Transactional
-    public TrackResponseDto viewTrack(int trackId, int memberId) {
+    public TrackResponseDto viewTrack(int trackId) {
+        int memberId = authService.getMember().getId();
         Track track = trackRepository.findById(trackId).orElseThrow(
                 () -> {
                     log.warn("{}번 트랙은 존재하지 않음", trackId);
-                    return new TrackNotFoundException("Track not found"); // TODO: 커스텀 예외로 교체
+                    return new TrackNotFoundException("Track not found");
                 });
         // visibility - public 여부 true -> 본인만 볼 수 있음
         if (!track.getVisibility()) {
             if (track.getMember().getId() != memberId) {
                 log.info("{}번 트랙은 회원이 조회할 수 없는 데이터", memberId);
-                throw new TrackNotFoundException(""); // TODO: 커스텀으로 교체
+                throw new TrackNotFoundException("");
             }
-        }
-
-        if (!track.getEnabled()) {
-            log.info("{}번 회원이 삭제된 트랙({})을 조회", memberId, track.getId());
-            throw new TrackNotFoundException(""); // TODO: 커스텀으로 교체
         }
         Member member = memberRepository.findById(memberId).orElseThrow(
                 () -> {
@@ -169,8 +170,13 @@ public class TrackService {
                 .build();
     }
 
+    /**
+     * 트랙 정보 업데이트
+     * @param trackUpdateRequestDto 트랙 업데이트 요청 DTO
+     */
     @Transactional
-    public void updateTrack(TrackUpdateRequestDto trackUpdateRequestDto, int memberId) {
+    public void updateTrack(TrackUpdateRequestDto trackUpdateRequestDto) {
+        int memberId = authService.getMember().getId();
         Track track = trackRepository.findById(trackUpdateRequestDto.getTrackId()).orElseThrow(
                 () -> {
                     log.warn("{} 트랙은 없는 트랙", trackUpdateRequestDto.getTrackId());
@@ -187,6 +193,11 @@ public class TrackService {
         trackRepository.save(track);
     }
 
+    /**
+     * S3 이미지 업데이트
+     * @param trackImageUploadRequestDto 이미지 업데이트 요청 DTO
+     * @return 업로드된 이미지 URL
+     */
     @Transactional
     public String updateImage(TrackImageUploadRequestDto trackImageUploadRequestDto) {
         Track track = trackRepository.findById(trackImageUploadRequestDto.getTrackId()).orElseThrow();
@@ -204,6 +215,11 @@ public class TrackService {
         return updatedFileUrl;
     }
 
+    /**
+     * 트랙 삭제(소프트 삭제)
+     *
+     * @param trackId 삭제할 트랙 ID
+     */
     @Transactional
     public void deleteTrack(int trackId) {
         Member member = authService.getMember();
@@ -225,10 +241,21 @@ public class TrackService {
         trackRepository.save(track);
     }
 
+    /**
+     * 15초 이상 들었을 시 그래프 반영
+     * (Member)-[VIEW]->(Track)
+     * @param trackId 반영할 트랙
+     */
+
     public void recordPlay(int trackId) {
         dataCollectingService.viewTrack(authService.getMember().getId(), trackId, WeightType.VIEW);
     }
 
+    /**
+     * 레이어 조회
+     * @param trackId 조회할 레이어의 트랙 ID
+     * @return 조회된 레이어 (LayerResponseDto 리스트) 반환
+     */
     public List<LayerResponseDto> getLayers(int trackId) {
         List<Layer> layers = layerRepository.findAllByTrackId(trackId);
         List<LayerResponseDto> layerResponseDtoList = new ArrayList<>();
@@ -241,6 +268,10 @@ public class TrackService {
         return layerResponseDtoList;
     }
 
+    /**
+     * 트랙 좋아요
+     * @param trackId 좋아요 트랙 ID
+     */
     @Transactional
     public void likeTrack(int trackId) {
         Member member = authService.getMember();
@@ -267,9 +298,13 @@ public class TrackService {
 
 
         // 2. graph 반영
-//        dataCollectingService.viewTrack(authService.getMember().getId(), trackId, WeightType.LIKE);
+        dataCollectingService.viewTrack(authService.getMember().getId(), trackId, WeightType.LIKE);
     }
 
+    /**
+     * 트랙 좋아요 취소
+     * @param trackId 트랙 좋아요 취소할 트랙 ID
+     */
     @Transactional
     public void unlikeTrack(int trackId) {
         // 1. TrackLike, Track.LikeCount 반영
@@ -295,9 +330,15 @@ public class TrackService {
         likeRepository.delete(like);
 
         // 2. graph 반영
-//        dataCollectingService.viewTrack(authService.getMember().getId(), trackId, WeightType.DISLIKE);
+        dataCollectingService.viewTrack(authService.getMember().getId(), trackId, WeightType.DISLIKE);
     }
 
+    /**
+     * 트랙 신고
+     * @param trackId 신고 대상 트랙 ID
+     * @param type 신고 타입 번호(타입 미정)
+     * @param detail 신고 상세 내용
+     */
     public void reportTrack(int trackId, int type, String detail) {
         Member member = authService.getMember();
         Track track = trackRepository.findById(trackId).orElseThrow(
@@ -316,6 +357,14 @@ public class TrackService {
         reportRepository.save(report);
     }
 
+    /**
+     * 트랙 검색
+     * @param keyword 검색 키워드 (null일 경우 적용 x)
+     * @param page 페이지네이션 - 페이지 0 부터
+     * @param size 페이지네이션 - 사이즈
+     * @param orderBy 정렬 조건 - DESC, ASC 대소문자 구분 x
+     * @return 조회된 트랙 정보(TrackSearchResponseDto 리스트) 반환
+     */
     @Transactional
     public List<TrackSearchResponseDto> searchTrack(String keyword, int page, int size, String orderBy) {
         if (keyword == null) {

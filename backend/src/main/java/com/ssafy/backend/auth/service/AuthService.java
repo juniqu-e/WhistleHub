@@ -327,6 +327,12 @@ public class AuthService {
             throw new ExpiredRefreshTokenException();
         }
 
+        // 토큰이 refresh 토큰인지 검증
+        if(jwtUtil.getKey(refreshToken, "refresh") == null) {
+            log.warn("refresh token is not refresh token");
+            throw new InvalidRefreshTokenException();
+        }
+
         // refresh 토큰에서 loginId, id 추출
         String loginId = jwtUtil.getKey(refreshToken, "loginId");
         Integer id = Integer.parseInt(jwtUtil.getKey(refreshToken, "id"));
