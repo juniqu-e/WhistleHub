@@ -73,22 +73,8 @@ class TrackPlayViewModel @Inject constructor(
         viewModelScope.launch (Dispatchers.IO) {
             // 유저 정보 가져오기
             _user.value = userRpository.getUser()
-            val trackRequests = (1 until 7).map { trackId ->
-                async {
-                    val resopnse = trackService.getTrackDetail(trackId.toString())
-                    Log.d("TrackPlayViewModel", "트랙 ID: $trackId")
-                    Log.d("TrackPlayViewModel", "트랙 응답: $resopnse")
-                    resopnse
-                } // 병렬 요청
-            }
-
-            val trackResults = trackRequests.awaitAll().mapNotNull { it.payload } // 모든 요청 완료 후 리스트 생성
-
-            withContext(Dispatchers.Main) {
-                _trackList.emit(trackResults)
-            }
-            Log.d("TrackPlayViewModel", "트랙 리스트: $trackResults")
-            Log.d("TrackPlayViewModel", "갱신된 리스트: ${_trackList.value}")
+            // 임시 트랙 리스트 가져오기
+            getTempTrackList()
         }
         // ExoPlayer 이벤트 리스너 추가
         exoPlayer.addListener(object : Player.Listener {
@@ -117,6 +103,31 @@ class TrackPlayViewModel @Inject constructor(
                 _trackDuration.value = if (exoPlayer.duration != C.TIME_UNSET) exoPlayer.duration else 0L
                 delay(1000)
             }
+        }
+    }
+
+    suspend fun getTempTrackList() {
+        try {
+            viewModelScope.launch(Dispatchers.IO) {
+                val trackRequests = (1 until 7).map { trackId ->
+                    async {
+                        val resopnse = trackService.getTrackDetail(trackId.toString())
+                        Log.d("TrackPlayViewModel", "트랙 ID: $trackId")
+                        Log.d("TrackPlayViewModel", "트랙 응답: $resopnse")
+                        resopnse
+                    } // 병렬 요청
+                }
+                val trackResults =
+                    trackRequests.awaitAll().mapNotNull { it.payload } // 모든 요청 완료 후 리스트 생성
+
+                withContext(Dispatchers.Main) {
+                    _trackList.emit(trackResults)
+                }
+                Log.d("TrackPlayViewModel", "트랙 리스트: $trackResults")
+                Log.d("TrackPlayViewModel", "갱신된 리스트: ${_trackList.value}")
+            }
+        } catch (e: Exception) {
+            Log.d("TrackPlayViewModel", "Error fetching track list: ${e.message}")
         }
     }
 

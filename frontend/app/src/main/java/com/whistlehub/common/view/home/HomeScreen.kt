@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -33,6 +34,10 @@ import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 fun HomeScreen(paddingValues: PaddingValues) {
     // ViewModel 초기화
     val trackPlayViewModel = hiltViewModel<TrackPlayViewModel>()
+
+    LaunchedEffect(Unit) {
+        trackPlayViewModel.getTempTrackList() // 트랙 리스트 가져오기
+    }
 
     // 트랙 리스트 UI
     val trackList by trackPlayViewModel.trackList.collectAsState(initial = emptyList())
