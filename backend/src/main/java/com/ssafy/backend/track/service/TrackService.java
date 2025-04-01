@@ -65,7 +65,7 @@ public class TrackService {
         Track track = trackRepository.findById(trackId).orElseThrow(
                 () -> {
                     log.warn("Track id {} not found", trackId);
-                    return new TrackNotFoundException("Track not found"); //TODO: 커스텀 예외 만들기
+                    return new TrackNotFoundException("Track not found");
                 }
         );
         return s3Service.downloadFile(S3FileKeyExtractor.extractS3FileKey(track.getSoundUrl()));
@@ -93,13 +93,13 @@ public class TrackService {
         Track track = trackRepository.findById(trackId).orElseThrow(
                 () -> {
                     log.warn("{}번 트랙은 존재하지 않음", trackId);
-                    return new TrackNotFoundException("Track not found"); // TODO: 커스텀 예외로 교체
+                    return new TrackNotFoundException("Track not found");
                 });
         // visibility - public 여부 true -> 본인만 볼 수 있음
         if (!track.getVisibility()) {
             if (track.getMember().getId() != memberId) {
                 log.info("{}번 트랙은 회원이 조회할 수 없는 데이터", memberId);
-                throw new TrackNotFoundException(""); // TODO: 커스텀으로 교체
+                throw new TrackNotFoundException("");
             }
         }
         Member member = memberRepository.findById(memberId).orElseThrow(
@@ -270,7 +270,6 @@ public class TrackService {
 
     /**
      * 트랙 좋아요
-     * TODO: 그래프 반영
      * @param trackId 좋아요 트랙 ID
      */
     @Transactional
@@ -299,12 +298,11 @@ public class TrackService {
 
 
         // 2. graph 반영
-//        dataCollectingService.viewTrack(authService.getMember().getId(), trackId, WeightType.LIKE);
+        dataCollectingService.viewTrack(authService.getMember().getId(), trackId, WeightType.LIKE);
     }
 
     /**
      * 트랙 좋아요 취소
-     * TODO: 그래프 반영
      * @param trackId 트랙 좋아요 취소할 트랙 ID
      */
     @Transactional
@@ -332,7 +330,7 @@ public class TrackService {
         likeRepository.delete(like);
 
         // 2. graph 반영
-//        dataCollectingService.viewTrack(authService.getMember().getId(), trackId, WeightType.DISLIKE);
+        dataCollectingService.viewTrack(authService.getMember().getId(), trackId, WeightType.DISLIKE);
     }
 
     /**

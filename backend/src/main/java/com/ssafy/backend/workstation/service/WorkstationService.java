@@ -77,14 +77,14 @@ public class WorkstationService {
         // 1-3-2. 원천 트랙 insert
         List<Sampling> samplings = Arrays.stream(trackUploadRequestDto.getSourceTracks())
                 .map(originTrackId -> Sampling.builder()
-                        .originTrack(trackRepository.findById(originTrackId).get()) //TODO: 반복문 내에서 repo 조회 개선 필요.
+                        .originTrack(trackRepository.findById(originTrackId).orElse(null))
                         .track(t).build()).toList();
         samplingRepository.saveAll(samplings);
 
         // 1-4. 그래프 추가
         // 1-4-1. Track 노드 생성 및 태그 연결
         dataCollectingService.createTrack(t.getId(), Arrays.stream(trackUploadRequestDto.getTags()).toList());
-        // 1-4-2. TODO: FastAPI로 음원 보내기
+        // 1-4-2. FastAPI로 음원 보내기
         openl3Service.uploadAndFindSimilar(trackUploadRequestDto.getTrackSoundFile().getResource(), t.getId(), 10);
 
         // 2. 레이어 목록 저장
