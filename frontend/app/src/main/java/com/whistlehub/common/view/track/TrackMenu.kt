@@ -43,9 +43,13 @@ fun TrackMenu(
     onImportToMyTrackClick: () -> Unit = {}
 ) {
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
-    Column(modifier = Modifier.heightIn(min = 200.dp).padding(16.dp),
+    Column(
+        modifier = Modifier
+            .heightIn(min = 200.dp)
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Bottom),
-        horizontalAlignment = Alignment.CenterHorizontally) {
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         if (currentTrack?.imageUrl != null) {
             AsyncImage(
                 model = currentTrack!!.imageUrl,
@@ -59,7 +63,8 @@ fun TrackMenu(
                 painterResource(R.drawable.default_track),
                 contentDescription = "Track Image",
                 modifier = Modifier.size(75.dp),
-                contentScale = ContentScale.Crop)
+                contentScale = ContentScale.Crop
+            )
         }
         Text(
             modifier = Modifier.fillMaxWidth(),
@@ -70,7 +75,7 @@ fun TrackMenu(
         )
         Text(
             modifier = Modifier.fillMaxWidth(),
-            text = currentTrack?.artistInfo?.nickname ?: "Artist Name",
+            text = currentTrack?.artist?.nickname ?: "Artist Name",
             style = Typography.bodyLarge,
             color = CustomColors().Mint500,
             textAlign = TextAlign.Center
@@ -85,7 +90,8 @@ fun TrackMenu(
         if (currentTrack?.tags?.isNotEmpty() == true) {
             FlowRow(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)) {
+                horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)
+            ) {
                 currentTrack?.tags?.forEach { tag ->
                     Button({}) {
                         Text(
@@ -107,9 +113,12 @@ fun TrackMenu(
             )
         }
         Row(
-            Modifier.clickable{
-                onAddToPlaylistClick()
-            }.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
+            Modifier
+                .clickable {
+                    onAddToPlaylistClick()
+                }
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 5.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -119,14 +128,18 @@ fun TrackMenu(
                     Icons.AutoMirrored.Rounded.ArrowForwardIos,
                     contentDescription = "플레이리스트에 추가",
                     tint = CustomColors().Grey200,
-                    modifier = Modifier.size(16.dp))
+                    modifier = Modifier.size(16.dp)
+                )
             }
         }
         HorizontalDivider(thickness = 1.dp, color = CustomColors().Grey50)
         Row(
-            Modifier.clickable{
-                onAddToPlaylistClick()
-            }.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
+            Modifier
+                .clickable {
+                    onAddToPlaylistClick()
+                }
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 5.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -136,15 +149,19 @@ fun TrackMenu(
                     Icons.AutoMirrored.Rounded.ArrowForwardIos,
                     contentDescription = "내 트랙에 Import",
                     tint = CustomColors().Grey200,
-                    modifier = Modifier.size(16.dp))
+                    modifier = Modifier.size(16.dp)
+                )
             }
         }
         if (true /* 내 트랙이 아닐 때 */) {
             HorizontalDivider(thickness = 1.dp, color = CustomColors().Grey50)
             Row(
-                Modifier.clickable {
-                    onReportClick()
-                }.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
+                Modifier
+                    .clickable {
+                        onReportClick()
+                    }
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 5.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {

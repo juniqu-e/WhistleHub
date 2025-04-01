@@ -16,8 +16,7 @@ import java.util.List;
  * 데이터 수집 서비스
  * neo4j 데이터를 수집
  *
- * @author 박병주
- * @author 허현준
+ * @author 박병주, 허현준
  * @version 2.1
  * @changes 2.1 태그 관계 생성 메서드 분리
  * @since 2025-03-27
@@ -63,7 +62,7 @@ public class DataCollectingService {
     public void createTrack(Integer trackId, List<Integer> tagIds) {
         // 트랙 노드 생성
         nodeService.createTrackNode(trackId);
-        System.out.println("트랙 생성");
+        log.info("{} track node created", trackId);
 
         // 태그와의 관계 생성
         for (Integer tagId : tagIds) {

@@ -54,7 +54,8 @@ public enum ResponseType {
     DATABASE_ERROR("DBE", HttpStatus.INTERNAL_SERVER_ERROR, "데이터베이스 오류입니다."),
     SERVER_ERROR("SER", HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류입니다."),
     EMAIL_SEND_FAILED("ESF", HttpStatus.INTERNAL_SERVER_ERROR, "이메일 발송에 실패하였습니다."),
-    FILE_UPLOAD_FAILED("FUF", HttpStatus.INTERNAL_SERVER_ERROR, "파일을 업로드하는데 실패했습니다.");
+    FILE_UPLOAD_FAILED("FUF", HttpStatus.INTERNAL_SERVER_ERROR, "파일을 업로드하는데 실패했습니다."),
+    S3_ERROR("S3E",HttpStatus.INTERNAL_SERVER_ERROR, "파일 저장소 오류입니다.");
 
     private final String code;
     private final HttpStatus status;

@@ -17,7 +17,7 @@ interface AuthApi {
     @POST("auth/register")
     suspend fun register(
         @Body request: AuthRequest.RegisterRequest
-    ): Response<ApiResponse<AuthResponse.RegisterResponse>>
+    ): Response<ApiResponse<Int>>
     // 태그 목록 요청
     @GET("auth/tag")
     suspend fun getTagList(
