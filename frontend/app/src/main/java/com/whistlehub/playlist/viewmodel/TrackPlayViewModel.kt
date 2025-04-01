@@ -28,7 +28,9 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.util.Timer
 import javax.inject.Inject
+import kotlin.concurrent.timer
 
 @HiltViewModel
 class TrackPlayViewModel @Inject constructor(
@@ -67,6 +69,9 @@ class TrackPlayViewModel @Inject constructor(
     // 현재 트랙 길이
     private val _trackDuration = MutableStateFlow(0L)
     val trackDuration: StateFlow<Long> get() = _trackDuration
+
+    // 트랙 로그 기준 시간
+    private val _LOG_TIME = 15L
 
     init {
         // 빌드 할 때 트랙 리스트 추가, 유저정보 파싱
@@ -152,6 +157,7 @@ class TrackPlayViewModel @Inject constructor(
 
     suspend fun playTrack(track: TrackResponse.GetTrackDetailResponse) {
         try {
+            resetTimer() // 기존 타이머 초기화
             val trackData = trackService.playTrack(trackId = track.trackId.toString())
 
             if (trackData != null) {
@@ -164,6 +170,7 @@ class TrackPlayViewModel @Inject constructor(
                 _currentTrack.value = track
                 _isPlaying.value = true
                 getTrackComment(track.trackId.toString())
+                startTimer() // 타이머 시작
 
                 // 플레이어 트랙 리스트 업데이트
                 val existingIndex = _playerTrackList.value.indexOfFirst { it.trackId == track.trackId }
@@ -186,6 +193,7 @@ class TrackPlayViewModel @Inject constructor(
         exoPlayer.playWhenReady = false
         exoPlayer.pause()
         _isPlaying.value = false
+        pauseTimer() // 타이머 일시 정지
     }
 
     // 트랙 재개
@@ -193,6 +201,7 @@ class TrackPlayViewModel @Inject constructor(
         exoPlayer.playWhenReady = true
         exoPlayer.play()
         _isPlaying.value = true
+        startTimer() // 타이머 재개
     }
 
     // 트랙 정지
@@ -201,6 +210,7 @@ class TrackPlayViewModel @Inject constructor(
         exoPlayer.stop()
         exoPlayer.clearMediaItems()
         _isPlaying.value = false
+        resetTimer() // 타이머 초기화
     }
 
     suspend fun previousTrack() {
@@ -339,6 +349,45 @@ class TrackPlayViewModel @Inject constructor(
             false
         }
     }
+
+    // 트랙 재생 타이머 (내부 로직)
+    // 재생중인 상태에만 타이머가 작동
+    // 재생 일시정지 -> 타이머 일시정지
+    // 재생 정지 또는 트랙 변경 -> 재생 로그 기록, 타이머 초기화
+    private val _playTime = MutableStateFlow(0L)
+    private var _timerTask : Timer? = null
+    private fun startTimer() {
+        _timerTask = timer(period = 1000) {
+            _playTime.value++
+            // 15초 지나면 재생 기록
+            if (_playTime.value == _LOG_TIME) {
+                viewModelScope.launch(Dispatchers.IO) {
+                    try {
+                        val response = trackService.increasePlayCount(
+                            TrackRequest.TrackPlayCountRequest(
+                                trackId = _currentTrack.value?.trackId ?: 0
+                            )
+                        )
+                        if (response.code == "SU") {
+                            Log.d("TrackPlayViewModel", "재생 기록 성공")
+                        } else {
+                            Log.d("TrackPlayViewModel", "재생 기록 실패: ${response.message}")
+                        }
+                    } catch (e: Exception) {
+                        Log.d("TrackPlayViewModel", "Error recording play count: ${e.message}")
+                    }
+                }
+            }
+        }
+    }
+    private fun pauseTimer() {
+        _timerTask?.cancel()
+    }
+    private fun resetTimer() {
+        _timerTask?.cancel()
+        _playTime.value = 0L
+    }
+
 
     override fun onCleared() {
         super.onCleared()
