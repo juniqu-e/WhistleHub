@@ -13,6 +13,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.AlertDialog
@@ -122,6 +124,11 @@ fun PlayerComment(
                         onDelete = { id ->
                             commentId = id
                             showDeleteDialog = true
+                        },
+                        onUpdate = { id, comment ->
+                            coroutineScope.launch {
+                                trackPlayViewModel.updateTrackComment(id, comment)
+                            }
                         }
                     )
                 }
@@ -169,9 +176,13 @@ fun CommentItem(comment: TrackResponse.GetTrackComment,
                 onDelete: (Int) -> Unit = {},
                 ) {
     // 댓글 항목을 표시하는 UI를 구현합니다.
+
+    var isEditing by remember { mutableStateOf(false) }
+    var updatedComment by remember { mutableStateOf(comment.comment) }
+
     Row(Modifier
         .fillMaxWidth()
-        .height(80.dp)
+        .height(100.dp)
         .padding(10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.Start)
@@ -186,34 +197,98 @@ fun CommentItem(comment: TrackResponse.GetTrackComment,
         )
         Column(Modifier
             .weight(1f)
-            .padding(horizontal = 10.dp)) {
-            Row(Modifier
-                .fillMaxWidth()
-                .height(30.dp) , verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = comment.memberInfo.nickname,
-                    color = CustomColors().Grey200,
-                    style = Typography.titleMedium,
-                    modifier = Modifier.weight(1f)
-                )
-                if (comment.memberInfo.memberId == userId) {
-                    Row {
-                        IconButton({}) {
-                            Icon(Icons.Rounded.Edit, contentDescription = "Edit Comment", tint = CustomColors().Mint500, modifier = Modifier.size(18.dp))
+            .padding(horizontal = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterVertically)
+        ) {
+            // 수정 중
+            if (isEditing) {
+                Row(modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, CustomColors().Grey50, RoundedCornerShape(5.dp)),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp))
+                {
+                    TextField(
+                        value = updatedComment,
+                        onValueChange = { updatedComment = it },
+                        modifier = Modifier.weight(1f),
+                        placeholder = {
+                            Text(
+                                text = "댓글을 입력하세요",
+                                color = CustomColors().Grey50,
+                                style = Typography.bodyMedium,
+                            )
+                        },
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                    )
+                    IconButton({
+                        if (updatedComment.isNotEmpty()) {
+                            onUpdate(comment.commentId, updatedComment)
+                            isEditing = false
                         }
-                        IconButton({
-                            onDelete(comment.commentId)
-                        }) {
-                            Icon(Icons.Rounded.Delete, contentDescription = "Edit Delete", tint = CustomColors().Mint500, modifier = Modifier.size(18.dp))
-                        }
+                    }) {
+                        Icon(Icons.Rounded.Check,
+                            contentDescription = "Send Comment",
+                            tint = CustomColors().Grey50
+                        )
+                    }
+                    IconButton({
+                        isEditing = false
+                        updatedComment = comment.comment
+                    }) {
+                        Icon(Icons.Rounded.Close,
+                            contentDescription = "Close Edit",
+                            tint = CustomColors().Grey50
+                        )
                     }
                 }
             }
-            Text(
-                text = comment.comment,
-                color = CustomColors().Grey50,
-                style = Typography.bodyLarge
-            )
+            // 수정 중이 아닐 때
+            else {
+                // 닉네임 - 수정, 삭제 버튼
+                Row(Modifier
+                    .fillMaxWidth()
+                    .height(30.dp) , verticalAlignment = Alignment.CenterVertically)
+                {
+                    Text(
+                        text = comment.memberInfo.nickname,
+                        color = CustomColors().Grey200,
+                        style = Typography.titleMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (comment.memberInfo.memberId == userId && !isEditing) {
+                        Row {
+                            IconButton({
+                                isEditing = true
+                            }) {
+                                Icon(Icons.Rounded.Edit,
+                                    contentDescription = "Edit Comment",
+                                    tint = CustomColors().Mint500,
+                                    modifier = Modifier.size(18.dp))
+                            }
+                            IconButton({
+                                onDelete(comment.commentId)
+                            }) {
+                                Icon(Icons.Rounded.Delete,
+                                    contentDescription = "Edit Delete",
+                                    tint = CustomColors().Mint500,
+                                    modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
+                }
+                Text(
+                    text = comment.comment,
+                    color = CustomColors().Grey50,
+                    style = Typography.bodyLarge
+                )
+            }
         }
     }
 }
