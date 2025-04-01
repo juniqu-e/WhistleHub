@@ -21,10 +21,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,18 +37,28 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
+import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
-import com.whistlehub.playlist.data.Comment
-import com.whistlehub.playlist.viewmodel.TrackCommentViewModel
+import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
+import kotlinx.coroutines.launch
 
 @Preview(showBackground = true)
 @Composable
 fun PlayerComment(
-    modifier: Modifier = Modifier, trackCommentViewModel: TrackCommentViewModel = hiltViewModel()
+    modifier: Modifier = Modifier,
+    trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
 ) {
-    val commentList = trackCommentViewModel.commentList.collectAsState(initial = emptyList())
+    val coroutineScope = rememberCoroutineScope()
+    val commentList by trackPlayViewModel.commentList.collectAsState(initial = emptyList())
+    val user by trackPlayViewModel.user.collectAsState(initial = null)
+    val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
+
     var newComment by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        trackPlayViewModel.getTrackComment(currentTrack?.trackId.toString())
+    }
 
     Column(modifier = modifier.background(CustomColors().Grey950.copy(alpha = 0.7f))) {
         Row(modifier = Modifier
@@ -76,33 +88,49 @@ fun PlayerComment(
                 shape = RoundedCornerShape(10.dp),
             )
             IconButton({
-                if (newComment.isNotEmpty()) {
-                    newComment = ""
+                if (newComment.isNotEmpty() && currentTrack != null) {
+                    coroutineScope.launch {
+                        trackPlayViewModel.createTrackComment(currentTrack!!.trackId, newComment)
+                        newComment = ""
+                    }
                 }
             }){
                 Icon(Icons.Rounded.Edit, contentDescription = "Send Comment", tint = CustomColors().Grey50)
             }
         }
-        LazyColumn(Modifier,
-            content = {
-                items(commentList.value.size) { index ->
-                    val comment = commentList.value[index]
+
+        // 댓글 목록을 표시하는 LazyColumn을 사용합니다.
+        if (commentList?.isEmpty() == true) {
+            Text(
+                text = "댓글이 없습니다.",
+                color = CustomColors().Grey50,
+                style = Typography.bodyLarge,
+                modifier = Modifier.padding(10.dp)
+            )
+        } else {
+            LazyColumn(Modifier.fillMaxWidth()) {
+            items(commentList!!.size) { index ->
+                    val comment = commentList!![index]
                     // 댓글 항목을 표시하는 Composable 함수를 호출합니다.
-                    CommentItem(comment)
+                    CommentItem(comment, userId = user?.memberId)
                 }
             }
-        )
+        }
+
+
     }
 }
 
 @Composable
-fun CommentItem(comment: Comment) {
+fun CommentItem(comment: TrackResponse.GetTrackComment, userId: Int? = null) {
     // 댓글 항목을 표시하는 UI를 구현합니다.
-    // 예를 들어, Text를 사용하여 댓글 내용을 표시할 수 있습니다.
     Row(Modifier
         .fillMaxWidth()
-        .padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp,
-        Alignment.Start)) {
+        .height(80.dp)
+        .padding(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.Start)
+    ) {
         AsyncImage(
             model = comment.memberInfo.profileImage,
             contentDescription = comment.memberInfo.nickname,
@@ -123,7 +151,7 @@ fun CommentItem(comment: Comment) {
                     style = Typography.titleMedium,
                     modifier = Modifier.weight(1f)
                 )
-                if (comment.commentId == 2) {
+                if (comment.memberInfo.memberId == userId) {
                     Row {
                         IconButton({}) {
                             Icon(Icons.Rounded.Edit, contentDescription = "Edit Comment", tint = CustomColors().Mint500, modifier = Modifier.size(18.dp))

@@ -1,7 +1,5 @@
 package com.whistlehub.common.data.remote.dto.request
 
-import okhttp3.MultipartBody
-
 /**
 ---------------------
 트랙 관련 API 요청 DTO
@@ -33,12 +31,12 @@ sealed class TrackRequest {
     // 트랙 댓글 작성
     data class CreateCommentRequest(
         val trackId: Int,
-        val comment: String
+        val context: String
     )
     // 트랙 댓글 수정
     data class UpdateCommentRequest(
         val commentId: Int,
-        val comment: String
+        val context: String
     )
     // 트랙 검색
     data class SearchTrackRequest(

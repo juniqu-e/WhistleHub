@@ -10,6 +10,9 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import com.whistlehub.common.data.local.entity.UserEntity
+import com.whistlehub.common.data.local.room.UserRepository
+import com.whistlehub.common.data.remote.dto.request.TrackRequest
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.data.repository.TrackService
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,7 +35,10 @@ class TrackPlayViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     val exoPlayer: ExoPlayer,
     val trackService: TrackService,
+    val userRpository: UserRepository,
 ) : ViewModel() {
+    private val _user = MutableStateFlow<UserEntity?>(null)
+    val user: StateFlow<UserEntity?> get() = _user
 
     // 테스트용 트랙 리스트 (최종 API 연결 후 삭제)
     private val _trackList = MutableStateFlow<List<TrackResponse.GetTrackDetailResponse>>(emptyList())
@@ -63,8 +69,10 @@ class TrackPlayViewModel @Inject constructor(
     val trackDuration: StateFlow<Long> get() = _trackDuration
 
     init {
-        // 트랙 리스트 추가
+        // 빌드 할 때 트랙 리스트 추가, 유저정보 파싱
         viewModelScope.launch (Dispatchers.IO) {
+            // 유저 정보 가져오기
+            _user.value = userRpository.getUser()
             val trackRequests = (1 until 7).map { trackId ->
                 async {
                     val resopnse = trackService.getTrackDetail(trackId.toString())
@@ -82,7 +90,7 @@ class TrackPlayViewModel @Inject constructor(
             Log.d("TrackPlayViewModel", "트랙 리스트: $trackResults")
             Log.d("TrackPlayViewModel", "갱신된 리스트: ${_trackList.value}")
         }
-    // ExoPlayer 이벤트 리스너 추가
+        // ExoPlayer 이벤트 리스너 추가
         exoPlayer.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
                 if (state == Player.STATE_ENDED) {
@@ -144,6 +152,7 @@ class TrackPlayViewModel @Inject constructor(
 
                 _currentTrack.value = track
                 _isPlaying.value = true
+                getTrackComment(track.trackId.toString())
 
                 // 플레이어 트랙 리스트 업데이트
                 val existingIndex = _playerTrackList.value.indexOfFirst { it.trackId == track.trackId }
@@ -211,6 +220,84 @@ class TrackPlayViewModel @Inject constructor(
 
     fun setPlayerViewState(state: PlayerViewState) {
         _playerViewState.value = state
+    }
+
+    // 현재 재생 트랙의 댓글
+    private val _commentList = MutableStateFlow<List<TrackResponse.GetTrackComment>?>(emptyList())
+    val commentList: StateFlow<List<TrackResponse.GetTrackComment>?> get() = _commentList
+
+    // 댓글 조회
+    suspend fun getTrackComment(trackId: String) {
+        try {
+            val response = trackService.getTrackComments(trackId)
+            if (response.code == "SU") {
+                _commentList.value = response.payload
+            } else {
+                Log.d("TrackPlayViewModel", "Failed to get track comments: ${response.message}")
+                _commentList.value = emptyList()
+            }
+        } catch (e: Exception) {
+            Log.d("TrackPlayViewModel", "Error fetching track comments: ${e.message}")
+            _commentList.value = emptyList()
+        }
+    }
+
+    // 댓글 작성
+    suspend fun createTrackComment(trackId: Int, comment: String): Boolean {
+        val request = TrackRequest.CreateCommentRequest(
+            trackId = trackId,
+            context = comment
+        )
+        return try {
+            val response = trackService.createTrackComment(request)
+            if (response.code == "SU") {
+                getTrackComment(_currentTrack.value?.trackId.toString()) // 댓글 작성 후 댓글 리스트 갱신
+                true
+            } else {
+                Log.d("TrackPlayViewModel", "Failed to post track comment: ${response.message}")
+                false
+            }
+        } catch (e: Exception) {
+            Log.d("TrackPlayViewModel", "Error posting track comment: ${e.message}")
+            false
+        }
+    }
+
+    // 댓글 수정
+    suspend fun updateTrackComment(commentId: Int, comment: String): Boolean {
+        val request = TrackRequest.UpdateCommentRequest(
+            commentId = commentId,
+            context = comment
+        )
+        return try {
+            val response = trackService.updateTrackComment(request)
+            if (response.code == "SU") {
+                getTrackComment(_currentTrack.value?.trackId.toString()) // 댓글 수정 후 댓글 리스트 갱신
+                true
+            } else {
+                Log.d("TrackPlayViewModel", "Failed to update track comment: ${response.message}")
+                false
+            }
+        } catch (e: Exception) {
+            Log.d("TrackPlayViewModel", "Error updating track comment: ${e.message}")
+            false
+        }
+    }
+
+    // 댓글 삭제
+    suspend fun deleteTrackComment(commentId: Int): Boolean {
+        return try {
+            val response = trackService.deleteTrackComment(commentId.toString())
+            if (response.code == "SU") {
+                true
+            } else {
+                Log.d("TrackPlayViewModel", "Failed to delete track comment: ${response.message}")
+                false
+            }
+        } catch (e: Exception) {
+            Log.d("TrackPlayViewModel", "Error deleting track comment: ${e.message}")
+            false
+        }
     }
 
     override fun onCleared() {
