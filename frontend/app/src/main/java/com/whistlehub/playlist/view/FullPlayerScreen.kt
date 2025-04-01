@@ -275,18 +275,36 @@ fun TrackInfomation(modifier: Modifier = Modifier, trackPlayViewModel: TrackPlay
 
 @Composable
 fun TrackInteraction(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
+    val coroutineScope = rememberCoroutineScope()
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
     val playerViewState by trackPlayViewModel.playerViewState.collectAsState(initial = PlayerViewState.PLAYING)
 
-    Row(Modifier.fillMaxWidth().background(CustomColors().Grey950.copy(alpha = 0.7f)), horizontalArrangement = Arrangement.SpaceBetween) {
-        if (currentTrack?.isLike == true) {
-            IconButton({}) {
-                Icon(Icons.Filled.Favorite, contentDescription = "좋아요", tint = CustomColors().Mint500)
+    Row(Modifier
+        .fillMaxWidth()
+        .background(CustomColors().Grey950.copy(alpha = 0.7f)),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(5.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton({
+                coroutineScope.launch {
+                    trackPlayViewModel.likeTrack(currentTrack?.trackId?.toInt() ?: 0)
+                }
+            }) {
+                if (currentTrack?.isLiked == true) {
+                    Icon(Icons.Filled.Favorite, contentDescription = "좋아요 취소", tint = CustomColors().Mint500)
+                } else {
+                    Icon(Icons.Filled.FavoriteBorder, contentDescription = "좋아요", tint = CustomColors().Grey200)
+                }
             }
-        } else {
-            IconButton({}) {
-                Icon(Icons.Filled.FavoriteBorder, contentDescription = "좋아요", tint = CustomColors().Grey200)
-            }
+            Text(
+                text = currentTrack?.likeCount.toString(),
+                style = Typography.bodyLarge,
+                color = CustomColors().Grey200,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 5.dp)
+            )
         }
         IconButton({
             if (playerViewState != PlayerViewState.COMMENT) {
@@ -296,7 +314,9 @@ fun TrackInteraction(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
             }
         }) {
             // 화면에 따라 색상 전환
-            Icon(Icons.Rounded.ChatBubbleOutline, contentDescription = "댓글", tint = if (playerViewState == PlayerViewState.COMMENT) CustomColors().Mint500 else CustomColors().Grey200 )
+            Icon(Icons.Rounded.ChatBubbleOutline,
+                contentDescription = "댓글",
+                tint = if (playerViewState == PlayerViewState.COMMENT) CustomColors().Mint500 else CustomColors().Grey200 )
         }
         IconButton({
             if (playerViewState != PlayerViewState.PLAYLIST) {
@@ -305,7 +325,9 @@ fun TrackInteraction(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
                 trackPlayViewModel.setPlayerViewState(PlayerViewState.PLAYING)
             }
         }) {
-            Icon(Icons.AutoMirrored.Rounded.List, contentDescription = "플레이리스트", tint = if(playerViewState == PlayerViewState.PLAYLIST) CustomColors().Mint500 else CustomColors().Grey200)
+            Icon(Icons.AutoMirrored.Rounded.List,
+                contentDescription = "플레이리스트",
+                tint = if(playerViewState == PlayerViewState.PLAYLIST) CustomColors().Mint500 else CustomColors().Grey200)
         }
     }
 }

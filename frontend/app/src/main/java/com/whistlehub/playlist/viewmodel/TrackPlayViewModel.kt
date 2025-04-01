@@ -233,6 +233,34 @@ class TrackPlayViewModel @Inject constructor(
         _playerViewState.value = state
     }
 
+    // 트랙 좋아요
+    suspend fun likeTrack(trackId: Int): Boolean {
+        return try {
+            val response = if (_currentTrack.value?.isLiked == true) {
+                trackService.unlikeTrack(trackId.toString())
+            } else {
+                trackService.likeTrack(
+                    TrackRequest.LikeTrackRequest(
+                        trackId = trackId
+                    )
+                )
+            }
+            if (response.code == "SU") {
+                // 트랙 상태 업데이트
+                val updateTrack = trackService.getTrackDetail(_currentTrack.value!!.trackId.toString())
+                _currentTrack.value = updateTrack.payload
+                true
+            } else {
+                Log.d("TrackPlayViewModel", "Failed to like track: ${response.message}")
+                false
+            }
+        } catch (e: Exception) {
+            Log.d("TrackPlayViewModel", "Error liking track: ${e.message}")
+            false
+        }
+    }
+
+
     // 현재 재생 트랙의 댓글
     private val _commentList = MutableStateFlow<List<TrackResponse.GetTrackComment>?>(emptyList())
     val commentList: StateFlow<List<TrackResponse.GetTrackComment>?> get() = _commentList

@@ -10,7 +10,6 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
-import retrofit2.http.Header
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -65,15 +64,15 @@ interface TrackApi {
     suspend fun playLayer(
         @Query("layerId") layerId: String
     ): Response<ApiResponse<TrackResponse.TrackLayerPlay>>
-    // 트랙 좋아요 상태 조회
-    @GET("track/like")
-    suspend fun getTrackLikeStatus(
-        @Query("trackId") trackId: String
-    ): Response<ApiResponse<Boolean>>
     // 트랙 좋아요
     @POST("track/like")
     suspend fun likeTrack(
         @Body request: TrackRequest.LikeTrackRequest
+    ): Response<ApiResponse<Unit>>
+    // 트랙 좋아요 취소
+    @DELETE("track/like")
+    suspend fun unlikeTrack(
+        @Query("trackId") trackId: String
     ): Response<ApiResponse<Unit>>
     // 트랙 댓글 조회
     @GET("track/comment")
