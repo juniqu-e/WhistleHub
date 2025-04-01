@@ -76,4 +76,6 @@ INSERT INTO whistlehub.tag (tag_id, name) VALUES
                                               (42, 'Healing'),
                                               (43, 'Coffee'),
                                               (44, 'Travel'),
-                                              (45, 'Work');
+                                              (45, 'Work'),
+                                              (46, 'Synth')
+                                                ;
