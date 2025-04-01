@@ -1,5 +1,6 @@
 package com.whistlehub.common.view.navigation
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
@@ -16,6 +17,7 @@ import com.whistlehub.common.view.login.LoginScreen
 import com.whistlehub.common.view.signup.SelectTagsScreen
 import com.whistlehub.common.view.signup.SignUpScreen
 import com.whistlehub.common.viewmodel.LoginViewModel
+import com.whistlehub.common.viewmodel.SignUpState
 import com.whistlehub.common.viewmodel.SignUpViewModel
 
 /**
@@ -62,8 +64,8 @@ fun MainNavGraph(
             SignUpScreen(
                 onNext = {
                     // 태그 선택 화면으로 전환
-                    userId, password, nickname, email, gender, birth ->
-                    navController.navigate("selecttags/$userId/$password/$nickname/$email/$gender/$birth")
+                    userId, password, email, nickname, gender, birth ->
+                    navController.navigate("selecttags/$userId/$password/$email/$nickname/$gender/$birth")
                 },
                 onLoginClick = {
                     // 로그인 화면으로 이동
@@ -75,7 +77,7 @@ fun MainNavGraph(
         }
 
         composable(
-            route = "select_tags?userId={userId}&password={password}&email={email}&nickname={nickname}&gender={gender}&birth={birth}",
+            route = "selecttags/{userId}/{password}/{email}/{nickname}/{gender}/{birth}",
             arguments = listOf(
                 navArgument("userId") { type = NavType.StringType },
                 navArgument("password") { type = NavType.StringType },
@@ -103,21 +105,14 @@ fun MainNavGraph(
                 gender = genderString.first(), // genderString는 "M" 또는 "F"
                 birth = birth,
                 onStartClick = { selectedTags ->
-                    // 태그 선택 후 회원가입 API 호출
-                    signUpViewModel.register(
-                        loginId = userId,
-                        password = password,
-                        email = email,
-                        nickname = nickname,
-                        birth = birth,
-                        gender = genderString.first(),
-                        tags = selectedTags
-                    ) {
-                        // 회원가입 성공 시 메인 화면으로 이동
-                        navController.navigate("main") {
-                            popUpTo("signup") { inclusive = true }
-                        }
+                    // onSuccess 콜백 회원가입 성공 시 메인 화면으로 이동
+                    navController.navigate("main") {
+                        popUpTo(navController.graph.id) { inclusive = true }
                     }
+                },
+                onBackClick = {
+                    // 뒤로가기 버튼 클릭 시 이전 화면으로 돌아감
+                    navController.popBackStack()
                 }
             )
         }

@@ -93,6 +93,7 @@ class LoginViewModel @Inject constructor(
                         profileImage = response.profileImage,
                         nickname = response.nickname
                     )
+                    userRepository.clearUser()
                     userRepository.saveUser(user) // 사용자 정보를 DB에 저장
                     _userInfo.value = userRepository.getUser() // 사용자 정보를 StateFlow에 저장
                     _loginState.value = LoginState.Success
