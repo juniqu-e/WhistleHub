@@ -109,32 +109,40 @@ fun FullPlayerScreen(
         val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
         val playerViewState by trackPlayViewModel.playerViewState.collectAsState(initial = PlayerViewState.PLAYING)
 
-        PlayerBackground(Modifier.fillMaxSize().padding(innerPadding)
-            .clickable{
-            // 배경 클릭 시 트랙 재생/일시정지
-            if (currentTrack != null && playerViewState == PlayerViewState.PLAYING) {
-                if (trackPlayViewModel.isPlaying.value) {
-                    trackPlayViewModel.pauseTrack()
-                } else {
-                    trackPlayViewModel.resumeTrack()
-                }
-            }
-        })
-        Column(Modifier
-            .fillMaxSize()
-            .padding(innerPadding)
-            .background(CustomColors().Grey700.copy(alpha = 0.3f)),
-            verticalArrangement = Arrangement.SpaceBetween) {
+        PlayerBackground(
+            Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .clickable {
+                    // 배경 클릭 시 트랙 재생/일시정지
+                    if (currentTrack != null && playerViewState == PlayerViewState.PLAYING) {
+                        if (trackPlayViewModel.isPlaying.value) {
+                            trackPlayViewModel.pauseTrack()
+                        } else {
+                            trackPlayViewModel.resumeTrack()
+                        }
+                    }
+                })
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(CustomColors().Grey700.copy(alpha = 0.3f)),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
             when (playerViewState) {
                 PlayerViewState.PLAYING -> {
                     TrackInfomation(Modifier.weight(1f))
                 }
+
                 PlayerViewState.PLAYLIST -> {
                     PlayerPlaylist(Modifier.weight(1f))
                 }
+
                 PlayerViewState.COMMENT -> {
                     PlayerComment(Modifier.weight(1f))
                 }
+
                 else -> Spacer(Modifier)
             }
             TrackInteraction(trackPlayViewModel)
@@ -143,7 +151,8 @@ fun FullPlayerScreen(
             ModalBottomSheet(
                 onDismissRequest = { showPlayerMenu = false },
                 sheetState = sheetState,
-                modifier = Modifier.wrapContentHeight()
+                modifier = Modifier
+                    .wrapContentHeight()
                     .background(CustomColors().Grey950.copy(alpha = 0.7f)),
             ) {
                 TrackMenu(onReportClick = {
@@ -158,9 +167,17 @@ fun FullPlayerScreen(
         if (showReportDialog) {
             AlertDialog(
                 onDismissRequest = { showReportDialog = false },
-                title = { Text("신고하기", style = Typography.titleLarge, color = CustomColors().Grey50) },
+                title = {
+                    Text(
+                        "신고하기",
+                        style = Typography.titleLarge,
+                        color = CustomColors().Grey50
+                    )
+                },
                 text = { ReportDialog() },
-                modifier = Modifier.fillMaxWidth().background(CustomColors().Grey950),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(CustomColors().Grey950),
                 confirmButton = {
                     Button(
                         onClick = { showReportDialog = false },
@@ -188,20 +205,33 @@ fun FullPlayerScreen(
         if (showAddToPlaylistDialog) {
             AlertDialog(
                 onDismissRequest = { showAddToPlaylistDialog = false },
-                title = { Text("플레이리스트에 추가", style = Typography.titleLarge, color = CustomColors().Grey50) },
-                text = { AddToPlaylistDialog(
-                    onPlaylistSelect = { playlistId ->
-                        coroutineScope.launch {
-                            playlistViewModel.addTrackToPlaylist(playlistId, currentTrack?.trackId ?: 0)
+                title = {
+                    Text(
+                        "플레이리스트에 추가",
+                        style = Typography.titleLarge,
+                        color = CustomColors().Grey50
+                    )
+                },
+                text = {
+                    AddToPlaylistDialog(
+                        onPlaylistSelect = { playlistId ->
+                            coroutineScope.launch {
+                                playlistViewModel.addTrackToPlaylist(
+                                    playlistId,
+                                    currentTrack?.trackId ?: 0
+                                )
+                                showAddToPlaylistDialog = false
+                            }
+                        },
+                        onCreatePlaylist = {
                             showAddToPlaylistDialog = false
+                            showCreatePlaylistDialog = true
                         }
-                    },
-                    onCreatePlaylist = {
-                        showAddToPlaylistDialog = false
-                        showCreatePlaylistDialog = true
-                    }
-                ) },
-                modifier = Modifier.fillMaxWidth().background(CustomColors().Grey950),
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(CustomColors().Grey950),
                 confirmButton = {},
                 dismissButton = {}
             )
@@ -212,18 +242,22 @@ fun FullPlayerScreen(
                     showCreatePlaylistDialog = false
                     showAddToPlaylistDialog = true
                 },
-                title = { Text(
-                    text = "플레이리스트 생성",
-                    style = Typography.titleLarge,
-                    color = CustomColors().Grey50,
-                ) },
-                text = { CreatePlaylist(
-                    onInputTitle = { playlistTitle = it},
-                    onInputDescription = { playlistDescription = it },
-                    onInputImage = {
-                        playlistImage = it
-                    }
-                ) },
+                title = {
+                    Text(
+                        text = "플레이리스트 생성",
+                        style = Typography.titleLarge,
+                        color = CustomColors().Grey50,
+                    )
+                },
+                text = {
+                    CreatePlaylist(
+                        onInputTitle = { playlistTitle = it },
+                        onInputDescription = { playlistDescription = it },
+                        onInputImage = {
+                            playlistImage = it
+                        }
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(CustomColors().Grey950),
@@ -238,7 +272,8 @@ fun FullPlayerScreen(
                                 )
                                 showCreatePlaylistDialog = false
                                 showAddToPlaylistDialog = true
-                            }},
+                            }
+                        },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = CustomColors().Mint500,
                             contentColor = CustomColors().Grey950,
@@ -363,12 +398,14 @@ fun TrackInteraction(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
     val playerViewState by trackPlayViewModel.playerViewState.collectAsState(initial = PlayerViewState.PLAYING)
 
-    Row(Modifier
-        .fillMaxWidth()
-        .background(CustomColors().Grey950.copy(alpha = 0.7f)),
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(CustomColors().Grey950.copy(alpha = 0.7f)),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(5.dp),
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton({
@@ -377,9 +414,17 @@ fun TrackInteraction(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
                 }
             }) {
                 if (currentTrack?.isLiked == true) {
-                    Icon(Icons.Filled.Favorite, contentDescription = "좋아요 취소", tint = CustomColors().Mint500)
+                    Icon(
+                        Icons.Filled.Favorite,
+                        contentDescription = "좋아요 취소",
+                        tint = CustomColors().Mint500
+                    )
                 } else {
-                    Icon(Icons.Filled.FavoriteBorder, contentDescription = "좋아요", tint = CustomColors().Grey200)
+                    Icon(
+                        Icons.Filled.FavoriteBorder,
+                        contentDescription = "좋아요",
+                        tint = CustomColors().Grey200
+                    )
                 }
             }
             Text(
@@ -398,9 +443,11 @@ fun TrackInteraction(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
             }
         }) {
             // 화면에 따라 색상 전환
-            Icon(Icons.Rounded.ChatBubbleOutline,
+            Icon(
+                Icons.Rounded.ChatBubbleOutline,
                 contentDescription = "댓글",
-                tint = if (playerViewState == PlayerViewState.COMMENT) CustomColors().Mint500 else CustomColors().Grey200 )
+                tint = if (playerViewState == PlayerViewState.COMMENT) CustomColors().Mint500 else CustomColors().Grey200
+            )
         }
         IconButton({
             if (playerViewState != PlayerViewState.PLAYLIST) {
@@ -409,9 +456,11 @@ fun TrackInteraction(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
                 trackPlayViewModel.setPlayerViewState(PlayerViewState.PLAYING)
             }
         }) {
-            Icon(Icons.AutoMirrored.Rounded.List,
+            Icon(
+                Icons.AutoMirrored.Rounded.List,
                 contentDescription = "플레이리스트",
-                tint = if(playerViewState == PlayerViewState.PLAYLIST) CustomColors().Mint500 else CustomColors().Grey200)
+                tint = if (playerViewState == PlayerViewState.PLAYLIST) CustomColors().Mint500 else CustomColors().Grey200
+            )
         }
     }
 }
@@ -528,7 +577,7 @@ fun PlayerController(
                         if (currentTrack == null && trackPlayViewModel.playerTrackList.value.isNotEmpty()) {
                             coroutineScope.launch {
                                 // 트랙이 없을 경우 첫 번째 트랙 재생
-                                trackPlayViewModel.playTrack(trackPlayViewModel.playerTrackList.value[0])
+                                trackPlayViewModel.playTrack(trackPlayViewModel.playerTrackList.value[0].trackId)
                             }
                         } else if (currentTrack != null) {
                             trackPlayViewModel.resumeTrack()
