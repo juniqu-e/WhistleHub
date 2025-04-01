@@ -15,6 +15,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -55,6 +58,9 @@ fun PlayerComment(
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
 
     var newComment by remember { mutableStateOf("") }
+
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var commentId by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
         trackPlayViewModel.getTrackComment(currentTrack?.trackId.toString())
@@ -112,17 +118,56 @@ fun PlayerComment(
             items(commentList!!.size) { index ->
                     val comment = commentList!![index]
                     // 댓글 항목을 표시하는 Composable 함수를 호출합니다.
-                    CommentItem(comment, userId = user?.memberId)
+                    CommentItem(comment, userId = user?.memberId,
+                        onDelete = { id ->
+                            commentId = id
+                            showDeleteDialog = true
+                        }
+                    )
                 }
             }
         }
+    }
 
-
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("댓글 삭제") },
+            text = { Text("정말로 댓글을 삭제하시겠습니까?") },
+            confirmButton = {
+                Button(onClick = {
+                    coroutineScope.launch {
+                        trackPlayViewModel.deleteTrackComment(commentId)
+                        showDeleteDialog = false
+                    } },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CustomColors().Error700,
+                        contentColor = CustomColors().Grey950
+                    )
+                ) {
+                    Text("삭제")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showDeleteDialog = false },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CustomColors().Grey400,
+                        contentColor = CustomColors().Grey950
+                    )
+                ) {
+                    Text("취소")
+                }
+            }
+        )
     }
 }
 
 @Composable
-fun CommentItem(comment: TrackResponse.GetTrackComment, userId: Int? = null) {
+fun CommentItem(comment: TrackResponse.GetTrackComment,
+                userId: Int? = null,
+                onUpdate: (Int, String) -> Unit = { _, _ -> },
+                onDelete: (Int) -> Unit = {},
+                ) {
     // 댓글 항목을 표시하는 UI를 구현합니다.
     Row(Modifier
         .fillMaxWidth()
@@ -156,7 +201,9 @@ fun CommentItem(comment: TrackResponse.GetTrackComment, userId: Int? = null) {
                         IconButton({}) {
                             Icon(Icons.Rounded.Edit, contentDescription = "Edit Comment", tint = CustomColors().Mint500, modifier = Modifier.size(18.dp))
                         }
-                        IconButton({}) {
+                        IconButton({
+                            onDelete(comment.commentId)
+                        }) {
                             Icon(Icons.Rounded.Delete, contentDescription = "Edit Delete", tint = CustomColors().Mint500, modifier = Modifier.size(18.dp))
                         }
                     }

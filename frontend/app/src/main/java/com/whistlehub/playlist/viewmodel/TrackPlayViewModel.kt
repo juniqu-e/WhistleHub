@@ -289,6 +289,7 @@ class TrackPlayViewModel @Inject constructor(
         return try {
             val response = trackService.deleteTrackComment(commentId.toString())
             if (response.code == "SU") {
+                getTrackComment(_currentTrack.value?.trackId.toString()) // 댓글 삭제 후 댓글 리스트 갱신
                 true
             } else {
                 Log.d("TrackPlayViewModel", "Failed to delete track comment: ${response.message}")
