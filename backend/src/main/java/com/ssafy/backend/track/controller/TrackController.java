@@ -34,14 +34,13 @@ public class TrackController {
     @GetMapping()
     public ApiResponse<?> viewTrack(int trackId) {
         return new ApiResponse.builder<Object>()
-                .payload(trackService.viewTrack(trackId, authService.getMember().getId()))
+                .payload(trackService.viewTrack(trackId))
                 .build();
     }
 
     @PutMapping()
     public ApiResponse<?> updateTrack(@RequestBody TrackUpdateRequestDto trackUpdateRequestDto) {
-        System.out.println(trackUpdateRequestDto);
-        trackService.updateTrack(trackUpdateRequestDto, authService.getMember().getId());
+        trackService.updateTrack(trackUpdateRequestDto);
         return new ApiResponse.builder<Object>()
                 .payload(null)
                 .build();

@@ -108,6 +108,11 @@ public class WorkstationService {
         return t.getId();
     }
 
+    /**
+     * 트랙 임포트
+     * @param trackId 임포트 대상 트랙 ID
+     * @return 트랙 및 하위 레이어 정보
+     */
     public TrackImportResponseDto importTrack(int trackId) {
         // 임포트 가능 여부 검사
         Track track = trackRepository.findById(trackId).orElseThrow(
