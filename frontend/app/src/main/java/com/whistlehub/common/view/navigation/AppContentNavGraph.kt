@@ -48,7 +48,7 @@ fun AppContentNavGraph(
             )
         }
         composable(route = Screen.Search.route) {
-            SearchScreen()
+            SearchScreen(navController)
         }
         composable(route = Screen.DAW.route) {
             WorkStationScreen(navController = navController)
