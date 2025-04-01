@@ -1,5 +1,6 @@
 package com.whistlehub.common.view.navigation
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
@@ -63,8 +64,8 @@ fun MainNavGraph(
             SignUpScreen(
                 onNext = {
                     // 태그 선택 화면으로 전환
-                    userId, password, nickname, email, gender, birth ->
-                    navController.navigate("selecttags/$userId/$password/$nickname/$email/$gender/$birth")
+                    userId, password, email, nickname, gender, birth ->
+                    navController.navigate("selecttags/$userId/$password/$email/$nickname/$gender/$birth")
                 },
                 onLoginClick = {
                     // 로그인 화면으로 이동
@@ -96,15 +97,6 @@ fun MainNavGraph(
             // Composable 컨텍스트에서 미리 ViewModel 인스턴스를 생성합니다.
             val signUpViewModel: SignUpViewModel = hiltViewModel()
 
-            // 회원가입 상태를 관찰하여 성공 시 네비게이션 처리
-            LaunchedEffect(signUpViewModel.signUpState) {
-                if (signUpViewModel.signUpState.value is SignUpState.Success) {
-                    navController.navigate("main") {
-                        popUpTo("signup") { inclusive = true }
-                    }
-                }
-            }
-
             SelectTagsScreen(
                 userId = userId,
                 password = password,
@@ -113,20 +105,9 @@ fun MainNavGraph(
                 gender = genderString.first(), // genderString는 "M" 또는 "F"
                 birth = birth,
                 onStartClick = { selectedTags ->
-                    // 태그 선택 후 회원가입 API 호출
-                    signUpViewModel.register(
-                        loginId = userId,
-                        password = password,
-                        email = email,
-                        nickname = nickname,
-                        birth = birth,
-                        gender = genderString.first(),
-                        tagList = selectedTags
-                    ) {
-                        // 회원가입 성공 시 메인 화면으로 이동
-                        navController.navigate("main") {
-                            popUpTo("signup") { inclusive = true }
-                        }
+                    // onSuccess 콜백 회원가입 성공 시 메인 화면으로 이동
+                    navController.navigate("main") {
+                        popUpTo(navController.graph.id) { inclusive = true }
                     }
                 },
                 onBackClick = {

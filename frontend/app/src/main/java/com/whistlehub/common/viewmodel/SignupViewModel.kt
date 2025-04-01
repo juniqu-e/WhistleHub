@@ -1,12 +1,16 @@
 package com.whistlehub.common.viewmodel
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.whistlehub.common.data.local.entity.UserEntity
+import com.whistlehub.common.data.local.room.UserRepository
 import com.whistlehub.common.data.remote.dto.request.AuthRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
 import com.whistlehub.common.data.remote.dto.response.AuthResponse
 import com.whistlehub.common.data.repository.AuthService
+import com.whistlehub.common.util.TokenManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,7 +36,9 @@ sealed class EmailVerificationState {
 
 @HiltViewModel
 class SignUpViewModel @Inject constructor(
-    private val authService: AuthService
+    private val authService: AuthService,
+    private val tokenManager: TokenManager,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _signUpState = MutableStateFlow<SignUpState>(SignUpState.Idle)
@@ -40,6 +46,9 @@ class SignUpViewModel @Inject constructor(
 
     private val _emailVerificationState = MutableStateFlow<EmailVerificationState>(EmailVerificationState.Idle)
     val emailVerificationState: StateFlow<EmailVerificationState> = _emailVerificationState
+
+    private val _userInfo = MutableStateFlow<UserEntity?>(null)
+    val userInfo: StateFlow<UserEntity?> = _userInfo
 
     // 인증 요청이 한 번이라도 성공했는지 여부를 판별하는 계산 프로퍼티
     val isEmailVerificationRequested: Boolean
@@ -156,8 +165,7 @@ class SignUpViewModel @Inject constructor(
         }
     }
 
-    // 회원가입 API 호출
-    fun register(
+    fun registerAndAutoLogin(
         loginId: String,
         password: String,
         email: String,
@@ -170,22 +178,55 @@ class SignUpViewModel @Inject constructor(
         viewModelScope.launch {
             _signUpState.value = SignUpState.Loading
             try {
-                val request = AuthRequest.RegisterRequest(loginId, password, email, nickname, gender, birth, tagList)
-                val response = authService.register(request)
-                if (response.code == "SU") {
-                    _signUpState.value = SignUpState.Success("회원가입에 성공했습니다.")
-                    onSuccess()
+                // 회원가입 API 호출
+                Log.d("SignUpViewModel", "Starting registration for loginId: $loginId")
+                val registerResponse = authService.register(
+                    AuthRequest.RegisterRequest(
+                        loginId = loginId,
+                        password = password,
+                        email = email,
+                        nickname = nickname,
+                        gender = gender,
+                        birth = birth,
+                        tagList = tagList
+                    )
+                )
+                if (registerResponse.code == "SU") {
+                    Log.d("SignUpViewModel", "Registration successful: ${registerResponse.message}")
+                    Log.d("SignUpViewModel", "Proceeding to auto login for loginId: $loginId")
+                    // 회원가입 성공 시 자동 로그인 API 호출
+                    val request = AuthRequest.LoginRequest(loginId, password)
+                    val response = authService.login(request).payload
+                    if (response != null) {
+                        Log.d("SignUpViewModel", "Login successful")
+                        Log.d("SignUpViewModel", "AccessToken: ${response.accessToken}")
+                        Log.d("SignUpViewModel", "RefreshToken: ${response.refreshToken}")
+                        tokenManager.saveTokens(response.accessToken, response.refreshToken)
+                        val user = UserEntity(
+                            memberId = response.memberId,
+                            profileImage = response.profileImage,
+                            nickname = response.nickname
+                        )
+                        Log.d("SignUpViewModel", "Saving user to repository: $user")
+                        userRepository.clearUser()
+                        userRepository.saveUser(user) // 사용자 정보를 DB에 저장
+                        val retrievedUser = userRepository.getUser()
+                        Log.d("SignUpViewModel", "Retrieved user from repository: $retrievedUser")
+                        _userInfo.value = retrievedUser // 사용자 정보를 StateFlow에 저장
+                        _signUpState.value = SignUpState.Success("회원가입 및 로그인에 성공했습니다.")
+                        onSuccess()
+                    } else {
+                        Log.e("SignUpViewModel", "Auto login failed")
+                        _signUpState.value = SignUpState.Error("자동 로그인 실패")
+                    }
                 } else {
-                    _signUpState.value = SignUpState.Error(response.message ?: "회원가입에 실패했습니다.")
+                    Log.e("SignUpViewModel", "Registration failed: code=${registerResponse.code}, message=${registerResponse.message}")
+                    _signUpState.value = SignUpState.Error(registerResponse.message ?: "회원가입 실패")
                 }
             } catch (e: Exception) {
+                Log.e("SignUpViewModel", "Exception in registerAndAutoLogin: ${e.message}", e)
                 _signUpState.value = SignUpState.Error("예외 발생: ${e.message}")
             }
         }
-    }
-
-    // 상태 초기화 함수
-    fun resetState() {
-        _signUpState.value = SignUpState.Idle
     }
 }

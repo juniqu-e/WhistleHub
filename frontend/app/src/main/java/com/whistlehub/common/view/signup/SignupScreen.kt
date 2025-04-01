@@ -48,14 +48,17 @@ fun SignUpScreen(
     // 입력 상태 변수들: rememberSaveable 사용하여 저장
     var userId by rememberSaveable { mutableStateOf("") }
     var userIdError by rememberSaveable { mutableStateOf<String?>(null) }
+    var userIdValidation by rememberSaveable { mutableStateOf(false) }
 
     var password by rememberSaveable { mutableStateOf("") }
     var passwordError by rememberSaveable { mutableStateOf<String?>(null) }
     var passwordConfirm by rememberSaveable { mutableStateOf("") }
     var passwordConfirmError by rememberSaveable { mutableStateOf<String?>(null) }
+    var passwordValidation by rememberSaveable { mutableStateOf(false) }
 
     var email by rememberSaveable { mutableStateOf("") }
     var emailError by rememberSaveable { mutableStateOf<String?>(null) }
+    var emailValidation by rememberSaveable { mutableStateOf(false) }
 
     var verificationCode by rememberSaveable { mutableStateOf("") }
     var verificationCodeError by rememberSaveable { mutableStateOf<String?>(null) }
@@ -63,6 +66,7 @@ fun SignUpScreen(
 
     var nickname by rememberSaveable { mutableStateOf("") }
     var nicknameError by rememberSaveable { mutableStateOf<String?>(null) }
+    var nicknameValidation by rememberSaveable { mutableStateOf(false) }
 
     var genderKorean by rememberSaveable { mutableStateOf("남성") }
 
@@ -70,6 +74,7 @@ fun SignUpScreen(
     var birthMonth by rememberSaveable { mutableStateOf("") }
     var birthDay by rememberSaveable { mutableStateOf("") }
     var birthError by rememberSaveable { mutableStateOf<String?>(null) }
+    var birthValidation by rememberSaveable { mutableStateOf(false) }
 
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
 
@@ -407,7 +412,7 @@ fun SignUpScreen(
                                 modifier = Modifier.padding(8.dp)
                             )
                         }
-                        // ── 회원가입 버튼 ──
+                        // ── 다음 버튼 ──
                         Button(
                             onClick = {
                                 if (
