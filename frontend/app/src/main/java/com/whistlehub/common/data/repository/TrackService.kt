@@ -131,10 +131,7 @@ class TrackService @Inject constructor(
 //        return tokenRefresh.execute { trackApi.searchTracks(request) }
 //    }
     suspend fun searchTracks(
-        keyword: String,
-        page: Int = 0,
-        size: Int = 50,
-        orderBy: String = "DESC"
+        request: TrackRequest.SearchTrackRequest
     ): ApiResponse<List<TrackResponse.SearchTrack>> {
         return tokenRefresh.execute {
             trackApi.searchTracks(
