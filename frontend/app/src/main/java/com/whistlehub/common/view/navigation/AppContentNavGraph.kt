@@ -21,6 +21,7 @@ import com.whistlehub.profile.view.PasswordChangeScreen
 import com.whistlehub.profile.view.ProfileChangeScreen
 import com.whistlehub.profile.view.ProfileMenuScreen
 import com.whistlehub.profile.view.ProfileScreen
+import com.whistlehub.profile.viewmodel.ProfileViewModel
 import com.whistlehub.search.view.SearchScreen
 import com.whistlehub.workstation.view.WorkStationScreen
 
@@ -57,17 +58,12 @@ fun AppContentNavGraph(
         composable(route = Screen.PlayList.route) {
             PlayListScreen(navController = navController)
         }
-        composable(route = Screen.Profile.route, arguments = listOf(navArgument("memberId") {
-            type = NavType.IntType
-            defaultValue = -1 // 기본값을 -1은 로그인한 유저의 프로필을 의미
-        })) { backStackEntry ->
-            // 네비게이션 인자에서 memberId 읽기
-            val memberIdArg = backStackEntry.arguments?.getInt("memberId")
+        composable(route = Screen.Profile.route + "/{memberId}"){ backStackEntry ->
+        val memberId = backStackEntry.arguments?.getString("memberId")
             ProfileScreen(
+                memberId?.toInt() ?: -1,
                 navController = navController,
                 logoutManager = logoutManager,
-                // memberIdArg가 -1이면 ProfileScreen 내부에서 로그인한 유저의 memberId 사용
-                memberIdParam = if (memberIdArg == -1) null else memberIdArg
             )
         }
         // 프로필 메뉴 화면으로 이동
