@@ -31,10 +31,11 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -47,6 +48,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -58,16 +60,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
-import com.whistlehub.common.data.remote.dto.request.ProfileRequest
 import com.whistlehub.common.data.remote.dto.response.ProfileResponse
 import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.common.view.theme.CustomColors
-import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.profile.viewmodel.ProfileViewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -81,10 +83,10 @@ enum class FollowListType {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    viewModel: ProfileViewModel = hiltViewModel(),
-    logoutManager: LogoutManager,
     memberIdParam: Int?,
-    navController: NavHostController
+    logoutManager: LogoutManager,
+    navController: NavHostController,
+    viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val customColors = CustomColors()
     // 로그인한 유저의 memberId는 ViewModel에서 가져옵니다.
@@ -96,6 +98,8 @@ fun ProfileScreen(
     val tracks by viewModel.tracks.collectAsState()
     val followerList by viewModel.followers.collectAsState()
     val followingList by viewModel.followings.collectAsState()
+    val followerCount by viewModel.followerCount.collectAsState()
+    val followingCount by viewModel.followingCount.collectAsState()
     val isFollowing by viewModel.isFollowing.collectAsState()
 
     var currentPage by remember { mutableIntStateOf(0) }
@@ -130,6 +134,11 @@ fun ProfileScreen(
         if (memberId != currentUserId) {
             viewModel.checkFollowStatus(memberId)
         }
+    }
+
+    // 팔로우 상태 변경 효과 추적
+    LaunchedEffect(isFollowing) {
+        Log.d("ProfileScreen", "Follow status changed: $isFollowing")
     }
 
     // 스크롤 상태를 감시해서 마지막 아이템이 보이면 다음 페이지를 로드
@@ -338,8 +347,8 @@ fun ProfileScreen(
                     profileImage = profile?.profileImage,
                     nickname = profile?.nickname ?: "Loading...",
                     profileText = profile?.profileText ?: "",
-                    followerCount = followerList.size,
-                    followingCount = followingList.size,
+                    followerCount = followerCount,
+                    followingCount = followingCount,
                     trackCount = tracks.size,
                     showFollowButton = memberId != currentUserId,
                     isFollowing = isFollowing,
@@ -353,7 +362,7 @@ fun ProfileScreen(
                             currentFollowListType = FollowListType.FOLLOWERS
                             currentFollowPage = 0
                             hasMoreFollowers = true
-                            // 팔로워 목록 로드
+                            // 팔로워 목록 로드 (이미 카운트를 위해 전체 로드했지만, 여기서는 페이지네이션용으로 다시 로드)
                             viewModel.loadFollowers(memberId, page = 0, size = 15)
                             showBottomSheet = true
                         }
@@ -363,7 +372,7 @@ fun ProfileScreen(
                             currentFollowListType = FollowListType.FOLLOWING
                             currentFollowPage = 0
                             hasMoreFollowing = true
-                            // 팔로잉 목록 로드
+                            // 팔로잉 목록 로드 (이미 카운트를 위해 전체 로드했지만, 여기서는 페이지네이션용으로 다시 로드)
                             viewModel.loadFollowings(memberId, page = 0, size = 15)
                             showBottomSheet = true
                         }
@@ -482,7 +491,8 @@ fun TrackGridItem(
             text = track.title,
             style = MaterialTheme.typography.bodyMedium,
             maxLines = 1,
-            color = customColors.Grey200
+            color = customColors.Grey200,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -525,24 +535,48 @@ fun ProfileHeader(
                     modifier = Modifier
                         .size(64.dp)
                         .clip(CircleShape)
-                        .background(Color.Gray),
+                        .background(colors.Grey700),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = "Profile Image",
-                        tint = Color.LightGray,
+                        tint = colors.Grey300,
                         modifier = Modifier.size(32.dp)
                     )
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
-            Column {
-                Text(
-                    text = nickname,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = colors.Grey50
-                )
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = nickname,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = colors.Grey50,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+
+                    // 팔로우 버튼을 닉네임 옆에 작은 아이콘으로 배치
+                    // 본인이 아닌 경우에만 팔로우 버튼 표시
+                    if (showFollowButton) {
+                        // 상태 변경을 확인하기 위한 로그
+                        Log.d("ProfileHeader", "Rendering follow button with isFollowing=$isFollowing")
+
+                        FollowIconButton(
+                            isFollowing = isFollowing,
+                            onClick = {
+                                Log.d("ProfileHeader", "Follow button clicked, current state: $isFollowing")
+                                onFollowClick()
+                            }
+                        )
+                    }
+                }
+
                 Text(
                     text = profileText,
                     style = MaterialTheme.typography.bodyMedium,
@@ -551,20 +585,9 @@ fun ProfileHeader(
                 )
             }
         }
+
         Spacer(modifier = Modifier.height(16.dp))
-        // 팔로우 버튼 영역
-        if (showFollowButton) {
-            Button(
-                onClick = onFollowClick,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isFollowing) colors.Grey700 else colors.Mint500,
-                    contentColor = colors.Grey50
-                )
-            ) {
-                Text(text = if (isFollowing) "팔로잉" else "팔로우")
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
+
         // 트랙, 팔로워, 팔로잉 통계 영역
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -588,12 +611,37 @@ fun ProfileHeader(
     }
 }
 
-fun formatNumber(number: Int): String {
-    return when {
-        number >= 1_000_000_000 -> "${number / 1_000_000_000}b+"
-        number >= 1_000_000 -> "${number / 1_000_000}m+"
-        number >= 1_000 -> "${number / 1_000}k+"
-        else -> number.toString()
+@Composable
+fun FollowIconButton(
+    isFollowing: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = CustomColors()
+
+    val buttonState = remember(isFollowing) {
+        derivedStateOf { isFollowing }
+    }
+
+    // 현재 상태 로깅
+    LaunchedEffect(buttonState.value) {
+        Log.d("FollowIconButton", "Button state updated: isFollowing=${buttonState.value}")
+    }
+
+    Box(
+        modifier = modifier
+            .size(28.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(if (buttonState.value) colors.Grey700 else colors.Mint500)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = if (buttonState.value) Icons.Default.Check else Icons.Default.Add,
+            contentDescription = if (buttonState.value) "팔로잉 취소" else "팔로우",
+            tint = colors.Grey50,
+            modifier = Modifier.size(16.dp)
+        )
     }
 }
 
@@ -622,6 +670,15 @@ fun ProfileStat(
                 color = customColors.Grey50
             )
         }
+    }
+}
+
+fun formatNumber(number: Int): String {
+    return when {
+        number >= 1_000_000_000 -> "${number / 1_000_000_000}b+"
+        number >= 1_000_000 -> "${number / 1_000_000}m+"
+        number >= 1_000 -> "${number / 1_000}k+"
+        else -> number.toString()
     }
 }
 
