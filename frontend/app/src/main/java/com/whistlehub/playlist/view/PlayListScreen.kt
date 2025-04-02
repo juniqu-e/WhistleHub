@@ -23,10 +23,12 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,12 +45,19 @@ import com.whistlehub.common.view.theme.Pretendard
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.view.component.CreatePlaylist
 import com.whistlehub.playlist.viewmodel.PlaylistViewModel
+import kotlinx.coroutines.launch
+import okhttp3.MultipartBody
 
 @Composable
 fun PlayListScreen(navController: NavHostController, playlistViewModel: PlaylistViewModel = hiltViewModel()) {
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
+    var showDeletePlaylistDialog by remember { mutableStateOf(false) }
+    var playlistId by remember { mutableStateOf(0) }
+    val coroutineScope = rememberCoroutineScope()
 
-    playlistViewModel.getPlaylists()
+    LaunchedEffect(Unit) {
+        playlistViewModel.getPlaylists()
+    }
     val playlists = playlistViewModel.playlists.collectAsState()
 
     // 플레이리스트 화면
@@ -108,9 +117,7 @@ fun PlayListScreen(navController: NavHostController, playlistViewModel: Playlist
                 .fillMaxWidth()
                 .clickable {
                     // 플레이리스트 클릭 시 트랙 목록 받아옴
-                    playlistViewModel.getPlaylistInfo(playlist.playlistId)
-                    playlistViewModel.getPlaylistTrack(playlist.playlistId)
-                    navController.navigate(Screen.PlayListTrackList.route)
+                    navController.navigate(Screen.PlayListTrackList.route + "/${playlist.playlistId}")
                 },
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically) {
@@ -136,7 +143,11 @@ fun PlayListScreen(navController: NavHostController, playlistViewModel: Playlist
                     tint = CustomColors().Grey50,
                     modifier = Modifier
                         .size(24.dp)
-                        .clickable {}
+                        .clickable {
+                            // 플레이리스트 수정
+                            navController.navigate(Screen.PlayListTrackList.route + "/${playlist.playlistId}")
+                            navController.navigate(Screen.PlayListEdit.route + "/${playlist.playlistId}")
+                        }
                 )
                 Icon(
                     Icons.Rounded.Delete,
@@ -144,7 +155,11 @@ fun PlayListScreen(navController: NavHostController, playlistViewModel: Playlist
                     tint = CustomColors().Grey50,
                     modifier = Modifier
                         .size(24.dp)
-                        .clickable {}
+                        .clickable {
+                            // 플레이리스트 삭제
+                            playlistId = playlist.playlistId
+                            showDeletePlaylistDialog = true
+                        }
                 )
             }
         }
@@ -170,21 +185,39 @@ fun PlayListScreen(navController: NavHostController, playlistViewModel: Playlist
     }
 
     // CreatePlaylist Dialog
+    var playlistTitle by remember { mutableStateOf("") }
+    var playlistDescription by remember { mutableStateOf("") }
+    var playlistImage by remember { mutableStateOf<MultipartBody.Part?>(null) }
+
     if (showCreatePlaylistDialog) {
         AlertDialog(
             onDismissRequest = { showCreatePlaylistDialog = false },
             title = { Text(
-                text = "Create Playlist",
+                text = "플레이리스트 생성",
                 style = Typography.titleLarge,
                 color = CustomColors().Grey50,
             ) },
-            text = { CreatePlaylist() },
+            text = { CreatePlaylist(
+                onInputTitle = { playlistTitle = it},
+                onInputDescription = { playlistDescription = it },
+                onInputImage = {
+                    playlistImage = it
+                }
+            ) },
             modifier = Modifier
                 .fillMaxWidth()
                 .background(CustomColors().Grey950),
             confirmButton = {
                 Button(
-                    onClick = { showCreatePlaylistDialog = false },
+                    onClick = {
+                        coroutineScope.launch {
+                            playlistViewModel.createPlaylist(
+                                name = playlistTitle,
+                                description = playlistDescription,
+                                image = playlistImage
+                            )
+                            showCreatePlaylistDialog = false
+                        }},
                     colors = ButtonDefaults.buttonColors(
                         containerColor = CustomColors().Mint500,
                         contentColor = CustomColors().Grey950,
@@ -202,6 +235,38 @@ fun PlayListScreen(navController: NavHostController, playlistViewModel: Playlist
                     )
                 ) {
                     Text("취소", style = Typography.bodyLarge)
+                }
+            }
+        )
+    }
+    if (showDeletePlaylistDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeletePlaylistDialog = false },
+            title = { Text("플레이리스트 삭제") },
+            text = { Text("플레이리스트를 삭제하시겠습니까?") },
+            confirmButton = {
+                Button (
+                    onClick = {
+                        coroutineScope.launch {
+                            playlistViewModel.deletePlaylist(playlistId)
+                        }
+                        showDeletePlaylistDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CustomColors().Error700,
+                        contentColor = CustomColors().Grey950
+                    )
+                ) {
+                    Text("삭제")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showDeletePlaylistDialog = false },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CustomColors().Grey400,
+                        contentColor = CustomColors().Grey950
+                    )) {
+                    Text("취소")
                 }
             }
         )

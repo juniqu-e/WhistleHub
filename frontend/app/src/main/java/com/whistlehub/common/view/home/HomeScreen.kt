@@ -16,29 +16,47 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.whistlehub.common.view.copmonent.NewTrackCard
-import com.whistlehub.common.view.copmonent.TrackListRow
+import androidx.navigation.NavHostController
 import com.whistlehub.common.view.theme.Typography
+import com.whistlehub.common.view.track.NewTrackCard
+import com.whistlehub.common.view.track.TrackListRow
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 
 @OptIn(ExperimentalLayoutApi::class)
 @SuppressLint("StateFlowValueCalledInComposition")
 @Composable
-fun HomeScreen(paddingValues: PaddingValues) {
-    // ViewModel 초기화
-    val trackPlayViewModel = hiltViewModel<TrackPlayViewModel>()
+fun HomeScreen(
+    paddingValues: PaddingValues,
+    trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
+    navController: NavHostController
+) {
+    LaunchedEffect(Unit) {
+        trackPlayViewModel.getTempTrackList() // 트랙 리스트 가져오기
+    }
 
     // 트랙 리스트 UI
     val trackList by trackPlayViewModel.trackList.collectAsState(initial = emptyList())
 
     // 추천태그 리스트
-    val tags = listOf("Pop", "Rock", "Jazz", "Classical", "Hip-Hop", "Electronic", "Indie", "R&B", "Country", "Reggae") // 예시 태그 리스트
+    val tags = listOf(
+        "Pop",
+        "Rock",
+        "Jazz",
+        "Classical",
+        "Hip-Hop",
+        "Electronic",
+        "Indie",
+        "R&B",
+        "Country",
+        "Reggae"
+    ) // 예시 태그 리스트
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth(),
@@ -63,16 +81,18 @@ fun HomeScreen(paddingValues: PaddingValues) {
                 Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(trackList.size) { index ->
-                    NewTrackCard(trackList[index])
+                    NewTrackCard(trackList[index], trackPlayViewModel, navController)
                 }
             }
         }
 
         // 추천 태그
         item {
-            Column(modifier = Modifier
-                .fillMaxWidth()
-                .padding(10.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp)
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -103,11 +123,17 @@ fun HomeScreen(paddingValues: PaddingValues) {
         // 최근 들은 느낌의 음악
         item {
             Column {
-                Row(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("최근 들은 느낌의 음악", style = Typography.titleLarge, modifier = Modifier.weight(1f))
-                    Text("전체보기", style = Typography.bodyLarge, modifier = Modifier.clickable{
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        "최근 들은 느낌의 음악",
+                        style = Typography.titleLarge,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text("전체보기", style = Typography.bodyLarge, modifier = Modifier.clickable {
                         // TODO: 더보기 클릭 시 동작
                     }, textAlign = TextAlign.End)
                 }
@@ -118,11 +144,17 @@ fun HomeScreen(paddingValues: PaddingValues) {
         // 한번도 안 들어본 음악
         item {
             Column {
-                Row(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("한번도 안 들어본 음악", style = Typography.titleLarge, modifier = Modifier.weight(1f))
-                    Text("전체보기", style = Typography.bodyLarge, modifier = Modifier.clickable{
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        "한번도 안 들어본 음악",
+                        style = Typography.titleLarge,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text("전체보기", style = Typography.bodyLarge, modifier = Modifier.clickable {
                         // TODO: 더보기 클릭 시 동작
                     }, textAlign = TextAlign.End)
                 }

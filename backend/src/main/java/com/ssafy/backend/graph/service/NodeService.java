@@ -21,24 +21,24 @@ public class NodeService {
     final private MemberNodeRepository memberNodeRepository;
 
     @Transactional
-    public TrackNode createTrackNode(Integer id) {
+    public void createTrackNode(Integer id) {
         TrackNode trackNode = new TrackNode();
         trackNode.setId(id);
-        return trackNodeRepository.save(trackNode);
+        trackNodeRepository.save(trackNode);
     }
 
     @Transactional
-    public TagNode createTagNode(Integer id) {
+    public void createTagNode(Integer id) {
         TagNode tagNode = new TagNode();
         tagNode.setId(id);
-        return tagNodeRepository.save(tagNode);
+        tagNodeRepository.save(tagNode);
     }
 
     @Transactional
-    public MemberNode createMemberNode(Integer id) {
+    public void createMemberNode(Integer id) {
         MemberNode memberNode = new MemberNode();
         memberNode.setId(id);
-        return memberNodeRepository.save(memberNode);
+        memberNodeRepository.save(memberNode);
     }
 
     @Transactional

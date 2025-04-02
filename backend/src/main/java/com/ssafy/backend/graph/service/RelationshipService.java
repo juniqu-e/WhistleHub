@@ -22,21 +22,42 @@ public class RelationshipService {
     final private MemberNodeRepository memberNodeRepository;
     final private RelationshipRepository relationshipRepository;
 
+    /**
+     * (Track1)-[SIM]->(Track2)
+     * @param trackId1 track1
+     * @param trackId2 track2
+     * @param similarity 유사도 수치
+     */
     @Transactional
     public void createSimilarRelationship(Integer trackId1, Integer trackId2, Double similarity) {
         relationshipRepository.createSimilarRelationship(trackId1, trackId2, similarity);
     }
 
+    /**
+     * (Track)-[HAVE]->(Tag)
+     * @param trackId track
+     * @param tagId tag
+     */
     @Transactional
     public void createHaveRelationship(Integer trackId, Integer tagId) {
         relationshipRepository.createHaveRelationship(trackId, tagId);
     }
 
+    /**
+     * (Member)-[WRITE]->(Track)
+     * @param memberId member
+     * @param trackId track
+     */
     @Transactional
     public void createWriteRelationship(Integer memberId, Integer trackId) {
         relationshipRepository.createWriteRelationship(memberId, trackId);
     }
 
+    /**
+     * (Member)-[FOLLOW]->(Member)
+     * @param followerId from
+     * @param followingId to
+     */
     @Transactional
     public void createFollowRelationship(Integer followerId, Integer followingId) {
         memberNodeRepository.createFollowRelationship(followerId, followingId);

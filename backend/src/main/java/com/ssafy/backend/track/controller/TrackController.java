@@ -34,14 +34,13 @@ public class TrackController {
     @GetMapping()
     public ApiResponse<?> viewTrack(int trackId) {
         return new ApiResponse.builder<Object>()
-                .payload(trackService.viewTrack(trackId, authService.getMember().getId()))
+                .payload(trackService.viewTrack(trackId))
                 .build();
     }
 
     @PutMapping()
     public ApiResponse<?> updateTrack(@RequestBody TrackUpdateRequestDto trackUpdateRequestDto) {
-        System.out.println(trackUpdateRequestDto);
-        trackService.updateTrack(trackUpdateRequestDto, authService.getMember().getId());
+        trackService.updateTrack(trackUpdateRequestDto);
         return new ApiResponse.builder<Object>()
                 .payload(null)
                 .build();
@@ -67,8 +66,8 @@ public class TrackController {
         byte[] file = trackService.trackPlay(trackId);
         ByteArrayResource resource = new ByteArrayResource(file);
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("audio/mpeg"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"audio.mp3\"")
+                .contentType(MediaType.parseMediaType("audio/wav"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"audio.wav\"")
                 .body(resource);
     }
 
@@ -92,8 +91,8 @@ public class TrackController {
         byte[] file = trackService.layerPlay(layerId);
         ByteArrayResource resource = new ByteArrayResource(file);
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("audio/mpeg"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"audio.mp3\"")
+                .contentType(MediaType.parseMediaType("audio/wav"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"audio.wav\"")
                 .body(resource);
     }
 
@@ -149,13 +148,14 @@ public class TrackController {
                 .build();
     }
 
-    @GetMapping("/track")
+    @GetMapping("/search")
     public ApiResponse<?> getSearchTrack(String keyword,
                                    int page,
                                    int size,
-                                   @RequestParam("order-by") String orderBy) {
+                                   String orderBy) {
         return new ApiResponse.builder<Object>()
                 .payload(trackService.searchTrack(keyword, page, size, orderBy))
                 .build();
     }
+
 }

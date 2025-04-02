@@ -83,6 +83,60 @@ public class AuthService {
     }
 
     /**
+     * 인증절차를 제외하고 회원가입을 수행합니다.
+     *
+     * @param registerRequestDto 회원가입 요청 dto, 아이디, 비밀번호, 닉네임, 이메일, 생일, 성별을 받습니다.
+     * @return 회원가입 성공시 회원id 반환
+     */
+    @Transactional
+    public Integer sudoRegister(RegisterRequestDto registerRequestDto) {
+        String loginId = registerRequestDto.getLoginId();
+        String nickname = registerRequestDto.getNickname();
+        String email = registerRequestDto.getEmail();
+        String password = registerRequestDto.getPassword();
+        String birth = registerRequestDto.getBirth();
+        Character gender = registerRequestDto.getGender();
+        List<Integer> tagIdList = registerRequestDto.getTagList();
+        List<Tag> tagList = tagRepository.findAllById(tagIdList);
+
+        // DB데이터 체크 -> 조금더 구체적으로 에러 반환
+        // 중복 체크 loginId, nickname, email
+        if (checkDuplicatedId(loginId))
+            throw new DuplicateIdException();
+        if (checkDuplicatedNickname(nickname))
+            throw new DuplicateNicknameException();
+        if (checkDuplicatedEmail(email))
+            throw new DuplicateEmailException();
+
+        // 새 회원 등록
+        Member member = Member.builder()
+                .loginId(loginId)
+                .password(passwordEncoder.encode(password))
+                .nickname(nickname)
+                .email(email)
+                .enabled(true)
+                .birth(birth)
+                .gender(gender)
+                .build();
+
+        member = memberRepository.save(member);
+
+        // 그래프 DB에도 추가
+        // 회원 노드 생성
+        dataCollectingService.createMember(member.getId());
+
+        List<Integer> tagNodeIdList = new LinkedList<>();
+        for (Tag tag : tagList) {
+            tagNodeIdList.add(tag.getId());
+        }
+
+        // 태그 노드 연결
+        dataCollectingService.viewTags(member.getId(), tagNodeIdList, WeightType.LIKE);
+
+        return member.getId();
+    }
+
+    /**
      * 회원가입을 수행합니다.
      *
      * @param registerRequestDto 회원가입 요청 dto, 아이디, 비밀번호, 닉네임, 이메일, 생일, 성별을 받습니다.
@@ -325,6 +379,12 @@ public class AuthService {
         if (jwtUtil.isExpired(refreshToken)) {
             log.warn("refresh token is expired");
             throw new ExpiredRefreshTokenException();
+        }
+
+        // 토큰이 refresh 토큰인지 검증
+        if(jwtUtil.getKey(refreshToken, "refresh") == null) {
+            log.warn("refresh token is not refresh token");
+            throw new InvalidRefreshTokenException();
         }
 
         // refresh 토큰에서 loginId, id 추출

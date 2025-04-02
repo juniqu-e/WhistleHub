@@ -47,7 +47,7 @@ class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
                 .fillMaxWidth()
                 .height(50.dp)
                 .padding(0.dp)
-                .background(CustomColors().Grey700)
+                .background(Color.White)
         ) {
             Row(modifier = Modifier.align(Alignment.CenterStart)) {
                 IconButton(
@@ -60,6 +60,7 @@ class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
                         modifier = Modifier.fillMaxSize(),
                         imageVector = Icons.Default.PlayArrow,
                         contentDescription = "Play Track",
+                        tint = Color.Cyan
                     )
                 }
 
