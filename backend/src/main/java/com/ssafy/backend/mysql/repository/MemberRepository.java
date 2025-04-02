@@ -15,5 +15,5 @@ public interface MemberRepository extends JpaRepository<Member, Integer> {
 
     Member findByLoginId(String loginId);
 
-    List<Member> findByNicknameContaining(String nickname, PageRequest pageRequest);
+    List<Member> findByNicknameContainingAndIdNot(String nickname, Integer excludeMemberId, PageRequest pageRequest);
 }

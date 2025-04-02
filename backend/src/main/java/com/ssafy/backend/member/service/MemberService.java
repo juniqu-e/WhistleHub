@@ -168,8 +168,9 @@ public class MemberService {
      * @return 회원 정보 리스트
      */
     public List<MemberInfo> searchMember(String query, PageRequest pageRequest) {
+        Member myself = authService.getMember();
         // 회원 검색
-        List<Member> memberList = memberRepository.findByNicknameContaining(query, pageRequest);
+        List<Member> memberList = memberRepository.findByNicknameContainingAndIdNot(query, myself.getId(), pageRequest);
         List<MemberInfo> memberInfoList = new LinkedList<>();
         for (Member member : memberList) {
             MemberInfo memberInfo = MemberInfo.builder()
