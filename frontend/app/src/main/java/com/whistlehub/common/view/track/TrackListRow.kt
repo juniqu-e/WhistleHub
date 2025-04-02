@@ -11,12 +11,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.whistlehub.common.data.remote.dto.response.TrackResponse
+import com.whistlehub.playlist.data.TrackEssential
 
 @Composable
 fun TrackListRow(
     modifier: Modifier = Modifier,
-    trackList: List<TrackResponse.GetTrackDetailResponse>,
+    trackList: List<TrackEssential>,
 ) {
     if (trackList.isEmpty()) {
         return

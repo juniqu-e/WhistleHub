@@ -15,6 +15,7 @@ import com.whistlehub.common.data.local.room.UserRepository
 import com.whistlehub.common.data.remote.dto.request.TrackRequest
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.data.repository.TrackService
+import com.whistlehub.playlist.data.TrackEssential
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -44,8 +45,8 @@ class TrackPlayViewModel @Inject constructor(
 
     // 테스트용 트랙 리스트 (최종 API 연결 후 삭제)
     private val _trackList =
-        MutableStateFlow<List<TrackResponse.GetTrackDetailResponse>>(emptyList())
-    val trackList: StateFlow<List<TrackResponse.GetTrackDetailResponse>> get() = _trackList
+        MutableStateFlow<List<TrackEssential>>(emptyList())
+    val trackList: StateFlow<List<TrackEssential>> get() = _trackList
 
     // 현재 재생 중인 트랙
     private val _currentTrack = MutableStateFlow<TrackResponse.GetTrackDetailResponse?>(null)
@@ -61,8 +62,8 @@ class TrackPlayViewModel @Inject constructor(
 
     // 플레이어 내부 트랙 리스트
     private val _playerTrackList =
-        MutableStateFlow<List<TrackResponse.GetTrackDetailResponse>>(emptyList())
-    val playerTrackList: MutableStateFlow<List<TrackResponse.GetTrackDetailResponse>> get() = _playerTrackList
+        MutableStateFlow<List<TrackEssential>>(emptyList())
+    val playerTrackList: MutableStateFlow<List<TrackEssential>> get() = _playerTrackList
 
     // 현재 트랙 위치
     private val _playerPosition = MutableStateFlow(0L)
@@ -120,14 +121,22 @@ class TrackPlayViewModel @Inject constructor(
             viewModelScope.launch(Dispatchers.IO) {
                 val trackRequests = (1 until 7).map { trackId ->
                     async {
-                        val resopnse = trackService.getTrackDetail(trackId.toString())
-                        Log.d("TrackPlayViewModel", "트랙 ID: $trackId")
-                        Log.d("TrackPlayViewModel", "트랙 응답: $resopnse")
-                        resopnse
+                        val resopnse = trackService.getTrackDetail(trackId.toString()).payload
+                        if (resopnse == null) {
+                            Log.d("TrackPlayViewModel", "트랙 정보가 없습니다.")
+                            return@async null
+                        }
+                        val track = TrackEssential(
+                            trackId = resopnse.trackId,
+                            title = resopnse.title,
+                            artist = resopnse.artist?.nickname ?: "Unknown Artist",
+                            imageUrl = resopnse.imageUrl
+                        )
+                        track
                     } // 병렬 요청
                 }
                 val trackResults =
-                    trackRequests.awaitAll().mapNotNull { it.payload } // 모든 요청 완료 후 리스트 생성
+                    trackRequests.awaitAll().mapNotNull { it } // 모든 요청 완료 후 리스트 생성
 
                 withContext(Dispatchers.Main) {
                     _trackList.emit(trackResults)
@@ -186,7 +195,12 @@ class TrackPlayViewModel @Inject constructor(
                 // 플레이어 트랙 리스트 업데이트
                 val existingIndex = _playerTrackList.value.indexOfFirst { it.trackId == trackId }
                 if (existingIndex == -1) {
-                    _playerTrackList.value += track  // 현재 재생 목록 맨 뒤에 트랙 추가
+                    _playerTrackList.value += TrackEssential(
+                        trackId = track.trackId,
+                        title = track.title,
+                        artist = track.artist?.nickname ?: "Unknown Artist",
+                        imageUrl = track.imageUrl
+                    )  // 현재 재생 목록 맨 뒤에 트랙 추가
                 }
             }
         } catch (e: Exception) {
@@ -241,7 +255,7 @@ class TrackPlayViewModel @Inject constructor(
         }
     }
 
-    suspend fun playPlaylist(tracks: List<TrackResponse.GetTrackDetailResponse>) {
+    suspend fun playPlaylist(tracks: List<TrackEssential>) {
         // 플레이리스트 재생
         _playerTrackList.value = tracks
         playTrack(tracks[0].trackId)
@@ -427,6 +441,5 @@ fun byteArrayToUri(context: Context, byteArray: ByteArray): Uri? {
 enum class PlayerViewState {
     PLAYING,
     COMMENT,
-    PLAYLIST,
-    MORE
+    PLAYLIST
 }

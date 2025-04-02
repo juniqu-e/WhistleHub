@@ -1,17 +1,15 @@
 package com.whistlehub.search.view
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,20 +23,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import coil3.compose.AsyncImage
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
+import com.whistlehub.common.view.track.TrackItemRow
+import com.whistlehub.playlist.data.TrackEssential
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import com.whistlehub.search.view.discovery.DiscoveryView
 import com.whistlehub.search.viewmodel.SearchViewModel
@@ -46,13 +42,13 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun SearchScreen(
+    paddingValues: PaddingValues,
     navController: NavHostController,
-    searchViewModel: SearchViewModel = hiltViewModel(),
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
+    searchViewModel: SearchViewModel = hiltViewModel(),
 ) {
     val coroutineScope = rememberCoroutineScope()
-    val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
-    val isPlaying by trackPlayViewModel.isPlaying.collectAsState(initial = false)
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     var searchText by remember { mutableStateOf("") }
     var searchMode by remember { mutableStateOf(SearchMode.DISCOVERY) }  // 기본 탐색 모드
@@ -72,7 +68,7 @@ fun SearchScreen(
         "Folk"
     )
 
-    Column(Modifier.fillMaxWidth()) {
+    Column(Modifier.fillMaxSize()) {
         // 검색창
         TextField(
             value = searchText,
@@ -110,6 +106,7 @@ fun SearchScreen(
                     coroutineScope.launch {
                         searchViewModel.searchTracks(searchText)
                         searchMode = SearchMode.COMPLETE_SEARCH
+                        keyboardController?.hide()
                     }
                 }) {
                     Icon(
@@ -121,9 +118,15 @@ fun SearchScreen(
         )
         when (searchMode) {
             SearchMode.DISCOVERY -> {
-                DiscoveryView(tags, navController = navController)
+                Column(Modifier.weight(1f)) {
+                    DiscoveryView(
+                        Modifier.weight(1f),
+                        tags,
+                        navController = navController
+                    )
+                    Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
+                }
             }
-
             SearchMode.SEARCHING -> {}
             SearchMode.COMPLETE_SEARCH -> {
                 if (searchResult.isEmpty()) {
@@ -140,75 +143,18 @@ fun SearchScreen(
                 } else {
                     // 검색 결과를 보여주는 UI
                     // 임시 UI
-                    LazyColumn {
+                    LazyColumn(Modifier.weight(1f)) {
                         items(searchResult.size) { index ->
-                            val track = searchResult[index]
-                            Row(
-                                Modifier
-                                    .clickable {
-                                        if (currentTrack?.trackId != track.trackId) {
-                                            trackPlayViewModel.stopTrack()
-                                        }
-                                        coroutineScope.launch {
-                                            trackPlayViewModel.playTrack(track.trackId)
-                                        }
-                                    }
-                                    .fillMaxWidth()
-                                    .padding(10.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically) {
-                                AsyncImage(
-                                    model = track.imageUrl,
-                                    contentDescription = "Track Image",
-                                    modifier = Modifier
-                                        .size(50.dp)
-                                        .clip(RoundedCornerShape(5.dp)),
-                                    error = null,
-                                    contentScale = ContentScale.Crop
-                                )
-
-                                Column(
-                                    Modifier
-                                        .weight(1f)
-                                        .padding(horizontal = 10.dp)
-                                ) {
-                                    Text(
-                                        track.title,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        style = Typography.titleLarge,
-                                        color = CustomColors().Grey50
-                                    )
-                                    Text(
-                                        track.nickname,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        style = Typography.bodyMedium,
-                                        color = CustomColors().Grey200
-                                    )
-                                }
-
-                                if (currentTrack?.trackId == track.trackId && isPlaying) {
-                                    // Add current track specific UI here
-                                    IconButton({ trackPlayViewModel.pauseTrack() }) {
-                                        Icon(
-                                            Icons.Filled.Pause, contentDescription = "Pause", tint = CustomColors().Mint500
-                                        )
-                                    }
-                                } else {
-                                    IconButton({
-                                        coroutineScope.launch {
-                                            trackPlayViewModel.playTrack(track.trackId)
-                                        }
-                                    }) {
-                                        Icon(
-                                            Icons.Filled.PlayArrow,
-                                            contentDescription = "Play",
-                                            tint = CustomColors().Grey50
-                                        )
-                                    }
-                                }
-                            }
+                            val track = TrackEssential(
+                                trackId = searchResult[index].trackId,
+                                title = searchResult[index].title,
+                                artist = searchResult[index].nickname,
+                                imageUrl = searchResult[index].imageUrl,
+                            )
+                            TrackItemRow(track, trackPlayViewModel=trackPlayViewModel)
+                        }
+                        item {
+                            Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
                         }
                     }
                 }
