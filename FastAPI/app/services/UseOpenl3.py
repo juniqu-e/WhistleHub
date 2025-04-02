@@ -284,22 +284,27 @@ class OpenL3Service:
         if exclude_track_id is not None:
             expr = f"track_id != {exclude_track_id}"
         
+        # 충분한 결과를 얻기 위해 요청 limit보다 더 많은 결과를 가져옴
+        # distance=0인 항목이 있을 수 있으므로 여유있게 설정
+        search_limit = limit + 5
+        
         search_results = self.collection.search(
             data=[embedding],
             anns_field="embedding",
             param=search_params,
-            limit=limit,
+            limit=search_limit,
             output_fields=["track_id"],  # 트랙 ID도 함께 반환
             expr=expr,
         )
         
         # 결과 처리
         similar_embeddings = []
+        excluded_count = 0
+        
         if search_results and len(search_results) > 0:
             for hit in search_results[0]:
                 # entity 객체에서 track_id 필드 안전하게 추출
                 try:
-                    # PyMilvus 2.2.x 이상 버전
                     track_id = hit.entity["track_id"]
                 except (KeyError, TypeError):
                     try:
@@ -309,12 +314,22 @@ class OpenL3Service:
                         # 모든 방법이 실패하면 기본값 사용
                         track_id = -1
                 
+                # distance가 0인 경우(동일한 임베딩)는 결과에서 제외
+                if hit.distance == 0:
+                    excluded_count += 1
+                    continue
+                
                 similar_embeddings.append({
                     "id": hit.id,
                     "track_id": track_id,
                     "distance": hit.distance,
                 })
-            print(f"검색된 유사 임베딩 수: {len(similar_embeddings)}")
+                
+                # 원하는 개수만큼 결과를 얻으면 종료
+                if len(similar_embeddings) >= limit:
+                    break
+            
+            print(f"검색된 유사 임베딩 수: {len(similar_embeddings)} (제외된 동일 임베딩: {excluded_count}개)")
         else:
             print("유사한 임베딩을 찾지 못했습니다.")
         
