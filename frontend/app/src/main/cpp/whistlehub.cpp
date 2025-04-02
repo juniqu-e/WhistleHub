@@ -1,5 +1,6 @@
 #include <jni.h>
 #include "WhistleHubAudioEngine.h"
+#include "WavLoader.h"
 #include <android/log.h>
 
 #define LOG_TAG "whistlehub"
@@ -52,3 +53,33 @@ Java_com_whistlehub_MainActivity_stopAudioEngine(JNIEnv *env, jobject) {
 //    // 오디오 스트림 정지 및 종료 로직 구현
 //    return 0;
 //}
+extern "C"
+JNIEXPORT jint
+
+JNICALL
+Java_com_whistlehub_common_util_AudioEngineBridge_startAudioEngine(JNIEnv *env, jobject thiz) {
+    engine.startAudioStream();
+    return 0;
+}
+
+extern "C"
+JNIEXPORT jint
+
+JNICALL
+Java_com_whistlehub_common_util_AudioEngineBridge_stopAudioEngine(JNIEnv *env, jobject thiz) {
+    engine.stopAudioStream();
+    return 0;
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_whistlehub_common_util_AudioEngineBridge_sendLayerInfoToNative(JNIEnv *env, jobject thiz,
+                                                                        jobject layer_info) {
+    // TODO: implement sendLayerInfoToNative()
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_whistlehub_common_util_AudioEngineBridge_setLayers(JNIEnv *env, jobject thiz, jobject layers) {
+    std::vector<LayerAudioInfo> parsed = engine.parseLayerList(env, layers);
+    engine.setLayers(parsed);
+}

@@ -37,8 +37,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -50,11 +48,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.whistlehub.common.view.theme.Typography
@@ -64,90 +61,104 @@ import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkStationScreen(navController: NavController) {
+    val context = LocalContext.current
     val activity = LocalActivity.current as? Activity
     val viewModel: WorkStationViewModel = hiltViewModel()
     val tracks by viewModel.tracks.collectAsState()
     val verticalScrollState = rememberScrollState()
     val bottomBarActions = viewModel.bottomBarActions.copy(
+        onPlayedClicked = {
+            viewModel.onPlayClicked()
+        },
         onExitClicked = {
             navController.popBackStack()
             Log.d("Exit", "EXIT")
         }
     )
     val selectedLayerId = remember { mutableStateOf<Int?>(null) }
+    var showDialog by remember { mutableStateOf(false) }
     // Immersive mode (fullscreen)
-    LaunchedEffect(Unit) {
-        activity?.window?.let { window ->
-            val controller = WindowInsetsControllerCompat(window, window.decorView)
-            controller.hide(WindowInsetsCompat.Type.systemBars())
-            controller.systemBarsBehavior =
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
-    }
+//    LaunchedEffect(Unit) {
+//        activity?.window?.let { window ->
+//            val controller = WindowInsetsControllerCompat(window, window.decorView)
+//            controller.hide(WindowInsetsCompat.Type.systemBars())
+//            controller.systemBarsBehavior =
+//                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+//        }
+//    }
     // Restore system bars when leaving screen
-    DisposableEffect(Unit) {
-        onDispose {
-            activity?.window?.let { window ->
-                val controller = WindowInsetsControllerCompat(window, window.decorView)
-                controller.show(WindowInsetsCompat.Type.systemBars())
-            }
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.displayCutout)
-            .background(Color.Black)
-    ) {
-        //좌측 악기
-        Row(
+//    DisposableEffect(Unit) {
+//        onDispose {
+//            activity?.window?.let { window ->
+//                val controller = WindowInsetsControllerCompat(window, window.decorView)
+//                controller.show(WindowInsetsCompat.Type.systemBars())
+//            }
+//        }
+//    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
             modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
+                .fillMaxSize()
+//            .windowInsetsPadding(WindowInsets.displayCutout)
+                .background(Color.Black)
         ) {
-            LayerPanel(
-                tracks = tracks,
-                verticalScrollState = verticalScrollState,
-                modifier = Modifier.fillMaxWidth(),
-                onAddInstrument = {
-                    viewModel.addLayer()
-                },
-                onDeleteLayer = {
-                    viewModel.deleteLayer(it)
-                },
-                onResetLayer = {
-                    //믹싱 옵션 초기화
-                },
-                onBeatAdjustment = { layer ->
-//                    beatAdjustmentLayer = layer
-                    selectedLayerId.value = layer.id
-                }
-            )
-        }
-
-        viewModel.bottomBarProvider.WorkStationBottomBar(bottomBarActions)
-        val selectedLayer = tracks.firstOrNull { it.id == selectedLayerId.value }
-        selectedLayer?.let { layer ->
-            ModalBottomSheet(
+            //좌측 악기
+            Row(
                 modifier = Modifier
+                    .weight(1f)
                     .fillMaxWidth()
-                    .windowInsetsPadding(WindowInsets.displayCutout)
-                    .padding(horizontal = 16.dp),
-                onDismissRequest = { selectedLayerId.value = null }
             ) {
-                BeatAdjustmentPanel(
-                    layer = layer,
-                    onDismiss = { selectedLayerId.value = null },
-                    onGridClick = { index ->
-                        viewModel.toggleBeat(layer.id, index)
+                LayerPanel(
+                    tracks = tracks,
+                    verticalScrollState = verticalScrollState,
+                    modifier = Modifier.fillMaxWidth(),
+                    onAddInstrument = {
+                        showDialog = true
                     },
-                    onAutoRepeatApply = { start, interval ->
-                        viewModel.applyPatternAutoRepeat(selectedLayer.id, start, interval)
+                    onDeleteLayer = {
+                        viewModel.deleteLayer(it)
+                    },
+                    onResetLayer = {
+                        //믹싱 옵션 초기화
+                    },
+                    onBeatAdjustment = { layer ->
+//                    beatAdjustmentLayer = layer
+                        selectedLayerId.value = layer.id
+                    },
+                )
+
+                AddLayerDialog(
+                    context = context,
+                    showDialog = showDialog,
+                    onDismiss = { showDialog = false },
+                    onLayerAdded = { newLayer ->
+                        viewModel.addLayer(newLayer)
                     }
                 )
             }
-        }
+            val selectedLayer = tracks.firstOrNull { it.id == selectedLayerId.value }
+            selectedLayer?.let { layer ->
+                ModalBottomSheet(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .windowInsetsPadding(WindowInsets.displayCutout)
+                        .padding(horizontal = 16.dp),
+                    onDismissRequest = { selectedLayerId.value = null }
+                ) {
+                    BeatAdjustmentPanel(
+                        layer = layer,
+                        onDismiss = { selectedLayerId.value = null },
+                        onGridClick = { index ->
+                            viewModel.toggleBeat(layer.id, index)
+                            Log.d("WhistleHubAudioEngine", layer.patternBlocks.toString())
+                        },
+                        onAutoRepeatApply = { start, interval ->
+                            viewModel.applyPatternAutoRepeat(selectedLayer.id, start, interval)
+                            Log.d("WhistleHubAudioEngine", layer.patternBlocks.toString())
+                        }
+                    )
+                }
+            }
 //        // 박자 조정 바텀시트 표시
 //        if (beatAdjustmentLayer != null) {
 //            ModalBottomSheet(
@@ -166,7 +177,17 @@ fun WorkStationScreen(navController: NavController) {
 //                )
 //            }
 //        }
+        }
+        Box(
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            viewModel.bottomBarProvider.WorkStationBottomBar(
+                actions =
+                bottomBarActions
+            )
+        }
     }
+
 }
 
 @Composable
@@ -177,7 +198,7 @@ fun LayerPanel(
     onResetLayer: (Layer) -> Unit,
     onBeatAdjustment: (Layer) -> Unit,
     verticalScrollState: ScrollState,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Column(
         modifier = modifier
@@ -231,13 +252,12 @@ fun LayerItem(
     var menuExpanded by remember { mutableStateOf(false) }
 
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp), // 하드웨어 고려 살짝 줄이기 (양쪽 padding)
+            .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // 왼쪽 카테고리 박스
         Box(
             modifier = Modifier
                 .background(bgColor, RoundedCornerShape(6.dp))
@@ -245,59 +265,42 @@ fun LayerItem(
                 .padding(12.dp),
             contentAlignment = Alignment.Center
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = layer.name,
-                    color = Color.Black,
-                    fontSize = 14.sp
-                )
-            }
+            Text(text = layer.name, color = Color.Black, fontSize = 14.sp)
         }
-        //구분 패딩
+
         Spacer(modifier = Modifier.width(8.dp))
-        //오른쪽 레이어
+
         Row(
             modifier = Modifier
-                .height(80.dp)
+                .height(100.dp)
                 .weight(1f)
                 .background(bgColor, RoundedCornerShape(6.dp))
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = layer.name,
-                    style = Typography.bodyLarge,
-                    color = textColor
-                )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = layer.name, style = Typography.bodyLarge, color = textColor)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = layer.description,
-                    style = Typography.bodyMedium,
-                    color = textColor
-                )
+                Text(text = layer.description, style = Typography.bodyMedium, color = textColor)
+
+                Spacer(modifier = Modifier.height(6.dp))
             }
-            // 레이어 메뉴 버튼
-            Box() {
+
+            Box {
                 Icon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = "More Options",
                     tint = textColor,
                     modifier = Modifier
                         .size(24.dp)
-                        .clickable {
-                            menuExpanded = true
-                        }
+                        .clickable { menuExpanded = true }
                 )
 
                 DropdownMenu(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false }
                 ) {
-                    //마디 조정
                     DropdownMenuItem(
                         text = { Text("마디 조정") },
                         onClick = {
@@ -305,7 +308,6 @@ fun LayerItem(
                             onBeatAdjustment(layer)
                         }
                     )
-                    //삭제 이벤트
                     DropdownMenuItem(
                         text = { Text("레이어 삭제") },
                         onClick = {
@@ -313,7 +315,6 @@ fun LayerItem(
                             onDelete(layer)
                         }
                     )
-                    //초기화 이벤트
                     DropdownMenuItem(
                         text = { Text("믹싱 초기화") },
                         onClick = {

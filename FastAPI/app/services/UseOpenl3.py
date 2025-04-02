@@ -3,6 +3,8 @@ import openl3
 import numpy as np
 import soundfile as sf
 import os
+import subprocess
+import logging
 from pymilvus import (
     connections,
     FieldSchema,
@@ -12,6 +14,7 @@ from pymilvus import (
     utility
 )
 import config
+import utils
 
 class OpenL3Service:
     def __init__(self):
@@ -33,7 +36,7 @@ class OpenL3Service:
             FieldSchema(name="track_id", dtype=DataType.INT64),  # 외부에서 받은 트랙 ID를 저장할 필드
             FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=self.embedding_dim),
         ]
-        schema = CollectionSchema(fields, description="Music embeddings")
+        schema = CollectionSchema(fields, description="음악 임베딩")
         
         if not utility.has_collection(self.collection_name):
             self.collection = Collection(name=self.collection_name, schema=schema)
@@ -44,10 +47,10 @@ class OpenL3Service:
                 "params": {"nlist": 1024},
             }
             self.collection.create_index(field_name="embedding", index_params=index_params)
-            print(f"Collection '{self.collection_name}' created.")
+            print(f"컬렉션 '{self.collection_name}' 생성 완료.")
         else:
             self.collection = Collection(name=self.collection_name)
-            print(f"Collection '{self.collection_name}' loaded.")
+            print(f"컬렉션 '{self.collection_name}' 로드 완료.")
             
         self.collection.load()  # 메모리에 로드
     
@@ -62,10 +65,58 @@ class OpenL3Service:
             mean_embedding: 평균 임베딩 벡터
         """
         try:
-            # 오디오 파일 로드
-            audio, sr = sf.read(audio_path)
+            utils.log(f"오디오 파일 읽기 시도: {audio_path}", level=logging.DEBUG)
+            
+            # 파일 존재 및 내용 확인
+            if not os.path.exists(audio_path):
+                utils.log(f"파일이 존재하지 않음: {audio_path}", level=logging.ERROR)
+                return None
+                
+            file_size = os.path.getsize(audio_path)
+            if file_size == 0:
+                utils.log(f"파일이 비어있음: {audio_path}", level=logging.ERROR)
+                return None
+                
+            utils.log(f"파일 존재 확인 (크기: {file_size} 바이트)", level=logging.DEBUG)
+            
+            # 필요한 경우 오디오 파일을 표준 형식으로 변환
+            try:
+                # 직접 읽기 먼저 시도
+                audio, sr = sf.read(audio_path)
+                utils.log(f"오디오 파일 읽기 성공 (모양: {audio.shape}, 샘플레이트: {sr})", level=logging.DEBUG)
+            except Exception as direct_read_error:
+                # 직접 읽기 실패 시 ffmpeg로 변환 시도
+                utils.log(f"직접 읽기 실패: {str(direct_read_error)}. ffmpeg로 변환 시도 중.", level=logging.WARNING)
+                
+                # 변환된 오디오를 위한 임시 파일 생성
+                converted_path = f"{audio_path}_converted.wav"
+                try:
+                    # ffmpeg로 표준 WAV 형식으로 변환
+                    cmd = ["ffmpeg", "-y", "-i", audio_path, "-acodec", "pcm_s16le", "-ar", "44100", "-ac", "2", converted_path]
+                    utils.log(f"ffmpeg 명령어 실행: {' '.join(cmd)}", level=logging.DEBUG)
+                    
+                    result = subprocess.run(cmd, capture_output=True, text=True)
+                    if result.returncode != 0:
+                        utils.log(f"FFmpeg 변환 실패: {result.stderr}", level=logging.ERROR)
+                        return None
+                    
+                    # 변환된 파일 읽기
+                    audio_path = converted_path
+                    audio, sr = sf.read(audio_path)
+                    utils.log(f"변환된 오디오 읽기 성공 (모양: {audio.shape}, 샘플레이트: {sr})", level=logging.DEBUG)
+                except Exception as conversion_error:
+                    utils.log(f"변환 및 읽기 실패: {str(conversion_error)}", level=logging.ERROR)
+                    return None
+                finally:
+                    # 변환된 파일 존재 시 정리
+                    if os.path.exists(converted_path):
+                        try:
+                            os.remove(converted_path)
+                        except:
+                            pass
             
             # OpenL3 임베딩 추출
+            utils.log(f"OpenL3 임베딩 추출 중...", level=logging.DEBUG)
             emb, ts = openl3.get_audio_embedding(
                 audio,
                 sr,
@@ -76,10 +127,13 @@ class OpenL3Service:
             
             # 평균 임베딩 계산
             mean_emb = np.mean(emb, axis=0)
+            utils.log(f"임베딩 추출 성공 (모양: {emb.shape})", level=logging.DEBUG)
             
             return mean_emb
         except Exception as e:
-            print(f"Error extracting embedding: {e}")
+            utils.log(f"임베딩 추출 오류: {str(e)}", level=logging.ERROR)
+            import traceback
+            utils.log(traceback.format_exc(), level=logging.ERROR)
             return None
     
     def store_embedding(self, embedding, track_id=None):
@@ -121,7 +175,7 @@ class OpenL3Service:
                 return insert_result.primary_keys[0]
             return None
         except Exception as e:
-            print(f"Error storing embedding: {e}")
+            print(f"임베딩 저장 오류: {e}")
             return None
     
     def process_audio_file(self, file_path, track_id=None):
@@ -265,7 +319,7 @@ class OpenL3Service:
             print("유사한 임베딩을 찾지 못했습니다.")
         
         return similar_embeddings
-    
+
 # 사용 예시
 if __name__ == "__main__":
     # 서비스 인스턴스 생성
@@ -282,4 +336,7 @@ if __name__ == "__main__":
             similar = openl3_service.find_similar_by_id(embedding_id)
             print("유사한 임베딩:")
             for item in similar:
-                print(f"- ID: {item['id']}, 거리: {item['distance']}")
+                print(f"- 트랙 ID: {item['track_id']}, 거리: {item['distance']}")
+
+# 다른 모듈에서 import할 수 있도록 모듈 레벨에 인스턴스 생성
+openl3_service = OpenL3Service()

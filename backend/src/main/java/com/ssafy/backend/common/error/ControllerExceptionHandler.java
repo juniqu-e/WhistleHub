@@ -3,6 +3,7 @@ package com.ssafy.backend.common.error;
 import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.common.error.exception.*;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  */
 
 @RestControllerAdvice
+@Slf4j
 public class ControllerExceptionHandler {
     @ExceptionHandler(NotFoundPageException.class)
     public ApiResponse<?> notFoundPageHandler(NotFoundPageException e) {
@@ -220,10 +222,17 @@ public class ControllerExceptionHandler {
                 .build();
     }
 
+    @ExceptionHandler(S3FileException.class)
+    public ApiResponse<?> s3FileExceptionHandler(S3FileException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.S3_ERROR)
+                .build();
+    }
+
     // 이외의 정의되지 않은 서버 에러처리
     @ExceptionHandler(Exception.class)
     public ApiResponse<?> serverErrorHandler(Exception e) {
-        e.printStackTrace();
+        log.error(e.getMessage(), e);
         return new ApiResponse.builder<Object>()
                 .errorStatus(ResponseType.SERVER_ERROR)
                 .build();

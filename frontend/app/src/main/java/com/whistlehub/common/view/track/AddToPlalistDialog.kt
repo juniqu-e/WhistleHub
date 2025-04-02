@@ -40,11 +40,9 @@ import com.whistlehub.playlist.viewmodel.PlaylistViewModel
 fun AddToPlaylistDialog(
     playlistViewModel: PlaylistViewModel = hiltViewModel(),
     onPlaylistSelect: (Int) -> Unit = {},
+    onCreatePlaylist: () -> Unit = {}
 ) {
     // Playlist에 추가하는 다이얼로그 UI
-
-    // 플레이리스트 목록 가져오기
-    playlistViewModel.getPlaylists() // 최신화
     val myPlaylists by playlistViewModel.playlists.collectAsState()
     var selectedPlaylist by remember { mutableStateOf(PlaylistResponse.GetMemberPlaylistsResponse(
         playlistId = 0,
@@ -98,7 +96,9 @@ fun AddToPlaylistDialog(
                 textAlign = TextAlign.Center
             )
         }
-        Button({}, modifier = Modifier.border(1.dp, CustomColors().Mint500, RoundedCornerShape(10.dp)),
+        Button({
+            onCreatePlaylist()
+        }, modifier = Modifier.border(1.dp, CustomColors().Mint500, RoundedCornerShape(10.dp)),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Transparent,
                 contentColor = CustomColors().Mint500

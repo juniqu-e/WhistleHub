@@ -1,7 +1,10 @@
 package com.whistlehub.common.view.navigation
 
+import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -9,17 +12,30 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.common.view.AppScaffold
 import com.whistlehub.common.view.login.LoginScreen
 import com.whistlehub.common.view.signup.SelectTagsScreen
 import com.whistlehub.common.view.signup.SignUpScreen
+import com.whistlehub.common.viewmodel.LoginViewModel
+import com.whistlehub.common.viewmodel.SignUpState
 import com.whistlehub.common.viewmodel.SignUpViewModel
 
 /**
  * 앱의 전체 네비게이션 구조를 처리하는 메인 네비게이션 그래프
  */
 @Composable
-fun MainNavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
+fun MainNavGraph(
+    navController: NavHostController,
+    logoutManager: LogoutManager,
+    modifier: Modifier = Modifier
+) {
+    // LogoutHandler가 LogoutManager의 logoutEventFlow를 구독하도록 함
+    LogoutHandler(
+        navController = navController,
+        logoutManager = logoutManager
+    )
+
     NavHost(
         navController = navController,
         startDestination = "login",
@@ -40,7 +56,8 @@ fun MainNavGraph(navController: NavHostController, modifier: Modifier = Modifier
                         popUpTo("login") { inclusive = true }
                     }
 
-                }
+                },
+                navController = navController
             )
         }
         // 회원가입 정보 화면
@@ -48,8 +65,8 @@ fun MainNavGraph(navController: NavHostController, modifier: Modifier = Modifier
             SignUpScreen(
                 onNext = {
                     // 태그 선택 화면으로 전환
-                    userId, password, nickname, email, gender, birth ->
-                    navController.navigate("selectTags/$userId/$password/$nickname/$email/$gender/$birth")
+                    userId, password, email, nickname, gender, birth ->
+                    navController.navigate("selecttags/$userId/$password/$email/$nickname/$gender/$birth")
                 },
                 onLoginClick = {
                     // 로그인 화면으로 이동
@@ -61,7 +78,7 @@ fun MainNavGraph(navController: NavHostController, modifier: Modifier = Modifier
         }
 
         composable(
-            route = "select_tags?userId={userId}&password={password}&email={email}&nickname={nickname}&gender={gender}&birth={birth}",
+            route = "selecttags/{userId}/{password}/{email}/{nickname}/{gender}/{birth}",
             arguments = listOf(
                 navArgument("userId") { type = NavType.StringType },
                 navArgument("password") { type = NavType.StringType },
@@ -89,27 +106,23 @@ fun MainNavGraph(navController: NavHostController, modifier: Modifier = Modifier
                 gender = genderString.first(), // genderString는 "M" 또는 "F"
                 birth = birth,
                 onStartClick = { selectedTags ->
-                    // 태그 선택 후 회원가입 API 호출
-                    signUpViewModel.register(
-                        loginId = userId,
-                        password = password,
-                        email = email,
-                        nickname = nickname,
-                        birth = birth,
-                        gender = genderString.first(),
-                        tags = selectedTags
-                    ) {
-                        // 회원가입 성공 시 메인 화면으로 이동
-                        navController.navigate("main") {
-                            popUpTo("signup") { inclusive = true }
-                        }
+                    // onSuccess 콜백 회원가입 성공 시 메인 화면으로 이동
+                    navController.navigate("main") {
+                        popUpTo(navController.graph.id) { inclusive = true }
                     }
+                },
+                onBackClick = {
+                    // 뒤로가기 버튼 클릭 시 이전 화면으로 돌아감
+                    navController.popBackStack()
                 }
             )
         }
         //휘슬허브 메인 화면들
         composable("main") {
-            MainScreenWithBottomNav(navController)
+            MainScreenWithBottomNav(
+                navController,
+                logoutManager = logoutManager
+            )
         }
     }
 }
@@ -118,9 +131,20 @@ fun MainNavGraph(navController: NavHostController, modifier: Modifier = Modifier
  * 메인 앱 콘텐츠와 하단 네비게이션이 포함된 화면
  */
 @Composable
-fun MainScreenWithBottomNav(navController: NavHostController) {
-    // 새로운 내부 네비게이션 컨트롤러 생성
+fun MainScreenWithBottomNav(
+    navController: NavHostController,
+    logoutManager: LogoutManager
+) {
     val newNavController = rememberNavController()
+    // 새로운 내부 네비게이션 컨트롤러 생성
+    LaunchedEffect(key1 = logoutManager.logoutEventFlow) {
+        logoutManager.logoutEventFlow.collect {
+            // inner navController의 백스택을 초기화하고 로그인 화면으로 이동
+            newNavController.navigate("login") {
+                popUpTo(newNavController.graph.id) { inclusive = true }
+            }
+        }
+    }
     AppScaffold(
         navController = newNavController,
         bottomBar = {
@@ -129,8 +153,8 @@ fun MainScreenWithBottomNav(navController: NavHostController) {
     ) { paddingValues ->
         AppContentNavGraph(
             navController = newNavController,
+            logoutManager = logoutManager,
             paddingValues = paddingValues,
-            originNavController = navController // 기존 컨트롤러는 로그아웃 시 사용하기 위해 전달
         )
     }
 }

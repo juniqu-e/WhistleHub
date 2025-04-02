@@ -5,8 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.whistlehub.common.view.copmonent.TrackListColumn
 import com.whistlehub.common.view.theme.CustomColors
+import com.whistlehub.common.view.track.TrackListColumn
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 
 @Composable

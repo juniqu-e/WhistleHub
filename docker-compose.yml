@@ -17,17 +17,26 @@ services:
       - "${FAST_API_PORT}:${FAST_API_PORT}"
     volumes:
       - FastAPI_log:/FastAPI/log
+      - audio_files:/shared_audio
     networks:
       - app_network
       - nginx_net
 
-  # CeleryWorker:
-  #   build:
-  #     context: ./FastAPI
-  #     dockerfile: Dockerfile
-  #   command: celery -A celery_app.celery_app worker --loglevel info --pool=solo
-  #   networks:
-  #     - app_network
+  celeryworker:
+    profiles: [fastapi, deploy]
+    build:
+      context: ./FastAPI
+      dockerfile: Dockerfile
+    env_file:
+      - ./envs/FastAPI.env
+    command: celery -A app.celery_app:app worker --loglevel info --pool=solo
+    networks:
+      - app_network
+    volumes:
+      - audio_files:/shared_audio
+    depends_on: # Redis가 준비된 후 시작하도록 의존성 추가 (권장)
+      redis:
+        condition: service_healthy
 
   backend:
     profiles: [backend, deploy]
@@ -186,6 +195,7 @@ services:
 
 volumes:
   FastAPI_log:
+  audio_files:
 
 networks:
   app_network:

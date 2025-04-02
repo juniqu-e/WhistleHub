@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,6 +37,7 @@ import com.whistlehub.R
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun MiniPlayerBar(
@@ -46,6 +48,7 @@ fun MiniPlayerBar(
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
     val isPlaying by trackPlayViewModel.isPlaying.collectAsState(initial = false)
 
+    val coroutineScope = rememberCoroutineScope()
     // 미니 플레이어 바 클릭 시 전체 트랙 플레이어 화면으로 이동
     Column(
         modifier = Modifier
@@ -96,14 +99,16 @@ fun MiniPlayerBar(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = currentTrack?.artistInfo?.nickname ?: "Unknown Album",
+                    text = currentTrack?.artist?.nickname ?: "Unknown Artist",
                     style = Typography.bodyLarge,
                     color = CustomColors().Grey400,
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 IconButton(onClick = {
-                    trackPlayViewModel.previousTrack()
+                    coroutineScope.launch {
+                        trackPlayViewModel.previousTrack()
+                    }
                 }) {
                     Icon(
                         imageVector = Icons.Rounded.FastRewind,
@@ -117,8 +122,10 @@ fun MiniPlayerBar(
                             trackPlayViewModel.pauseTrack()
                         } else {
                             if (currentTrack == null && trackPlayViewModel.playerTrackList.value.isNotEmpty()) {
-                                // 트랙이 없을 경우 첫 번째 트랙 재생
-                                trackPlayViewModel.playTrack(trackPlayViewModel.playerTrackList.value[0])
+                                coroutineScope.launch {
+                                    // 트랙이 없을 경우 첫 번째 트랙 재생
+                                    trackPlayViewModel.playTrack(trackPlayViewModel.playerTrackList.value[0].trackId)
+                                }
                             } else if (currentTrack != null) {
                                 trackPlayViewModel.resumeTrack()
                             }
@@ -131,7 +138,9 @@ fun MiniPlayerBar(
                     )
                 }
                 IconButton(onClick = {
-                    trackPlayViewModel.nextTrack()
+                    coroutineScope.launch {
+                        trackPlayViewModel.nextTrack()
+                    }
                 }) {
                     Icon(
                         imageVector = Icons.Rounded.FastForward,

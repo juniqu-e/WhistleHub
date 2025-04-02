@@ -19,11 +19,13 @@ sealed class WorkstationRequest {
         val importedLayers: List<ImportedLayer>,
         val newLayers: List<NewLayer>
     )
+
     // 불러온 레이어
     data class ImportedLayer(
         val layerId: Int,
         val modification: JsonObject
     )
+
     // 생성한 레이어
     data class NewLayer(
         val layerName: String,
@@ -31,9 +33,14 @@ sealed class WorkstationRequest {
         val modification: JsonObject,
         val layerFileId: Int?
     )
+
     // 트랙 임포트
     data class ImportTrackRequest(
         val trackId: Int,
-        val layerIds: List<Int>
     )
+
+//    data class ImportTrackRequest(
+//        val trackId: Int,
+//        val layerIds: List<Int>
+//    )
 }

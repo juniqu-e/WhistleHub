@@ -49,6 +49,21 @@ public class AuthController {
     }
 
     /**
+     * (테스트용) 인증이 없는 회원가입을 수행합니다.
+     *
+     * @param registerRequestDto 회원가입 요청 dto
+     * @return 회원가입 성공시 회원id 반환
+     */
+    @PostMapping("/sudo/register")
+    public ApiResponse<?> sudoRegister(@RequestBody RegisterRequestDto registerRequestDto) {
+        Integer result = authService.register(registerRequestDto);
+
+        return new ApiResponse.builder<Integer>()
+                .payload(result)
+                .build();
+    }
+
+    /**
      * 중복된 아이디가 DB에 있는지 확인합니다.
      *
      * @param loginId 중복 체크할 아이디
