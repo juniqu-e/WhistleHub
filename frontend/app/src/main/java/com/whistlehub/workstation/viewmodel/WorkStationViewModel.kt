@@ -6,8 +6,17 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.whistlehub.common.data.remote.dto.request.TrackRequest
+import com.whistlehub.common.data.remote.dto.request.WorkstationRequest
+import com.whistlehub.common.data.remote.dto.response.ApiResponse
+import com.whistlehub.common.data.remote.dto.response.TrackResponse
+import com.whistlehub.common.data.remote.dto.response.WorkstationResponse
+import com.whistlehub.common.data.repository.TrackService
+import com.whistlehub.common.data.repository.WorkstationService
 import com.whistlehub.common.util.AudioEngineBridge.setLayers
 import com.whistlehub.common.util.AudioEngineBridge.startAudioEngine
+import com.whistlehub.common.util.downloadWavFromS3Url
 import com.whistlehub.workstation.data.BottomBarActions
 import com.whistlehub.workstation.data.InstrumentType
 import com.whistlehub.workstation.data.Layer
@@ -20,21 +29,28 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
+import kotlinx.coroutines.launch
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
 class WorkStationViewModel @Inject constructor(
     val bottomBarProvider: WorkStationBottomBarProvider,
-    private val audioLayerPlayer: AudioLayerPlayer
+    private val audioLayerPlayer: AudioLayerPlayer,
+    private val trackService: TrackService,
+    private val workstationService: WorkstationService,
 ) : ViewModel() {
     private val _tracks = MutableStateFlow<List<Layer>>(emptyList())
     val tracks: StateFlow<List<Layer>> = _tracks.asStateFlow()
     private val _nextId = mutableIntStateOf(1)
     private val _wavPathMap = mutableStateOf<Map<Int, String>>(emptyMap())
     val wavPathMap: State<Map<Int, String>> get() = _wavPathMap
+    private val _searchTrackResults =
+        mutableStateOf<ApiResponse<List<TrackResponse.SearchTrack>>?>(null);
+    val searchTrackResults: State<ApiResponse<List<TrackResponse.SearchTrack>>?> get() = _searchTrackResults;
+    private val _layersOfSearchTrack =
+        mutableStateOf<ApiResponse<WorkstationResponse.ImportTrackResponse>?>(null);
+    val layersOfSearchTrack: State<ApiResponse<WorkstationResponse.ImportTrackResponse>?> get() = _layersOfSearchTrack;
 
     fun addLayerByInstrument(type: InstrumentType) {
         val newId = (_tracks.value.maxOfOrNull { it.id } ?: 0) + 1
@@ -110,6 +126,47 @@ class WorkStationViewModel @Inject constructor(
 
                 layer.copy(patternBlocks = blocks)
             } else layer
+        }
+    }
+
+    fun searchTrack(request: TrackRequest.SearchTrackRequest) {
+        viewModelScope.launch {
+            try {
+                val results = trackService.searchTracks(request);
+                _searchTrackResults.value = results;
+                Log.d("Search", results.toString());
+            } catch (e: Exception) {
+                Log.d("Search", "검색 오류 ${e.message}");
+            }
+        }
+    }
+
+    fun addLayerFromSearchTrack(request: WorkstationRequest.ImportTrackRequest, context: Context) {
+        viewModelScope.launch {
+            try {
+                val results = workstationService.importTrack(request);
+//                _layersOfSearchTrack.value = results;
+                val payload = results.payload ?: return@launch
+                val layers = payload.layers.map { layerRes ->
+                    val s3Url = layerRes.soundUrl
+                    val fileName = "layer_${UUID.randomUUID()}.mp3"
+                    val localFile = downloadWavFromS3Url(context, s3Url, fileName)
+                    Log.d("Search", "불러온 레이어 수: $localFile")
+                    Layer(
+                        id = layerRes.layerId,
+                        name = layerRes.name,
+                        description = "Imported from ${payload.title}",
+                        category = layerRes.instrumentType.toString(),
+                        colorHex = "#BDBDBD",
+                        length = 4,
+//                        wavPath = localFile.absolutePath
+                    )
+                }
+                _tracks.value += layers
+                Log.d("Search", "불러온 레이어 수: ${layers.size}")
+            } catch (e: Exception) {
+                Log.d("Search", "Layer 오류 ${e.message}");
+            }
         }
     }
 

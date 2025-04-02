@@ -1,7 +1,6 @@
 package com.whistlehub.common.view
 
 import android.app.Activity
-import android.content.pm.ActivityInfo
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -31,23 +30,26 @@ fun AppScaffold(
     val activity = context as? Activity
     // 화면 방향 처리
     LaunchedEffect(currentRoute) {
-        if (currentRoute == Screen.DAW.route) {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        } else {
-            //세로 고정
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        }
+//        if (currentRoute == Screen.DAW.route) {
+//            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+//        } else {
+//            //세로 고정
+//            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+//        }
     }
 
     Scaffold(
         modifier = Modifier
-            .fillMaxSize()
-            .then(
-                if (currentRoute != Screen.DAW.route)
-                    Modifier.systemBarsPadding() else Modifier
-            ),
+            .fillMaxSize().systemBarsPadding(),
+//            .then(
+//                if (currentRoute != Screen.DAW.route)
+//                    Modifier.systemBarsPadding() else Modifier
+//            ),
         bottomBar = {
-            if (currentRoute != "login" && currentRoute != Screen.DAW.route) {
+//            if (currentRoute != "login" && currentRoute != Screen.DAW.route) {
+//                bottomBar()
+//            }
+            if (currentRoute != "login") {
                 bottomBar()
             }
         },

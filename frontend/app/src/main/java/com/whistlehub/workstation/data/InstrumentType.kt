@@ -1,8 +1,11 @@
 package com.whistlehub.workstation.data
 
-enum class InstrumentType(val label: String, val assetFolder: String) {
-    DRUM("Drum", "drum"),
-    BASS("Bass", "bass"),
-    SYNTH("Synth", "synth"),
-    FX("FX", "fx")
+import androidx.compose.ui.graphics.Color
+
+enum class InstrumentType(val label: String, val assetFolder: String, val hexColor: Color) {
+    DRUM("DRUM", "drum", Color(0xFFFFEE58)),
+    BASS("BASS", "bass", Color(0xFF9575CD)),
+    GUITAR("GUITAR", "guitar", Color(0xFFFFAF4D)),
+    SYNTH("SYNTH", "synth", Color(0xFFBDBDBD)),
+    SEARCH("SEARCH", "", Color(0xFF80CBC4))
 }

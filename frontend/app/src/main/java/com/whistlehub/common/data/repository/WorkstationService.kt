@@ -14,13 +14,11 @@ import javax.inject.Singleton
 워크스테이션 관련 API 호출을 담당하는 서비스 클래스
 ---------------------------------------------
  **/
-
 @Singleton
 class WorkstationService @Inject constructor(
     private val workstationApi: WorkstationApi,
     private val tokenRefresh: TokenRefresh
 ) : ApiRepository() {
-
     // 트랙 업로드
     suspend fun uploadTrack(
         request: WorkstationRequest.UploadTrackRequest
@@ -37,10 +35,12 @@ class WorkstationService @Inject constructor(
 
     // 트랙 임포트
     suspend fun importTrack(
-        trackId: Int,
-        layerIds: List<Int>
+        request: WorkstationRequest.ImportTrackRequest
     ): ApiResponse<WorkstationResponse.ImportTrackResponse> {
-        val request = WorkstationRequest.ImportTrackRequest(trackId, layerIds)
-        return tokenRefresh.execute { workstationApi.importTrack(request) }
+        return tokenRefresh.execute {
+            workstationApi.importTrack(
+                trackId = request.trackId
+            )
+        }
     }
 }
