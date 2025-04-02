@@ -1,7 +1,6 @@
 package com.whistlehub.common.view
 
 import android.app.Activity
-import android.content.pm.ActivityInfo
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -41,13 +40,16 @@ fun AppScaffold(
 
     Scaffold(
         modifier = Modifier
-            .fillMaxSize()
-            .then(
-                if (currentRoute != Screen.DAW.route)
-                    Modifier.systemBarsPadding() else Modifier
-            ),
+            .fillMaxSize().systemBarsPadding(),
+//            .then(
+//                if (currentRoute != Screen.DAW.route)
+//                    Modifier.systemBarsPadding() else Modifier
+//            ),
         bottomBar = {
-            if (currentRoute != "login" && currentRoute != Screen.DAW.route) {
+//            if (currentRoute != "login" && currentRoute != Screen.DAW.route) {
+//                bottomBar()
+//            }
+            if (currentRoute != "login") {
                 bottomBar()
             }
         },
