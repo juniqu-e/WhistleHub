@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,20 +54,11 @@ fun SearchScreen(
     var searchText by remember { mutableStateOf("") }
     var searchMode by remember { mutableStateOf(SearchMode.DISCOVERY) }  // 기본 탐색 모드
     val searchResult by searchViewModel.searchResult.collectAsState()
+    val tagList by searchViewModel.tagList.collectAsState()
 
-    // 임시 추천 태그
-    val tags = listOf(
-        "Pop",
-        "Rock",
-        "Hip-Hop",
-        "R&B",
-        "Jazz",
-        "Classical",
-        "Electronic",
-        "Reggae",
-        "Country",
-        "Folk"
-    )
+    LaunchedEffect(Unit) {
+        searchViewModel.recommendTag()
+    }
 
     Column(Modifier.fillMaxSize()) {
         // 검색창
@@ -121,12 +113,13 @@ fun SearchScreen(
                 Column(Modifier.weight(1f)) {
                     DiscoveryView(
                         Modifier.weight(1f),
-                        tags,
+                        tagList,
                         navController = navController
                     )
                     Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
                 }
             }
+
             SearchMode.SEARCHING -> {}
             SearchMode.COMPLETE_SEARCH -> {
                 if (searchResult.isEmpty()) {
@@ -151,7 +144,7 @@ fun SearchScreen(
                                 artist = searchResult[index].nickname,
                                 imageUrl = searchResult[index].imageUrl,
                             )
-                            TrackItemRow(track, trackPlayViewModel=trackPlayViewModel)
+                            TrackItemRow(track, trackPlayViewModel = trackPlayViewModel)
                         }
                         item {
                             Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
