@@ -12,7 +12,6 @@ import java.util.List;
 @Repository
 public interface FollowRepository extends JpaRepository<Follow, Integer> {
     Optional<Follow> findByFromMemberIdAndToMemberId(int followerId, int followingId);
-    void deleteByFromMemberIdAndToMemberId(int followerId, int followingId);
     List<Follow> findByFromMemberId(int memberId, PageRequest pageRequest);
     List<Follow> findByToMemberId(int memberId, PageRequest pageRequest);
 

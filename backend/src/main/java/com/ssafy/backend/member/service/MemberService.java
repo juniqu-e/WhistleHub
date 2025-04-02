@@ -168,8 +168,9 @@ public class MemberService {
      * @return 회원 정보 리스트
      */
     public List<MemberInfo> searchMember(String query, PageRequest pageRequest) {
+        Member myself = authService.getMember();
         // 회원 검색
-        List<Member> memberList = memberRepository.findByNicknameContaining(query, pageRequest);
+        List<Member> memberList = memberRepository.findByNicknameContainingAndIdNot(query, myself.getId(), pageRequest);
         List<MemberInfo> memberInfoList = new LinkedList<>();
         for (Member member : memberList) {
             MemberInfo memberInfo = MemberInfo.builder()
@@ -281,22 +282,24 @@ public class MemberService {
                 });
 
         if (followRequest) { // 팔로우 신청 요청인경우,
-            if (followRepository.findByFromMemberIdAndToMemberId(member.getId(), targetMember.getId()).isPresent()) {
+            followRepository.findByFromMemberIdAndToMemberId(member.getId(), targetMember.getId()).ifPresent(follow -> {
                 log.warn("이미 팔로우 신청한 회원입니다. memberId : {}", requestFollowRequestDto.getMemberId());
                 throw new DuplicateFollowRequestException();
-            }
-            Follow follow = new Follow();
-            follow.setFromMember(member);
-            follow.setToMember(targetMember);
+            });
+
+            Follow follow = Follow.builder()
+                    .fromMember(member)
+                    .toMember(targetMember)
+                    .build();
 
             followRepository.save(follow);
         } else { // 팔로우 취소 요청인 경우,
-            if (followRepository.findByFromMemberIdAndToMemberId(member.getId(), targetMember.getId()).isEmpty()) {
+            Follow follow = followRepository.findByFromMemberIdAndToMemberId(member.getId(), targetMember.getId()).orElseThrow(()->{
                 log.warn("팔로우 신청하지 않은 회원입니다. memberId : {}", requestFollowRequestDto.getMemberId());
-                throw new DuplicateFollowRequestException();
-            }
+                return new DuplicateFollowRequestException();
+            });
 
-            followRepository.deleteByFromMemberIdAndToMemberId(member.getId(), targetMember.getId());
+            followRepository.delete(follow);
         }
     }
 
