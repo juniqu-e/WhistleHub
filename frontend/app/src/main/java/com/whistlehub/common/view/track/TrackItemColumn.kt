@@ -1,4 +1,4 @@
-package com.whistlehub.common.view.copmonent
+package com.whistlehub.common.view.track
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -35,7 +35,7 @@ fun TrackItemColumn(
             .fillMaxWidth()
             .clickable {
                 coroutineScope.launch {
-                    trackPlayViewModel.playTrack(track)
+                    trackPlayViewModel.playTrack(track.trackId)
                 }
             }, verticalArrangement = Arrangement.Top, horizontalAlignment = Alignment.Start
     ) {

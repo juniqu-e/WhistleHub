@@ -39,7 +39,7 @@ class PlaylistViewModel @Inject constructor(
             if (user == null) {
                 Log.d("warning", "User not found, using default ID 1")
             }
-            val playlistResponse = playlistService.getMemberPlaylists(user?.memberId ?: 1, 0, 10) // 페이지는 0번부터
+            val playlistResponse = playlistService.getMemberPlaylists(user?.memberId ?: 0, 0, 10) // 페이지는 0번부터
 
             withContext(Dispatchers.Main) {
                 _playlists.emit(playlistResponse.payload ?: emptyList())

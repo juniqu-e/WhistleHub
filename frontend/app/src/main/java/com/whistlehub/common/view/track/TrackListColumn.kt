@@ -1,4 +1,4 @@
-package com.whistlehub.common.view.copmonent
+package com.whistlehub.common.view.track
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
