@@ -111,7 +111,8 @@ fun WorkStationScreen(
             onDismiss = { showDialog = false },
             onLayerAdded = { newLayer ->
                 viewModel.addLayer(newLayer)
-            }
+            },
+            viewModel = viewModel,
         )
 
         Column(

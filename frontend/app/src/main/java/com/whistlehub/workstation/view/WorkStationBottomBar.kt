@@ -1,7 +1,9 @@
 package com.whistlehub.workstation.view
 
+import androidx.annotation.ColorRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,10 +11,14 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Save
@@ -22,6 +28,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -46,36 +54,59 @@ class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .padding(horizontal = 12.dp, vertical = 12.dp)
                 .background(Color.Transparent),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            Button(
-                modifier = Modifier.weight(1f), onClick = actions.onPlayedClicked,
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+
+            val buttonSize = 64.dp
+            val iconSize = 32.dp
+            val iconColor = Color.Black
+
+            IconButton(
+                modifier = Modifier.size(buttonSize),
+                onClick = actions.onPlayedClicked,
+                colors = IconButtonDefaults.iconButtonColors(containerColor = Color.White)
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text("재생", color = Color.Black, style = Typography.titleMedium)
-                }
+                Icon(
+                    Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    modifier = Modifier.size(iconSize),
+                    tint = iconColor
+                )
+
             }
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            Button(
-                onClick = actions.onTrackUploadClicked,
-//                onClick = { menuExpanded = true },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray)
+            IconButton(
+                modifier = Modifier.size(buttonSize),
+                onClick = actions.onPlayedClicked,
+                colors = IconButtonDefaults.iconButtonColors(containerColor = Color.White)
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.Menu, contentDescription = null)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text("업로드", color = Color.Black, style = Typography.titleMedium)
-                }
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = null,
+                    modifier = Modifier.size(iconSize),
+                    tint = iconColor
+                )
+
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            IconButton(
+                modifier = Modifier.size(buttonSize),
+                onClick = actions.onPlayedClicked,
+                colors = IconButtonDefaults.iconButtonColors(containerColor = Color.White)
+            ) {
+                Icon(
+                    Icons.Default.CloudUpload,
+                    contentDescription = null,
+                    modifier = Modifier.size(iconSize),
+                    tint = iconColor
+                )
+
             }
         }
 
