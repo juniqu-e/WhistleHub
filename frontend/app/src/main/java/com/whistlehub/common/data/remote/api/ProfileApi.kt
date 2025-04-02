@@ -69,12 +69,14 @@ interface ProfileApi {
     @GET("member/follower")
     suspend fun getFollowers(
         @Query("memberId") memberId: Int,
-        @Query("page") page: Int
+        @Query("page") page: Int,
+        @Query("size") size: Int,
     ): Response<ApiResponse<List<ProfileResponse.GetFollowersResponse>>>
     // 멤버의 팔로잉 목록 조회
     @GET("member/following")
     suspend fun getFollowings(
         @Query("memberId") memberId: Int,
-        @Query("page") page: Int
+        @Query("page") page: Int,
+        @Query("size") size: Int,
     ): Response<ApiResponse<List<ProfileResponse.GetFollowingsResponse>>>
 }

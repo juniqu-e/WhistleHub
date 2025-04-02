@@ -26,6 +26,7 @@ import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.whistlehub.R
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
+import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
@@ -53,7 +54,7 @@ fun NewTrackCard(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(Modifier.clickable {
-                // TODO : 아티스트 프로필로 이동?
+                navController.navigate(Screen.Profile.route + "/${track.artist?.memberId}")
             }, verticalAlignment = Alignment.CenterVertically) {
                 AsyncImage(
                     model = track.artist?.profileImage ?: R.drawable.default_profile,

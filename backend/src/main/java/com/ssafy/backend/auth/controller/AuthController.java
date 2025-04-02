@@ -56,7 +56,7 @@ public class AuthController {
      */
     @PostMapping("/sudo/register")
     public ApiResponse<?> sudoRegister(@RequestBody RegisterRequestDto registerRequestDto) {
-        Integer result = authService.register(registerRequestDto);
+        Integer result = authService.sudoRegister(registerRequestDto);
 
         return new ApiResponse.builder<Integer>()
                 .payload(result)
