@@ -95,9 +95,12 @@ interface TrackApi {
         @Query("commentId") commentId: String
     ): Response<ApiResponse<Unit>>
     // 트랙 검색
-    @POST("track/search")
+    @GET("track/search")
     suspend fun searchTracks(
-        @Body request: TrackRequest.SearchTrackRequest
+        @Query("keyword") keyword: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 50,
+        @Query("orderBy") orderBy: String = "DESC"
     ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
     // 트랙 신고
     @POST("track/report")

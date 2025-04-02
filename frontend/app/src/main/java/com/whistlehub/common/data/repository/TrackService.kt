@@ -127,9 +127,17 @@ class TrackService @Inject constructor(
 
     // 트랙 검색
     suspend fun searchTracks(
-        request: TrackRequest.SearchTrackRequest
+        keyword: String,
+        page: Int = 0,
+        size: Int = 50,
+        orderBy: String = "DESC"
     ): ApiResponse<List<TrackResponse.SearchTrack>> {
-        return tokenRefresh.execute { trackApi.searchTracks(request) }
+        return tokenRefresh.execute { trackApi.searchTracks(
+            keyword = keyword,
+            page = page,
+            size = size,
+            orderBy = orderBy
+        ) }
     }
 
     // 트랙 신고
