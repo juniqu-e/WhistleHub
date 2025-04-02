@@ -37,11 +37,6 @@ sealed class TrackRequest {
         val commentId: Int,
         val context: String
     )
-    // 트랙 검색
-    data class SearchTrackRequest(
-        val keyword: String?,
-        val tags: List<String>?
-    )
     // 트랙 신고
     data class ReportTrackRequest(
         val trackId: Int,

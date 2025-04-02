@@ -2,7 +2,6 @@ package com.whistlehub.search.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.whistlehub.common.data.remote.dto.request.TrackRequest
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.data.repository.TrackService
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,13 +17,9 @@ class SearchViewModel @Inject constructor(
     val searchResult: StateFlow<List<TrackResponse.SearchTrack>> get() = _searchResult
 
     // 트랙 검색
-    suspend fun searchTracks(query: String) {
-        val request = TrackRequest.SearchTrackRequest(
-            keyword = query,
-            tags = null
-        )
+    suspend fun searchTracks(keyword: String) {
         try {
-            val response = trackService.searchTracks(request)
+            val response = trackService.searchTracks(keyword)
             if (response.code == "SU") {
                 _searchResult.value = response.payload ?: emptyList()
             } else {
