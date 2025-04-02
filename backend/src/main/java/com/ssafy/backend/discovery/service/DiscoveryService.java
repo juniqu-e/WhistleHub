@@ -94,7 +94,7 @@ public class DiscoveryService {
     public List<TrackInfo> getTagRecommend(int tagId, int size) {
         Member member = authService.getMember();
 
-        List<Integer> trackIds = neo4jContentRetrieverService.retrieveTrackByMemberIdAndTagId(member.getId(), 1, 10);
+        List<Integer> trackIds = neo4jContentRetrieverService.retrieveTrackByMemberIdAndTagId(member.getId(), tagId, size);
         List<Track> trackList = trackRepository.findAllById(trackIds);
 
         List<TrackInfo> result = new ArrayList<>();
