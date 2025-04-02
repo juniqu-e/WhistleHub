@@ -1,10 +1,13 @@
 package com.ssafy.backend.graph.repository;
 
+import com.ssafy.backend.graph.model.entity.TagNode;
 import com.ssafy.backend.graph.model.entity.TrackNode;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public interface RelationshipRepository extends Neo4jRepository<TrackNode, Integer> {
@@ -24,4 +27,7 @@ public interface RelationshipRepository extends Neo4jRepository<TrackNode, Integ
             "MERGE (m)-[:WRITE]->(t)")
     void createWriteRelationship(@Param("memberId") Integer memberId,
                                  @Param("trackId") Integer trackId);
+
+    @Query("MATCH (m:Member{id: $memberId})-[p:PREFER]->(t:Tag) order by p.weight desc return t")
+    List<TagNode> findPreferTagsByMemberId(@Param("memberId") Integer memberId);
 }
