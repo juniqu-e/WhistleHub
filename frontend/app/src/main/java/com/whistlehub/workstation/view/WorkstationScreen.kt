@@ -1,6 +1,5 @@
 package com.whistlehub.workstation.view
 
-import SoundSelector
 import android.app.Activity
 import android.util.Log
 import androidx.activity.compose.LocalActivity
@@ -38,8 +37,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -55,14 +52,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.workstation.data.Layer
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
-import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,89 +78,87 @@ fun WorkStationScreen(navController: NavController) {
     val selectedLayerId = remember { mutableStateOf<Int?>(null) }
     var showDialog by remember { mutableStateOf(false) }
     // Immersive mode (fullscreen)
-    LaunchedEffect(Unit) {
-        activity?.window?.let { window ->
-            val controller = WindowInsetsControllerCompat(window, window.decorView)
-            controller.hide(WindowInsetsCompat.Type.systemBars())
-            controller.systemBarsBehavior =
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
-    }
+//    LaunchedEffect(Unit) {
+//        activity?.window?.let { window ->
+//            val controller = WindowInsetsControllerCompat(window, window.decorView)
+//            controller.hide(WindowInsetsCompat.Type.systemBars())
+//            controller.systemBarsBehavior =
+//                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+//        }
+//    }
     // Restore system bars when leaving screen
-    DisposableEffect(Unit) {
-        onDispose {
-            activity?.window?.let { window ->
-                val controller = WindowInsetsControllerCompat(window, window.decorView)
-                controller.show(WindowInsetsCompat.Type.systemBars())
-            }
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.displayCutout)
-            .background(Color.Black)
-    ) {
-        //좌측 악기
-        Row(
+//    DisposableEffect(Unit) {
+//        onDispose {
+//            activity?.window?.let { window ->
+//                val controller = WindowInsetsControllerCompat(window, window.decorView)
+//                controller.show(WindowInsetsCompat.Type.systemBars())
+//            }
+//        }
+//    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
             modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
+                .fillMaxSize()
+//            .windowInsetsPadding(WindowInsets.displayCutout)
+                .background(Color.Black)
         ) {
-            LayerPanel(
-                tracks = tracks,
-                verticalScrollState = verticalScrollState,
-                modifier = Modifier.fillMaxWidth(),
-                onAddInstrument = {
-                    showDialog = true
-                },
-                onDeleteLayer = {
-                    viewModel.deleteLayer(it)
-                },
-                onResetLayer = {
-                    //믹싱 옵션 초기화
-                },
-                onBeatAdjustment = { layer ->
-//                    beatAdjustmentLayer = layer
-                    selectedLayerId.value = layer.id
-                },
-            )
-
-            AddLayerDialog(
-                context = context,
-                showDialog = showDialog,
-                onDismiss = { showDialog = false },
-                onLayerAdded = { newLayer ->
-                    viewModel.addLayer(newLayer)
-                },
-            )
-        }
-
-        viewModel.bottomBarProvider.WorkStationBottomBar(bottomBarActions)
-        val selectedLayer = tracks.firstOrNull { it.id == selectedLayerId.value }
-        selectedLayer?.let { layer ->
-            ModalBottomSheet(
+            //좌측 악기
+            Row(
                 modifier = Modifier
+                    .weight(1f)
                     .fillMaxWidth()
-                    .windowInsetsPadding(WindowInsets.displayCutout)
-                    .padding(horizontal = 16.dp),
-                onDismissRequest = { selectedLayerId.value = null }
             ) {
-                BeatAdjustmentPanel(
-                    layer = layer,
-                    onDismiss = { selectedLayerId.value = null },
-                    onGridClick = { index ->
-                        viewModel.toggleBeat(layer.id, index)
-                        Log.d("WhistleHubAudioEngine", layer.patternBlocks.toString())
+                LayerPanel(
+                    tracks = tracks,
+                    verticalScrollState = verticalScrollState,
+                    modifier = Modifier.fillMaxWidth(),
+                    onAddInstrument = {
+                        showDialog = true
                     },
-                    onAutoRepeatApply = { start, interval ->
-                        viewModel.applyPatternAutoRepeat(selectedLayer.id, start, interval)
-                        Log.d("WhistleHubAudioEngine", layer.patternBlocks.toString())
+                    onDeleteLayer = {
+                        viewModel.deleteLayer(it)
+                    },
+                    onResetLayer = {
+                        //믹싱 옵션 초기화
+                    },
+                    onBeatAdjustment = { layer ->
+//                    beatAdjustmentLayer = layer
+                        selectedLayerId.value = layer.id
+                    },
+                )
+
+                AddLayerDialog(
+                    context = context,
+                    showDialog = showDialog,
+                    onDismiss = { showDialog = false },
+                    onLayerAdded = { newLayer ->
+                        viewModel.addLayer(newLayer)
                     }
                 )
             }
-        }
+            val selectedLayer = tracks.firstOrNull { it.id == selectedLayerId.value }
+            selectedLayer?.let { layer ->
+                ModalBottomSheet(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .windowInsetsPadding(WindowInsets.displayCutout)
+                        .padding(horizontal = 16.dp),
+                    onDismissRequest = { selectedLayerId.value = null }
+                ) {
+                    BeatAdjustmentPanel(
+                        layer = layer,
+                        onDismiss = { selectedLayerId.value = null },
+                        onGridClick = { index ->
+                            viewModel.toggleBeat(layer.id, index)
+                            Log.d("WhistleHubAudioEngine", layer.patternBlocks.toString())
+                        },
+                        onAutoRepeatApply = { start, interval ->
+                            viewModel.applyPatternAutoRepeat(selectedLayer.id, start, interval)
+                            Log.d("WhistleHubAudioEngine", layer.patternBlocks.toString())
+                        }
+                    )
+                }
+            }
 //        // 박자 조정 바텀시트 표시
 //        if (beatAdjustmentLayer != null) {
 //            ModalBottomSheet(
@@ -185,7 +177,17 @@ fun WorkStationScreen(navController: NavController) {
 //                )
 //            }
 //        }
+        }
+        Box(
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            viewModel.bottomBarProvider.WorkStationBottomBar(
+                actions =
+                bottomBarActions
+            )
+        }
     }
+
 }
 
 @Composable
@@ -325,7 +327,6 @@ fun LayerItem(
         }
     }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

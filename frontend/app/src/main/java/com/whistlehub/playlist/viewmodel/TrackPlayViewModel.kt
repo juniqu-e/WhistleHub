@@ -43,7 +43,8 @@ class TrackPlayViewModel @Inject constructor(
     val user: StateFlow<UserEntity?> get() = _user
 
     // 테스트용 트랙 리스트 (최종 API 연결 후 삭제)
-    private val _trackList = MutableStateFlow<List<TrackResponse.GetTrackDetailResponse>>(emptyList())
+    private val _trackList =
+        MutableStateFlow<List<TrackResponse.GetTrackDetailResponse>>(emptyList())
     val trackList: StateFlow<List<TrackResponse.GetTrackDetailResponse>> get() = _trackList
 
     // 현재 재생 중인 트랙
@@ -59,7 +60,8 @@ class TrackPlayViewModel @Inject constructor(
     val playerViewState: StateFlow<PlayerViewState> get() = _playerViewState
 
     // 플레이어 내부 트랙 리스트
-    private val _playerTrackList = MutableStateFlow<List<TrackResponse.GetTrackDetailResponse>>(emptyList())
+    private val _playerTrackList =
+        MutableStateFlow<List<TrackResponse.GetTrackDetailResponse>>(emptyList())
     val playerTrackList: MutableStateFlow<List<TrackResponse.GetTrackDetailResponse>> get() = _playerTrackList
 
     // 현재 트랙 위치
@@ -75,7 +77,7 @@ class TrackPlayViewModel @Inject constructor(
 
     init {
         // 빌드 할 때 트랙 리스트 추가, 유저정보 파싱
-        viewModelScope.launch (Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.IO) {
             // 유저 정보 가져오기
             _user.value = userRpository.getUser()
             // 임시 트랙 리스트 가져오기
@@ -98,6 +100,7 @@ class TrackPlayViewModel @Inject constructor(
                     Player.STATE_ENDED -> Log.d("ExoPlayer", "재생 완료")
                 }
             }
+
             override fun onPlayerError(error: PlaybackException) {
                 Log.e("ExoPlayer", "재생 오류 발생: ${error.message}")
             }
@@ -105,7 +108,8 @@ class TrackPlayViewModel @Inject constructor(
         viewModelScope.launch {
             while (true) {
                 _playerPosition.value = exoPlayer.currentPosition
-                _trackDuration.value = if (exoPlayer.duration != C.TIME_UNSET) exoPlayer.duration else 0L
+                _trackDuration.value =
+                    if (exoPlayer.duration != C.TIME_UNSET) exoPlayer.duration else 0L
                 delay(1000)
             }
         }
@@ -155,10 +159,17 @@ class TrackPlayViewModel @Inject constructor(
         }
     }
 
-    suspend fun playTrack(track: TrackResponse.GetTrackDetailResponse) {
+    suspend fun playTrack(trackId: Int) {
         try {
+            val trackResponse = trackService.getTrackDetail(trackId.toString())  // 트랙 정보 가져오기
+            if (trackResponse.code != "SU") {
+                Log.d("TrackPlayViewModel", "Failed to get track detail: ${trackResponse.message}")
+                stopTrack()
+                return  // 트랙 정보 가져오기 실패 시 플레이어 종료
+            }
+            val track = trackResponse.payload ?: return  // 트랙 정보가 없으면 종료
             resetTimer() // 기존 타이머 초기화
-            val trackData = trackService.playTrack(trackId = track.trackId.toString())
+            val trackData = trackService.playTrack(trackId.toString())
 
             if (trackData != null) {
                 val mediaItem = MediaItem.fromUri(byteArrayToUri(context, trackData) ?: Uri.EMPTY)
@@ -169,19 +180,14 @@ class TrackPlayViewModel @Inject constructor(
 
                 _currentTrack.value = track
                 _isPlaying.value = true
-                getTrackComment(track.trackId.toString())
+                getTrackComment(trackId.toString())  // 댓글 정보 업데이트
                 startTimer() // 타이머 시작
 
                 // 플레이어 트랙 리스트 업데이트
-                val existingIndex = _playerTrackList.value.indexOfFirst { it.trackId == track.trackId }
+                val existingIndex = _playerTrackList.value.indexOfFirst { it.trackId == trackId }
                 if (existingIndex == -1) {
-                    _playerTrackList.value += track
+                    _playerTrackList.value += track  // 현재 재생 목록 맨 뒤에 트랙 추가
                 }
-            }
-            val existingIndex = _playerTrackList.value.indexOfFirst { it.trackId == track.trackId }
-
-            if (existingIndex == -1) { // 플레이어에 없는 경우 추가
-                _playerTrackList.value += track
             }
         } catch (e: Exception) {
             Log.e("TrackPlayViewModel", "Error playing track: ${e.message}")
@@ -214,29 +220,31 @@ class TrackPlayViewModel @Inject constructor(
     }
 
     suspend fun previousTrack() {
-        val currentIndex = _playerTrackList.value.indexOfFirst { it.trackId == _currentTrack.value?.trackId }
+        val currentIndex =
+            _playerTrackList.value.indexOfFirst { it.trackId == _currentTrack.value?.trackId }
         if (currentIndex > 0) {
-            playTrack(_playerTrackList.value[currentIndex - 1])
+            playTrack(_playerTrackList.value[currentIndex - 1].trackId)
         } else {
 //            stopTrack() // 첫 곡이면 정지
-            playTrack(_playerTrackList.value.last()) // 첫 곡이면 마지막 곡으로 돌아감
+            playTrack(_playerTrackList.value.last().trackId) // 첫 곡이면 마지막 곡으로 돌아감
         }
     }
 
     suspend fun nextTrack() {
-        val currentIndex = _playerTrackList.value.indexOfFirst { it.trackId == _currentTrack.value?.trackId }
+        val currentIndex =
+            _playerTrackList.value.indexOfFirst { it.trackId == _currentTrack.value?.trackId }
         if (currentIndex != -1 && currentIndex < _playerTrackList.value.size - 1) {
-            playTrack(_playerTrackList.value[currentIndex + 1])
+            playTrack(_playerTrackList.value[currentIndex + 1].trackId)
         } else {
 //            stopTrack() // 마지막 곡이면 정지
-            playTrack(_playerTrackList.value[0]) // 마지막 곡이면 첫 곡으로 돌아감
+            playTrack(_playerTrackList.value[0].trackId) // 마지막 곡이면 첫 곡으로 돌아감
         }
     }
 
     suspend fun playPlaylist(tracks: List<TrackResponse.GetTrackDetailResponse>) {
         // 플레이리스트 재생
         _playerTrackList.value = tracks
-        playTrack(tracks[0])
+        playTrack(tracks[0].trackId)
     }
 
     fun setPlayerViewState(state: PlayerViewState) {
@@ -257,7 +265,8 @@ class TrackPlayViewModel @Inject constructor(
             }
             if (response.code == "SU") {
                 // 트랙 상태 업데이트
-                val updateTrack = trackService.getTrackDetail(_currentTrack.value!!.trackId.toString())
+                val updateTrack =
+                    trackService.getTrackDetail(_currentTrack.value!!.trackId.toString())
                 _currentTrack.value = updateTrack.payload
                 true
             } else {
@@ -355,7 +364,7 @@ class TrackPlayViewModel @Inject constructor(
     // 재생 일시정지 -> 타이머 일시정지
     // 재생 정지 또는 트랙 변경 -> 재생 로그 기록, 타이머 초기화
     private val _playTime = MutableStateFlow(0L)
-    private var _timerTask : Timer? = null
+    private var _timerTask: Timer? = null
     private fun startTimer() {
         _timerTask = timer(period = 1000) {
             _playTime.value++
@@ -380,9 +389,11 @@ class TrackPlayViewModel @Inject constructor(
             }
         }
     }
+
     private fun pauseTimer() {
         _timerTask?.cancel()
     }
+
     private fun resetTimer() {
         _timerTask?.cancel()
         _playTime.value = 0L

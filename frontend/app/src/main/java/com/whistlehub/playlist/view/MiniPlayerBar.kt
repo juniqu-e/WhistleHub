@@ -124,7 +124,7 @@ fun MiniPlayerBar(
                             if (currentTrack == null && trackPlayViewModel.playerTrackList.value.isNotEmpty()) {
                                 coroutineScope.launch {
                                     // 트랙이 없을 경우 첫 번째 트랙 재생
-                                    trackPlayViewModel.playTrack(trackPlayViewModel.playerTrackList.value[0])
+                                    trackPlayViewModel.playTrack(trackPlayViewModel.playerTrackList.value[0].trackId)
                                 }
                             } else if (currentTrack != null) {
                                 trackPlayViewModel.resumeTrack()

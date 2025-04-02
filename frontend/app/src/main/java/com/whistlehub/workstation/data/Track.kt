@@ -8,7 +8,7 @@ data class Layer(
     val colorHex: String? = null,
     val length: Int,
     val patternBlocks: List<PatternBlock> = emptyList(),
-    val wavPath: String = ""
+    val wavPath: String = "",
 ) {
     val beatPattern: List<Boolean>
         get() = MutableList(60) { false }.apply {
@@ -28,7 +28,7 @@ data class Track(
     val layers: List<Layer> = emptyList()
 )
 
-fun Layer.toAudioInfo() : LayerAudioInfo {
+fun Layer.toAudioInfo(): LayerAudioInfo {
     return LayerAudioInfo(
         id = this.id,
         wavPath = this.wavPath,

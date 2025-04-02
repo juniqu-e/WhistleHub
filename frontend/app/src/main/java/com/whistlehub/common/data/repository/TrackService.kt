@@ -124,12 +124,23 @@ class TrackService @Inject constructor(
     ): ApiResponse<Unit> {
         return tokenRefresh.execute { trackApi.deleteTrackComment(commentId) }
     }
-
     // 트랙 검색
+//    suspend fun searchTracks(
+//        request: TrackRequest.SearchTrackRequest
+//    ): ApiResponse<List<TrackResponse.SearchTrack>> {
+//        return tokenRefresh.execute { trackApi.searchTracks(request) }
+//    }
     suspend fun searchTracks(
         request: TrackRequest.SearchTrackRequest
     ): ApiResponse<List<TrackResponse.SearchTrack>> {
-        return tokenRefresh.execute { trackApi.searchTracks(request) }
+        return tokenRefresh.execute {
+            trackApi.searchTracks(
+                keyword = request.keyword,
+                page = request.page,
+                size = request.size,
+                orderBy = request.orderBy,
+            )
+        }
     }
 
     // 트랙 신고

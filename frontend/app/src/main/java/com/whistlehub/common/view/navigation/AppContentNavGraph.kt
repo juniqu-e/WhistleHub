@@ -19,8 +19,8 @@ import com.whistlehub.playlist.view.PlaylistTrackListScreen
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import com.whistlehub.profile.view.PasswordChangeScreen
 import com.whistlehub.profile.view.ProfileChangeScreen
-import com.whistlehub.profile.view.ProfileScreen
 import com.whistlehub.profile.view.ProfileMenuScreen
+import com.whistlehub.profile.view.ProfileScreen
 import com.whistlehub.search.view.SearchScreen
 import com.whistlehub.workstation.view.WorkStationScreen
 
@@ -41,10 +41,14 @@ fun AppContentNavGraph(
         modifier = modifier
     ) {
         composable(route = Screen.Home.route) {
-            HomeScreen(paddingValues)
+            HomeScreen(
+                paddingValues,
+                trackPlayViewModel = trackPlayViewModel,
+                navController = navController
+            )
         }
         composable(route = Screen.Search.route) {
-            SearchScreen()
+            SearchScreen(navController)
         }
         composable(route = Screen.DAW.route) {
             WorkStationScreen(navController = navController)
@@ -84,13 +88,21 @@ fun AppContentNavGraph(
 
         // 플레이어 화면
         composable(route = Screen.Player.route) {
-            FullPlayerScreen(navController = navController, paddingValues = paddingValues, trackPlayViewModel = trackPlayViewModel)
+            FullPlayerScreen(
+                navController = navController,
+                paddingValues = paddingValues,
+                trackPlayViewModel = trackPlayViewModel
+            )
         }
         // 플레이리스트 트랙리스트 화면
         composable(route = Screen.PlayListTrackList.route + "/{playlistId}") { backStackEntry ->
             val playlistId = backStackEntry.arguments?.getString("playlistId")
             if (playlistId != null) {
-                PlaylistTrackListScreen(playlistId.toInt(), navController, trackPlayViewModel = trackPlayViewModel)
+                PlaylistTrackListScreen(
+                    playlistId.toInt(),
+                    navController,
+                    trackPlayViewModel = trackPlayViewModel
+                )
             }
         }
         // 플레이리스트 편집 화면

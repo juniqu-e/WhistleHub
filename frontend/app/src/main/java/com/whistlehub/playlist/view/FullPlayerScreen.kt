@@ -68,12 +68,14 @@ import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.common.view.track.AddToPlaylistDialog
 import com.whistlehub.common.view.track.ReportDialog
 import com.whistlehub.common.view.track.TrackMenu
+import com.whistlehub.playlist.view.component.CreatePlaylist
 import com.whistlehub.playlist.view.component.PlayerComment
 import com.whistlehub.playlist.view.component.PlayerPlaylist
 import com.whistlehub.playlist.viewmodel.PlayerViewState
 import com.whistlehub.playlist.viewmodel.PlaylistViewModel
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import kotlinx.coroutines.launch
+import okhttp3.MultipartBody
 import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,6 +91,10 @@ fun FullPlayerScreen(
     var showPlayerMenu by remember { mutableStateOf(false) }
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
     var showReportDialog by remember { mutableStateOf(false) }
+    var showCreatePlaylistDialog by remember { mutableStateOf(false) }
+    var playlistTitle by remember { mutableStateOf("") }
+    var playlistDescription by remember { mutableStateOf("") }
+    var playlistImage by remember { mutableStateOf<MultipartBody.Part?>(null) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -216,6 +222,10 @@ fun FullPlayerScreen(
                                 )
                                 showAddToPlaylistDialog = false
                             }
+                        },
+                        onCreatePlaylist = {
+                            showAddToPlaylistDialog = false
+                            showCreatePlaylistDialog = true
                         }
                     )
                 },
@@ -224,6 +234,68 @@ fun FullPlayerScreen(
                     .background(CustomColors().Grey950),
                 confirmButton = {},
                 dismissButton = {}
+            )
+        }
+        if (showCreatePlaylistDialog) {
+            AlertDialog(
+                onDismissRequest = {
+                    showCreatePlaylistDialog = false
+                    showAddToPlaylistDialog = true
+                },
+                title = {
+                    Text(
+                        text = "플레이리스트 생성",
+                        style = Typography.titleLarge,
+                        color = CustomColors().Grey50,
+                    )
+                },
+                text = {
+                    CreatePlaylist(
+                        onInputTitle = { playlistTitle = it },
+                        onInputDescription = { playlistDescription = it },
+                        onInputImage = {
+                            playlistImage = it
+                        }
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(CustomColors().Grey950),
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                playlistViewModel.createPlaylist(
+                                    name = playlistTitle,
+                                    description = playlistDescription,
+                                    image = playlistImage
+                                )
+                                showCreatePlaylistDialog = false
+                                showAddToPlaylistDialog = true
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = CustomColors().Mint500,
+                            contentColor = CustomColors().Grey950,
+                        )
+                    ) {
+                        Text("생성", style = Typography.bodyLarge)
+                    }
+                },
+                dismissButton = {
+                    Button(
+                        onClick = {
+                            showCreatePlaylistDialog = false
+                            showAddToPlaylistDialog = true
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = CustomColors().Grey400,
+                            contentColor = CustomColors().Grey50,
+                        )
+                    ) {
+                        Text("취소", style = Typography.bodyLarge)
+                    }
+                }
             )
         }
     }
@@ -326,12 +398,14 @@ fun TrackInteraction(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
     val playerViewState by trackPlayViewModel.playerViewState.collectAsState(initial = PlayerViewState.PLAYING)
 
-    Row(Modifier
-        .fillMaxWidth()
-        .background(CustomColors().Grey950.copy(alpha = 0.7f)),
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(CustomColors().Grey950.copy(alpha = 0.7f)),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(5.dp),
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton({
@@ -340,9 +414,17 @@ fun TrackInteraction(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
                 }
             }) {
                 if (currentTrack?.isLiked == true) {
-                    Icon(Icons.Filled.Favorite, contentDescription = "좋아요 취소", tint = CustomColors().Mint500)
+                    Icon(
+                        Icons.Filled.Favorite,
+                        contentDescription = "좋아요 취소",
+                        tint = CustomColors().Mint500
+                    )
                 } else {
-                    Icon(Icons.Filled.FavoriteBorder, contentDescription = "좋아요", tint = CustomColors().Grey200)
+                    Icon(
+                        Icons.Filled.FavoriteBorder,
+                        contentDescription = "좋아요",
+                        tint = CustomColors().Grey200
+                    )
                 }
             }
             Text(
@@ -361,9 +443,11 @@ fun TrackInteraction(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
             }
         }) {
             // 화면에 따라 색상 전환
-            Icon(Icons.Rounded.ChatBubbleOutline,
+            Icon(
+                Icons.Rounded.ChatBubbleOutline,
                 contentDescription = "댓글",
-                tint = if (playerViewState == PlayerViewState.COMMENT) CustomColors().Mint500 else CustomColors().Grey200 )
+                tint = if (playerViewState == PlayerViewState.COMMENT) CustomColors().Mint500 else CustomColors().Grey200
+            )
         }
         IconButton({
             if (playerViewState != PlayerViewState.PLAYLIST) {
@@ -372,9 +456,11 @@ fun TrackInteraction(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
                 trackPlayViewModel.setPlayerViewState(PlayerViewState.PLAYING)
             }
         }) {
-            Icon(Icons.AutoMirrored.Rounded.List,
+            Icon(
+                Icons.AutoMirrored.Rounded.List,
                 contentDescription = "플레이리스트",
-                tint = if(playerViewState == PlayerViewState.PLAYLIST) CustomColors().Mint500 else CustomColors().Grey200)
+                tint = if (playerViewState == PlayerViewState.PLAYLIST) CustomColors().Mint500 else CustomColors().Grey200
+            )
         }
     }
 }
@@ -491,7 +577,7 @@ fun PlayerController(
                         if (currentTrack == null && trackPlayViewModel.playerTrackList.value.isNotEmpty()) {
                             coroutineScope.launch {
                                 // 트랙이 없을 경우 첫 번째 트랙 재생
-                                trackPlayViewModel.playTrack(trackPlayViewModel.playerTrackList.value[0])
+                                trackPlayViewModel.playTrack(trackPlayViewModel.playerTrackList.value[0].trackId)
                             }
                         } else if (currentTrack != null) {
                             trackPlayViewModel.resumeTrack()

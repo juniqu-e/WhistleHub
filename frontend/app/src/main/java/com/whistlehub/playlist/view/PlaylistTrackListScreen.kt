@@ -72,7 +72,8 @@ fun PlaylistTrackListScreen(
 
     LazyColumn(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
-            Row(Modifier.fillMaxWidth(),
+            Row(
+                Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -183,9 +184,12 @@ fun PlaylistTrackListScreen(
                     )
                 }
                 if (currentTrack?.trackId == track.trackInfo.trackId && isPlaying) {
-                // Add current track specific UI here
-                IconButton({trackPlayViewModel.pauseTrack()}) {
-                    Icon(Icons.Filled.Pause, contentDescription = "Pause", tint = CustomColors().Mint500)
+                    IconButton({ trackPlayViewModel.pauseTrack() }) {
+                        Icon(
+                            Icons.Filled.Pause,
+                            contentDescription = "Pause",
+                            tint = CustomColors().Mint500
+                        )
                     }
                 } else {
                     IconButton({
@@ -193,12 +197,7 @@ fun PlaylistTrackListScreen(
                             trackPlayViewModel.resumeTrack()
                         } else {
                             coroutineScope.launch {
-                                val convertedTrack = trackPlayViewModel.getTrackbyTrackId(track.trackInfo.trackId)
-                                if (convertedTrack != null) {
-                                    trackPlayViewModel.playTrack(convertedTrack)
-                                } else {
-                                    Log.d("PlaylistTrackListScreen", "Track not found: ${track.trackInfo.trackId}")
-                                }
+                                trackPlayViewModel.playTrack(track.trackInfo.trackId)
                             }
                         }
                     }) {
@@ -227,7 +226,7 @@ fun PlaylistTrackListScreen(
             title = { Text("플레이리스트 삭제") },
             text = { Text("플레이리스트를 삭제하시겠습니까?") },
             confirmButton = {
-                Button (
+                Button(
                     onClick = {
                         coroutineScope.launch {
                             playlistViewModel.deletePlaylist(playlistId)
@@ -244,11 +243,13 @@ fun PlaylistTrackListScreen(
                 }
             },
             dismissButton = {
-                Button(onClick = { showDeletePlaylistDialog = false },
+                Button(
+                    onClick = { showDeletePlaylistDialog = false },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = CustomColors().Grey400,
                         contentColor = CustomColors().Grey950
-                    )) {
+                    )
+                ) {
                     Text("취소")
                 }
             }
@@ -280,11 +281,13 @@ fun PlaylistTrackListScreen(
                 }
             },
             dismissButton = {
-                Button(onClick = { showPlayPlaylistDialog = false },
+                Button(
+                    onClick = { showPlayPlaylistDialog = false },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = CustomColors().Grey400,
                         contentColor = CustomColors().Grey950
-                    )) {
+                    )
+                ) {
                     Text("취소")
                 }
             }

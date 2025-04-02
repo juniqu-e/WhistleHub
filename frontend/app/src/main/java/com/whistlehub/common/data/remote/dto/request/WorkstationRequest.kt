@@ -37,6 +37,10 @@ sealed class WorkstationRequest {
     // 트랙 임포트
     data class ImportTrackRequest(
         val trackId: Int,
-        val layerIds: List<Int>
     )
+
+//    data class ImportTrackRequest(
+//        val trackId: Int,
+//        val layerIds: List<Int>
+//    )
 }
