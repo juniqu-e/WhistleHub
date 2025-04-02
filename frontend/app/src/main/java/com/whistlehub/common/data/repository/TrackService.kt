@@ -83,18 +83,18 @@ class TrackService @Inject constructor(
         return tokenRefresh.execute { trackApi.playLayer(layerId) }
     }
 
-    // 트랙 좋아요 상태 조회
-    suspend fun getTrackLikeStatus(
-        trackId: String
-    ): ApiResponse<Boolean> {
-        return tokenRefresh.execute { trackApi.getTrackLikeStatus(trackId) }
-    }
-
     // 트랙 좋아요
     suspend fun likeTrack(
         request: TrackRequest.LikeTrackRequest
     ): ApiResponse<Unit> {
         return tokenRefresh.execute { trackApi.likeTrack(request) }
+    }
+
+    // 트랙 좋아요 취소
+    suspend fun unlikeTrack(
+        trackId: String
+    ): ApiResponse<Unit> {
+        return tokenRefresh.execute { trackApi.unlikeTrack(trackId) }
     }
 
     // 트랙 댓글 조회
@@ -131,7 +131,10 @@ class TrackService @Inject constructor(
 //        return tokenRefresh.execute { trackApi.searchTracks(request) }
 //    }
     suspend fun searchTracks(
-        request: TrackRequest.SearchTrackRequest
+        keyword: String,
+        page: Int = 0,
+        size: Int = 50,
+        orderBy: String = "DESC"
     ): ApiResponse<List<TrackResponse.SearchTrack>> {
         return tokenRefresh.execute {
             trackApi.searchTracks(

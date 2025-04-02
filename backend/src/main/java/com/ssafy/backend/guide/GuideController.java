@@ -52,7 +52,7 @@ public class GuideController {
 
             // 응답 헤더 설정
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.parseMediaType("audio/mpeg"));
+            headers.setContentType(MediaType.parseMediaType("audio/wav"));
             headers.setContentDispositionFormData("attachment",
                     originalFilename.replace(".mp3", "_2x.mp3"));
 

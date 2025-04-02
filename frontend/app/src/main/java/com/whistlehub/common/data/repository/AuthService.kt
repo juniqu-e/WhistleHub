@@ -22,7 +22,7 @@ class AuthService @Inject constructor(
     // 회원 가입
     suspend fun register(
         request: AuthRequest.RegisterRequest
-    ): ApiResponse<AuthResponse.RegisterResponse> {
+    ): ApiResponse<Int> {
         return executeApiCall { authApi.register(request) }
     }
     // 태그 목록

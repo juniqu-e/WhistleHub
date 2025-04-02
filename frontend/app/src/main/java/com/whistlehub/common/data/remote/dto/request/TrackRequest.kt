@@ -25,22 +25,21 @@ sealed class TrackRequest {
         val trackId: Int
     )
 
-    // 트랙 좋아요
+    // 트랙 좋아요 / 좋아요 취소
     data class LikeTrackRequest(
-        val trackId: Int,
-        val like: Boolean
+        val trackId: Int
     )
 
     // 트랙 댓글 작성
     data class CreateCommentRequest(
         val trackId: Int,
-        val comment: String
+        val context: String
     )
 
     // 트랙 댓글 수정
     data class UpdateCommentRequest(
         val commentId: Int,
-        val comment: String
+        val context: String
     )
 
     // 트랙 검색

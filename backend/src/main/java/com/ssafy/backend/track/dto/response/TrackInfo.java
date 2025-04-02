@@ -8,7 +8,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TrackInfoDto {
+public class TrackInfo {
     int trackId;
     String title;
     int duration;

@@ -1,4 +1,4 @@
-package com.whistlehub.common.view.copmonent
+package com.whistlehub.common.view.track
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,25 +33,27 @@ import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun TrackItemRow(track: TrackResponse.GetTrackDetailResponse,
-                 style: TrackItemStyle = TrackItemStyle.DEFAULT,
-                 trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
+fun TrackItemRow(
+    track: TrackResponse.GetTrackDetailResponse,
+    style: TrackItemStyle = TrackItemStyle.DEFAULT,
+    trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
 ) {
     val coroutineScope = rememberCoroutineScope()
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
     val isPlaying by trackPlayViewModel.isPlaying.collectAsState(initial = false)
 
-    Row(Modifier
-        .clickable {
-            if (currentTrack?.trackId != track.trackId) {
-                trackPlayViewModel.stopTrack()
+    Row(
+        Modifier
+            .clickable {
+                if (currentTrack?.trackId != track.trackId) {
+                    trackPlayViewModel.stopTrack()
+                }
+                coroutineScope.launch {
+                    trackPlayViewModel.playTrack(track.trackId)
+                }
             }
-            coroutineScope.launch {
-                trackPlayViewModel.playTrack(track)
-            }
-        }
-        .fillMaxWidth()
-        .padding(10.dp),
+            .fillMaxWidth()
+            .padding(10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically) {
         AsyncImage(
@@ -69,9 +71,11 @@ fun TrackItemRow(track: TrackResponse.GetTrackDetailResponse,
             TODO()
         }
 
-        Column(Modifier
-            .weight(1f)
-            .padding(horizontal = 10.dp)) {
+        Column(
+            Modifier
+                .weight(1f)
+                .padding(horizontal = 10.dp)
+        ) {
             Text(
                 track.title,
                 maxLines = 1,
@@ -80,7 +84,7 @@ fun TrackItemRow(track: TrackResponse.GetTrackDetailResponse,
                 color = CustomColors().Grey50
             )
             Text(
-                track.artistInfo?.nickname ?: "Unknown Artist",
+                track.artist?.nickname ?: "Unknown Artist",
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = Typography.bodyMedium,
@@ -90,7 +94,7 @@ fun TrackItemRow(track: TrackResponse.GetTrackDetailResponse,
 
         if (currentTrack?.trackId == track.trackId && isPlaying) {
             // Add current track specific UI here
-            IconButton({trackPlayViewModel.pauseTrack()}) {
+            IconButton({ trackPlayViewModel.pauseTrack() }) {
                 Icon(
                     Icons.Filled.Pause, contentDescription = "Pause", tint = CustomColors().Mint500
                 )
@@ -98,7 +102,7 @@ fun TrackItemRow(track: TrackResponse.GetTrackDetailResponse,
         } else {
             IconButton({
                 coroutineScope.launch {
-                    trackPlayViewModel.playTrack(track)
+                    trackPlayViewModel.playTrack(track.trackId)
                 }
             }) {
                 Icon(

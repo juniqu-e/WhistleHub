@@ -71,19 +71,16 @@ interface TrackApi {
     suspend fun playLayer(
         @Query("layerId") layerId: String
     ): Response<ApiResponse<TrackResponse.TrackLayerPlay>>
-
-    // 트랙 좋아요 상태 조회
-    @GET("track/like")
-    suspend fun getTrackLikeStatus(
-        @Query("trackId") trackId: String
-    ): Response<ApiResponse<Boolean>>
-
     // 트랙 좋아요
     @POST("track/like")
     suspend fun likeTrack(
         @Body request: TrackRequest.LikeTrackRequest
     ): Response<ApiResponse<Unit>>
-
+    // 트랙 좋아요 취소
+    @DELETE("track/like")
+    suspend fun unlikeTrack(
+        @Query("trackId") trackId: String
+    ): Response<ApiResponse<Unit>>
     // 트랙 댓글 조회
     @GET("track/comment")
     suspend fun getTrackComments(
