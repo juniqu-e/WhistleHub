@@ -17,15 +17,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
-import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
+import com.whistlehub.playlist.data.TrackEssential
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import kotlinx.coroutines.launch
 
 @Composable
 fun TrackItemColumn(
-    track: TrackResponse.GetTrackDetailResponse,
+    track: TrackEssential,
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -57,7 +57,7 @@ fun TrackItemColumn(
             modifier = Modifier
         )
         Text(
-            text = track.artist?.nickname ?: "Unknown Artist",
+            text = track.artist,
             style = Typography.bodyMedium,
             color = CustomColors().Mint500,
             maxLines = 1,

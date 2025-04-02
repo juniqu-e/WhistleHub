@@ -8,7 +8,9 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -50,6 +52,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
 import com.whistlehub.common.view.theme.CustomColors
@@ -60,8 +63,9 @@ import kotlin.math.roundToInt
 
 @Composable
 fun PlaylistEditScreen(
+    paddingValues: PaddingValues,
     playlistId: Int,
-    navController: androidx.navigation.NavHostController,
+    navController: NavHostController,
     playlistViewModel: PlaylistViewModel = hiltViewModel(),
 ) {
     LaunchedEffect(playlistId) {
@@ -378,10 +382,13 @@ fun PlaylistEditScreen(
                 .height(2.dp)
                 .background(CustomColors().Mint500),
                 thickness = 2.dp
-            )
+                )
+            }
+        }
+        item {
+            Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
         }
     }
-}
 
     if (showConfirmDialog) {
         AlertDialog(

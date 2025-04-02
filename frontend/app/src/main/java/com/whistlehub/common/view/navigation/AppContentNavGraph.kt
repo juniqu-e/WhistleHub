@@ -5,10 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
 import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.common.view.home.HomeScreen
 import com.whistlehub.common.view.login.LoginScreen
@@ -21,7 +19,6 @@ import com.whistlehub.profile.view.PasswordChangeScreen
 import com.whistlehub.profile.view.ProfileChangeScreen
 import com.whistlehub.profile.view.ProfileMenuScreen
 import com.whistlehub.profile.view.ProfileScreen
-import com.whistlehub.profile.viewmodel.ProfileViewModel
 import com.whistlehub.search.view.SearchScreen
 import com.whistlehub.workstation.view.WorkStationScreen
 
@@ -49,14 +46,21 @@ fun AppContentNavGraph(
             )
         }
         composable(route = Screen.Search.route) {
-            SearchScreen(navController)
+            SearchScreen(
+                paddingValues,
+                navController,
+                trackPlayViewModel
+            )
         }
         composable(route = Screen.DAW.route) {
             WorkStationScreen(navController = navController)
 //            DAWScreen()
         }
         composable(route = Screen.PlayList.route) {
-            PlayListScreen(navController = navController)
+            PlayListScreen(
+                paddingValues,
+                navController
+            )
         }
         composable(route = Screen.Profile.route + "/{memberId}"){ backStackEntry ->
         val memberId = backStackEntry.arguments?.getString("memberId")
@@ -95,9 +99,10 @@ fun AppContentNavGraph(
             val playlistId = backStackEntry.arguments?.getString("playlistId")
             if (playlistId != null) {
                 PlaylistTrackListScreen(
+                    paddingValues,
                     playlistId.toInt(),
                     navController,
-                    trackPlayViewModel = trackPlayViewModel
+                    trackPlayViewModel
                 )
             }
         }
@@ -105,7 +110,11 @@ fun AppContentNavGraph(
         composable(route = Screen.PlayListEdit.route + "/{playlistId}") { backStackEntry ->
             val playlistId = backStackEntry.arguments?.getString("playlistId")
             if (playlistId != null) {
-                PlaylistEditScreen(playlistId.toInt(), navController)
+                PlaylistEditScreen(
+                    paddingValues,
+                    playlistId.toInt(),
+                    navController
+                )
             }
         }
     }

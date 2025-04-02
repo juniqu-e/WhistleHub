@@ -13,17 +13,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.common.view.track.NewTrackCard
 import com.whistlehub.common.view.track.TrackListRow
@@ -44,19 +47,6 @@ fun HomeScreen(
     // 트랙 리스트 UI
     val trackList by trackPlayViewModel.trackList.collectAsState(initial = emptyList())
 
-    // 추천태그 리스트
-    val tags = listOf(
-        "Pop",
-        "Rock",
-        "Jazz",
-        "Classical",
-        "Hip-Hop",
-        "Electronic",
-        "Indie",
-        "R&B",
-        "Country",
-        "Reggae"
-    ) // 예시 태그 리스트
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth(),
@@ -81,40 +71,17 @@ fun HomeScreen(
                 Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(trackList.size) { index ->
-                    NewTrackCard(trackList[index], trackPlayViewModel, navController)
-                }
-            }
-        }
-
-        // 추천 태그
-        item {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(10.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("추천 태그", style = Typography.titleLarge, modifier = Modifier.weight(1f))
-                    Text(
-                        "더보기",
-                        style = Typography.bodyLarge,
-                        modifier = Modifier.clickable {},
-                        textAlign = TextAlign.End
-                    )
-                }
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(tags.size) { index ->
-                        Button(
-                            onClick = { /* TODO: 태그 클릭 시 동작 */ }, modifier = Modifier.padding(4.dp)
-                        ) {
-                            Text(tags[index], style = Typography.titleMedium)
-                        }
+                    var track by remember { mutableStateOf<TrackResponse.GetTrackDetailResponse?>(null) }
+                    LaunchedEffect(Unit) {
+                        track = trackPlayViewModel.getTrackbyTrackId(trackList[index].trackId)
+                    }
+                    track?.let { track ->
+                        // 트랙 카드
+                        NewTrackCard(
+                            track = track,
+                            trackPlayViewModel = trackPlayViewModel,
+                            navController = navController
+                        )
                     }
                 }
             }
