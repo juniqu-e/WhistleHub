@@ -21,6 +21,7 @@ import com.whistlehub.profile.view.ProfileMenuScreen
 import com.whistlehub.profile.view.ProfileScreen
 import com.whistlehub.search.view.SearchScreen
 import com.whistlehub.workstation.view.WorkStationScreen
+import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 
 /**
  * 메인 앱 화면 간의 네비게이션을 처리하는 콘텐츠 네비게이션 그래프
@@ -31,6 +32,7 @@ fun AppContentNavGraph(
     logoutManager: LogoutManager,
     paddingValues: PaddingValues,
     modifier: Modifier = Modifier,
+    workStationViewModel: WorkStationViewModel,
 ) {
     val trackPlayViewModel = hiltViewModel<TrackPlayViewModel>()
     NavHost(
@@ -53,7 +55,11 @@ fun AppContentNavGraph(
             )
         }
         composable(route = Screen.DAW.route) {
-            WorkStationScreen(navController = navController)
+            WorkStationScreen(
+                navController = navController,
+                viewModel = workStationViewModel,
+                paddingValues = paddingValues
+            )
 //            DAWScreen()
         }
         composable(route = Screen.PlayList.route) {
@@ -85,7 +91,6 @@ fun AppContentNavGraph(
         composable(route = Screen.Login.route) {
             LoginScreen(navController = navController)
         }
-
         // 플레이어 화면
         composable(route = Screen.Player.route) {
             FullPlayerScreen(

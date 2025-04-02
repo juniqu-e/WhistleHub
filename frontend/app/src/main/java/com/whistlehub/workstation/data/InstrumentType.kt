@@ -7,5 +7,6 @@ enum class InstrumentType(val label: String, val assetFolder: String, val hexCol
     BASS("BASS", "bass", Color(0xFF9575CD)),
     GUITAR("GUITAR", "guitar", Color(0xFFFFAF4D)),
     SYNTH("SYNTH", "synth", Color(0xFFBDBDBD)),
-    SEARCH("SEARCH", "", Color(0xFF80CBC4))
+    RECORD("RECORD", "record", Color(0xFFFF8585)),
+    SEARCH("SEARCH", "", Color(0xFF80CBC4)),
 }
