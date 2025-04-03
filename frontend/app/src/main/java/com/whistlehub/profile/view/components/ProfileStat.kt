@@ -40,7 +40,7 @@ fun ProfileStat(
             )
             Text(
                 text = statLabel,
-                style = Typography.bodySmall,
+                style = Typography.bodyMedium,
                 color = customColors.Grey50
             )
         }
