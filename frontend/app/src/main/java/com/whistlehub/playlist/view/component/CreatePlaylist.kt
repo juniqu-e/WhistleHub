@@ -43,7 +43,7 @@ fun CreatePlaylist(
     val handleImageSelected = { uri: Uri ->
         selectedImageUri = uri
         val multipartImage = uriToMultipartBodyPart(context, uri)
-        onInputImage(multipartImage)
+        onInputImage(multipartImage!!)
     }
 
     Column(

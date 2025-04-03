@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.whistlehub.common.data.local.room.UserRepository
 import com.whistlehub.common.data.remote.dto.request.PlaylistRequest
+import com.whistlehub.common.data.remote.dto.response.ApiResponse
 import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
 import com.whistlehub.common.data.repository.PlaylistService
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -144,8 +145,11 @@ class PlaylistViewModel @Inject constructor(
         name: String,
         description: String,
         trackIds: List<Int> = emptyList(),
+        image: MultipartBody.Part? = null
     ) {
         try {
+            lateinit var updatePlaylistImage: ApiResponse<Unit>
+            // 정보 수정
             val updatePlaylistResponse = playlistService.updatePlaylist(
                 request = PlaylistRequest.UpdatePlaylistRequest(
                     playlistId = playlistId,
@@ -153,6 +157,7 @@ class PlaylistViewModel @Inject constructor(
                     description = description
                 )
             )
+            // 트랙 수정
             if (trackIds.isNotEmpty()) {
                 playlistService.updatePlaylistTracks(
                     request = PlaylistRequest.UpdatePlaylistTrackRequest(
@@ -160,6 +165,16 @@ class PlaylistViewModel @Inject constructor(
                         tracks = trackIds
                     )
                 )
+            }
+            // 이미지 수정
+            if (image != null) {
+                updatePlaylistImage = playlistService.uploadPlaylistImage(
+                    playlistId = playlistId,
+                    image = image
+                )
+                Log.d("success", "Image is not null")
+            } else {
+                Log.d("error", "Image is null")
             }
             if (updatePlaylistResponse.code == "SU") {
                 Log.d("success", "Playlist updated successfully with ID $playlistId")

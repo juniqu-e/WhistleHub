@@ -1,5 +1,6 @@
 package com.whistlehub.playlist.view
 
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -47,14 +48,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
+import com.whistlehub.common.util.uriToMultipartBodyPart
+import com.whistlehub.common.view.copmonent.ImageUpload
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.viewmodel.PlaylistViewModel
@@ -78,8 +83,10 @@ fun PlaylistEditScreen(
     val playlistTrack by playlistViewModel.playlistTrack.collectAsState()
     val playlistInfo by playlistViewModel.playlistInfo.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     var showConfirmDialog by remember { mutableStateOf(false) }
     var showDismissDialog by remember { mutableStateOf(false) }
+    var showImageDialog by remember { mutableStateOf(false) }
 
     // 플레이리스트 정보 수정 관련
     var isEditTitle by remember { mutableStateOf(false) } // 제목 수정 모드
@@ -87,10 +94,12 @@ fun PlaylistEditScreen(
     // playlistInfo를 구독하여 제목과 설명 자동 업데이트
     var playlistTitle by remember { mutableStateOf("") }
     var playlistDescription by remember { mutableStateOf("") }
+    var playlistImage: Uri? by remember { mutableStateOf<Uri?>(null) }
 
     LaunchedEffect(playlistInfo) {
         if (!isEditTitle) playlistTitle = playlistInfo?.name ?: ""
         if (!isEditDescription) playlistDescription = playlistInfo?.description ?: ""
+        if (playlistInfo?.imageUrl != null) playlistImage = playlistInfo?.imageUrl?.toUri()
     }
 
     // 트랙 순서 변경 관련
@@ -118,11 +127,14 @@ fun PlaylistEditScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 AsyncImage(
-                    model = playlistInfo?.imageUrl,
+                    model = playlistImage,
                     contentDescription = "Playlist Image",
                     modifier = Modifier
                         .size(50.dp)
-                        .clip(RoundedCornerShape(5.dp)),
+                        .clip(RoundedCornerShape(5.dp))
+                        .clickable {
+                            showImageDialog = true
+                        },
                     error = null,
                     contentScale = ContentScale.Crop
                 )
@@ -399,11 +411,17 @@ fun PlaylistEditScreen(
                 Button({
                     showConfirmDialog = false
                     coroutineScope.launch {
+                        val image = if (playlistImage != null && playlistImage != playlistInfo?.imageUrl?.toUri()) {
+                            uriToMultipartBodyPart(context, playlistImage!!)
+                        } else {
+                            null
+                        }
                         playlistViewModel.updatePlaylist(
                             playlistId = playlistId,
                             name = playlistTitle,
                             description = playlistDescription,
-                            trackIds = trackList.map { it.trackInfo.trackId }
+                            trackIds = trackList.map { it.trackInfo.trackId },
+                            image = image
                         )
                         navController.popBackStack()
                     } },
@@ -450,6 +468,47 @@ fun PlaylistEditScreen(
             dismissButton = {
                 Button({
                     showDismissDialog = false
+                },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CustomColors().Grey400,
+                        contentColor = CustomColors().Grey950
+                    )
+                ) {
+                    Text("취소")
+                }
+            }
+        )
+    }
+    if (showImageDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                playlistImage = playlistInfo?.imageUrl?.toUri()
+                showImageDialog = false
+            },
+            title = { Text("플레이리스트 이미지 수정") },
+            text = { ImageUpload(
+                onChangeImage = { uri ->
+                    playlistImage = uri
+                },
+                originImageUri = playlistInfo?.imageUrl?.toUri(),
+                canDelete = false
+            ) },
+            confirmButton = {
+                Button({
+                    showImageDialog = false
+                },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CustomColors().Mint500,
+                        contentColor = CustomColors().Grey950
+                    )
+                ) {
+                    Text("적용")
+                }
+            },
+            dismissButton = {
+                Button({
+                    playlistImage = playlistInfo?.imageUrl?.toUri()
+                    showImageDialog = false
                 },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = CustomColors().Grey400,
