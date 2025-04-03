@@ -12,9 +12,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.whistlehub.common.util.LogoutManager
+import com.whistlehub.common.view.copmonent.CustomAlertDialog
 import com.whistlehub.common.view.theme.CustomColors
+import com.whistlehub.profile.viewmodel.PasswordChangeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,9 +25,10 @@ fun PasswordChangeScreen(
     logoutManager: LogoutManager,
     navController: NavHostController,
     // 필요하다면 뷰모델을 주입해서 API 연동, 상태 관리
-    // viewModel: ChangePasswordViewModel = hiltViewModel()
+     viewModel: PasswordChangeViewModel = hiltViewModel()
 ) {
     val customColors = CustomColors()
+    val uiState by viewModel.uiState.collectAsState()
 
     // UI 상태(예시). 실제로는 뷰모델 상태를 collectAsState()로 가져올 수 있음
     var currentPassword by remember { mutableStateOf("") }
@@ -32,6 +36,18 @@ fun PasswordChangeScreen(
     var newPasswordConfirm by remember { mutableStateOf("") }
 
     var errorMessage by remember { mutableStateOf("") } // 예: "새 비밀번호가 일치하지 않습니다." 등
+
+    // 성공 다이얼로그 표시
+    CustomAlertDialog(
+        showDialog = uiState.showSuccessDialog,
+        title = "비밀번호 변경 완료",
+        message = uiState.dialogMessage,
+        onDismiss = { viewModel.dismissDialog() },
+        onConfirm = {
+            viewModel.dismissDialog()
+            navController.popBackStack() // 다이얼로그 확인 후 이전 화면으로 이동
+        }
+    )
 
     Scaffold(
         topBar = {
@@ -114,23 +130,33 @@ fun PasswordChangeScreen(
             if (errorMessage.isNotEmpty()) {
                 Text(text = errorMessage, color = Color.Red, style = MaterialTheme.typography.bodySmall)
             }
+            if (uiState.errorMessage.isNotEmpty()) {
+                Text(text = uiState.errorMessage, color = Color.Red, style = MaterialTheme.typography.bodySmall)
+            }
 
             // 4) 비밀번호 변경 버튼
-            Spacer(modifier = Modifier.weight(1f))
+//            Spacer(modifier = Modifier.weight(1f))
             Button(
                 onClick = {
-                    // 비밀번호 변경 로직 (API 호출 등)
-                    // 예시: 새 비밀번호 일치 여부 확인
-                    if (newPassword != newPasswordConfirm) {
-                        errorMessage = "새 비밀번호가 일치하지 않습니다."
+                    if (newPassword == newPasswordConfirm) {
+                        viewModel.changePassword(currentPassword, newPassword)
                     } else {
-                        // 실제로는 뷰모델 통해 비밀번호 변경 API 호출
-                        // 성공 시 뒤로가기 등
+                        // 로컬 유효성 검사 에러
+                        // 뷰모델 상태를 업데이트하는 대신 로컬 상태 사용
+//                        errorMessage = "새 비밀번호가 일치하지 않습니다."
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.isLoading
             ) {
-                Text("비밀번호 변경")
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.White
+                    )
+                } else {
+                    Text("비밀번호 변경")
+                }
             }
         }
     }
