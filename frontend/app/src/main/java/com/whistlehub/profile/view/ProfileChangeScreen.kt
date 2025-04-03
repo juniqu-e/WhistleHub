@@ -31,6 +31,7 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody // 추가
 import java.util.UUID // 추가
 import android.util.Log // 로깅을 위해 추가
+import com.whistlehub.common.view.copmonent.CustomAlertDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,12 +54,27 @@ fun ProfileChangeScreen(
     var nicknameError by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
 
+    // 다이얼로그 관련 상태
+    var showSuccessDialog by remember { mutableStateOf(false) }
+    var dialogMessage by remember { mutableStateOf("") }
+
     // 컴포넌트가 처음 로드될 때 프로필 정보 가져오기
     LaunchedEffect(Unit) {
         viewModel.loadProfile(
             viewModel.userRepository.getUser()?.memberId ?: return@LaunchedEffect
         )
     }
+
+    CustomAlertDialog(
+        showDialog = showSuccessDialog,
+        title = "프로필 변경 완료",
+        message = dialogMessage,
+        onDismiss = { showSuccessDialog = false },
+        onConfirm = {
+            showSuccessDialog = false
+            navController.popBackStack() // 다이얼로그 확인 후 이전 화면으로 이동
+        }
+    )
 
     val context = LocalContext.current
 
@@ -207,7 +223,10 @@ fun ProfileChangeScreen(
                         // 닉네임 유효성 검사 후 업데이트 진행
                         if (nicknameError.isEmpty()) {
                             viewModel.updateProfile(nickname, profileText)
-                            navController.popBackStack()
+                            // 프로필 업데이트 성공 시 다이얼로그 표시
+                            dialogMessage = "프로필이 성공적으로 변경되었습니다."
+                            showSuccessDialog = true
+//                            navController.popBackStack()
                         }
                     },
                     enabled = !isLoading && nicknameError.isEmpty()
