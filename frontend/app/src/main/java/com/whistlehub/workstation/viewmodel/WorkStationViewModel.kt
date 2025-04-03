@@ -14,8 +14,12 @@ import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.data.remote.dto.response.WorkstationResponse
 import com.whistlehub.common.data.repository.TrackService
 import com.whistlehub.common.data.repository.WorkstationService
+import com.whistlehub.common.util.AudioEngineBridge.renderMixToWav
 import com.whistlehub.common.util.AudioEngineBridge.setLayers
 import com.whistlehub.common.util.AudioEngineBridge.startAudioEngine
+import com.whistlehub.common.util.AudioEngineBridge.stopAudioEngine
+import com.whistlehub.common.util.createMultipart
+import com.whistlehub.common.util.createRequestBody
 import com.whistlehub.common.util.downloadWavFromS3Url
 import com.whistlehub.workstation.data.BottomBarActions
 import com.whistlehub.workstation.data.InstrumentType
@@ -30,6 +34,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.UUID
 import javax.inject.Inject
 
@@ -118,7 +123,7 @@ class WorkStationViewModel @Inject constructor(
                 var i = startBeat
                 while (i < 60) {
                     val newBlock = PatternBlock(i, length)
-                    val alreadyExists = blocks.any { it.start == newBlock.start }
+//                    val alreadyExists = blocks.any { it.start == newBlock.start }
                     val overlaps = blocks.any { isOverlapping(newBlock, it) }
                     if (!overlaps) {
                         blocks.add(newBlock)
@@ -167,8 +172,8 @@ class WorkStationViewModel @Inject constructor(
                     )
                 }
 
-                layers.forEach {
-                    layer -> addLayer(layer)
+                layers.forEach { layer ->
+                    addLayer(layer)
                 }
 //                _tracks.value += layers
                 Log.d("Search", "불러온 레이어 수: ${layers.size}")
@@ -180,30 +185,77 @@ class WorkStationViewModel @Inject constructor(
 
     fun onPlayClicked() {
         val infos = getAudioLayerInfos();
-        startAudioEngine();
+        stopAudioEngine()
         setLayers(infos);
         startAudioEngine();
     }
+
+    fun onUpload(context: Context, fileName: String, onResult: (Boolean) -> Unit = {}) {
+        viewModelScope.launch {
+            val infos = getAudioLayerInfos();
+            setLayers(infos);
+            val mix = File(context.filesDir, fileName)
+            val success = renderMixToWav(mix.absolutePath)
+
+            if (!success) {
+                onResult(false)
+            } else {
+                //MultiPart
+                val requestBodyMap = hashMapOf(
+                    "title" to createRequestBody(fileName),
+                    "description" to createRequestBody("Description Hard Coding (。・ω・。)"),
+                    "duration" to createRequestBody("120"),
+                    "visibility" to createRequestBody("1"),
+                    "tag" to createRequestBody("1,2,3,4"),
+                    "sourceTrack" to createRequestBody("1,2"),
+                    "layerName" to createRequestBody("layer1, layer2"),
+                    "instrumentType" to createRequestBody("1,2")
+                )
+                val trackImg = null
+                val trackSoundFile = createMultipart(mix, "trackSoundFile")
+                val layerSoundFiles = tracks.value.map { layer ->
+                    Log.d("Upload", File(layer.wavPath).toString())
+                    createMultipart(File(layer.wavPath), "layerSoundFiles")
+                }
+                Log.d(
+                    "Upload",
+                    "TrackSoundFile -> name: ${trackSoundFile.headers}, body type: ${trackSoundFile.body.contentType()}"
+                )
+
+                layerSoundFiles.forEachIndexed { index, part ->
+                    Log.d(
+                        "Upload",
+                        "Layer[$index] -> name: ${part.headers}, body type: ${part.body.contentType()}"
+                    )
+                }
+                val result = workstationService.uploadTrack(
+                    WorkstationRequest.UploadTrackRequest(
+                        partMap = requestBodyMap,
+                        trackImg = trackImg,
+                        layerSoundFiles = layerSoundFiles,
+                        trackSoundFile = trackSoundFile,
+                    )
+                )
+
+                Log.d("Upload", result.toString())
+            }
+
+            onResult(success)
+        }
+
+    }
+
 
     private fun getAudioLayerInfos(): List<LayerAudioInfo> {
         return tracks.value.map { it.toAudioInfo() }
     }
 
-    private fun audioEngineTest() {
-        startAudioEngine()
-    }
-
     val bottomBarActions = BottomBarActions(
-        onPlayedClicked = {
-//            playAllLayers(_tracks.value)
-//            audioEngineTest()
-        },
-        onTrackSavedClicked = {},
-        onTrackUploadClicked = {},
-        onTrackDownloadClicked = {},
-        onExitClicked = {}
+        onPlayedClicked = {},
+        onTrackUploadClicked = { },
+        onAddInstrument = {},
     )
-    //    fun toggleBeat(layerId: Int, index: Int) {
+//    fun toggleBeat(layerId: Int, index: Int) {
 //        _tracks.value = _tracks.value.map { layer ->
 //            if (layer.id == layerId) {
 //                Log.d("Toggle", "Layer ${layer.id} toggle at $index")

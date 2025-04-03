@@ -97,7 +97,6 @@ fun SearchLayerSection(
                     }
                 ),
                 colors = TextFieldDefaults.colors(
-
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                     focusedContainerColor = CustomColors().Grey200,
@@ -107,7 +106,6 @@ fun SearchLayerSection(
                     focusedTrailingIconColor = CustomColors().Grey950,
                     unfocusedTextColor = CustomColors().Grey950,
                     focusedTextColor = CustomColors().Grey950,
-
                     unfocusedLabelColor = Color.LightGray,
                     focusedLabelColor = Color.Black,
                     cursorColor = Color.Black,
@@ -166,7 +164,6 @@ fun SearchLayerSection(
                                 ) {
                                     Text(track.nickname)
                                 }
-
                             }
                         }
                     }

@@ -29,6 +29,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -56,6 +58,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.workstation.data.Layer
+import com.whistlehub.workstation.data.ToastData
+import com.whistlehub.workstation.data.rememberToastState
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,17 +73,34 @@ fun WorkStationScreen(
     val activity = LocalActivity.current as? Activity
     val tracks by viewModel.tracks.collectAsState()
     val verticalScrollState = rememberScrollState()
+    val selectedLayerId = remember { mutableStateOf<Int?>(null) }
+    var showDialog by remember { mutableStateOf(false) }
+    val toastState = rememberToastState()
     val bottomBarActions = viewModel.bottomBarActions.copy(
         onPlayedClicked = {
             viewModel.onPlayClicked()
         },
-        onExitClicked = {
-            navController.popBackStack()
-            Log.d("Exit", "EXIT")
+        onAddInstrument = {
+            showDialog = true
+        },
+        onUploadConfirm = { name ->
+            viewModel.onUpload(context, name) { success ->
+                toastState.value = if (success) {
+                    ToastData("믹스 저장 성공", Icons.Default.CheckCircle, Color(0xFF4CAF50))
+                } else {
+                    ToastData("믹스 저장 실패", Icons.Default.Error, Color(0xFFF44336))
+                }
+//                Toast.makeText(
+//                    context,
+//                    if (success) "믹스 저장 성공 🎉" else "믹스 저장 실패 ❌",
+//                    Toast.LENGTH_SHORT
+//                ).show()
+            }
         }
     )
-    val selectedLayerId = remember { mutableStateOf<Int?>(null) }
-    var showDialog by remember { mutableStateOf(false) }
+
+
+
 
     Column(
         modifier = Modifier
@@ -87,6 +108,11 @@ fun WorkStationScreen(
             .padding(paddingValues)
 //            .background(Color(0xFF9090C0))
     ) {
+        CustomToast(
+            toastData = toastState.value,
+            onDismiss = { toastState.value = null },
+            position = Alignment.Center
+        )
         //좌측 악기
         LayerPanel(
             tracks = tracks,
@@ -119,7 +145,11 @@ fun WorkStationScreen(
             modifier = Modifier.background(Color(0xFF9090C0)),
             verticalArrangement = Arrangement.Center,
         ) {
-            viewModel.bottomBarProvider.WorkStationBottomBar(actions = bottomBarActions)
+
+            viewModel.bottomBarProvider.WorkStationBottomBar(
+                actions = bottomBarActions,
+                context = context
+            )
         }
     }
     val selectedLayer = tracks.firstOrNull { it.id == selectedLayerId.value }

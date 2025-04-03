@@ -36,7 +36,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-
     // 일반 API용 OkHttpClient (AuthInterceptor 포함)
     @Provides
     @Singleton

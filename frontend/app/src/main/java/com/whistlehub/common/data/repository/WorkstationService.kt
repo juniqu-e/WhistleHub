@@ -23,7 +23,14 @@ class WorkstationService @Inject constructor(
     suspend fun uploadTrack(
         request: WorkstationRequest.UploadTrackRequest
     ): ApiResponse<Int> {
-        return tokenRefresh.execute { workstationApi.uploadTrack(request) }
+        return tokenRefresh.execute {
+            workstationApi.uploadTrack(
+                partMap = request.partMap,
+                trackImg = request.trackImg,
+                layerSoundFiles = request.layerSoundFiles,
+                trackSoundFile = request.trackSoundFile,
+            )
+        }
     }
 
     // 레이어 업로드

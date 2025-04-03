@@ -1,10 +1,11 @@
 package com.whistlehub.workstation.data
 
+import android.content.Context
+
 data class BottomBarActions(
     val onPlayedClicked: () -> Unit,
-    val onTrackSavedClicked: () -> Unit,
     val onTrackUploadClicked: () -> Unit,
-    val onTrackDownloadClicked: () -> Unit,
-    val onExitClicked: () -> Unit,
+    val onAddInstrument: () -> Unit,
+    val onUploadConfirm: (String) -> Unit = {},
 )
 
