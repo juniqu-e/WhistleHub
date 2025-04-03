@@ -14,6 +14,10 @@ sealed class ProfileRequest {
         val nickname: String,
         val profileText: String
     )
+    // 프로필 업로드
+    data class UpdateProfileImageRequest(
+        val profileImage: MultipartBody.Part
+    )
     // 비밀번호 변경
     data class ChangePasswordRequest(
         val oldPassword: String,

@@ -1,5 +1,8 @@
 package com.whistlehub.profile.view
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -11,27 +14,47 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
+import com.whistlehub.profile.view.components.ProfileImageUpload
+import com.whistlehub.profile.viewmodel.ProfileChangeViewModel
+import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileChangeScreen(
     logoutManager: LogoutManager,
     navController: NavHostController,
-    // 필요하다면 뷰모델을 주입해서 API 연동, 상태 관리
-    // viewModel: ProfileEditViewModel = hiltViewModel()
+    viewModel: ProfileChangeViewModel = hiltViewModel()
 ) {
     val customColors = CustomColors()
+    val scope = rememberCoroutineScope()
 
-    // UI 상태(예시). 실제로는 뷰모델 상태를 collectAsState()로 가져올 수 있음
-    var nickname by remember { mutableStateOf("") }
-    var nicknameError by remember { mutableStateOf("") }  // "이미 존재하는 닉네임입니다." 등
-    var profileText by remember { mutableStateOf("자기소개입니다.자기소개입니다...") }
-    var profileImageUrl by remember { mutableStateOf("https://via.placeholder.com/150") }
+    // ViewModel의 상태 수집
+    val nickname by viewModel.nickname.collectAsState()
+    val profileText by viewModel.profileText.collectAsState()
+    val profileImageUrl by viewModel.profileImageUrl.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    // 로컬 UI 상태
+    var nicknameError by remember { mutableStateOf("") }
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    // 컴포넌트가 처음 로드될 때 프로필 정보 가져오기
+    LaunchedEffect(Unit) {
+        viewModel.loadProfile(
+            viewModel.userRepository.getUser()?.memberId ?: return@LaunchedEffect
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -56,41 +79,28 @@ fun ProfileChangeScreen(
                 .padding(16.dp),
         ) {
             // 1) 프로필 이미지 및 버튼
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // 이미지 표시 (예: Coil AsyncImage)
-                AsyncImage(
-                    model = profileImageUrl,
-                    contentDescription = "Profile Image",
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(MaterialTheme.shapes.medium)
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                // 이미지 수정 / 삭제 버튼
-                Column {
-                    Button(
-                        onClick = {
-                            // 이미지 수정 로직 (예: 갤러리 열기, 카메라, API 업로드 등)
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("이미지 수정")
+            ProfileImageUpload(
+                profileImageUrl = profileImageUrl,
+                onImageSelected = { uri ->
+                    selectedImageUri = uri
+                    // 이미지가 선택되면 바로 업로드 처리
+                    uri?.let { imageUri ->
+                        scope.launch {
+                            val file = File(imageUri.path ?: return@launch)
+                            val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
+                            val imagePart = MultipartBody.Part.createFormData(
+                                "image",
+                                file.name,
+                                requestFile
+                            )
+                            viewModel.updateProfileImage(imagePart)
+                        }
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedButton(
-                        onClick = {
-                            // 이미지 삭제 로직
-                            profileImageUrl = "" // 예시
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("이미지 삭제")
-                    }
+                },
+                onDeleteImage = {
+                    viewModel.deleteProfileImage()
                 }
-            }
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -99,8 +109,8 @@ fun ProfileChangeScreen(
             OutlinedTextField(
                 value = nickname,
                 onValueChange = { newValue ->
-                    nickname = newValue
-                    // 닉네임 유효성 검사 로직 (공백 사용 불가 등)
+                    viewModel._nickname.value = newValue
+                    // 닉네임 유효성 검사 로직
                     nicknameError = if (newValue.contains(" ")) {
                         "공백 문자는 사용할 수 없습니다."
                     } else ""
@@ -109,6 +119,7 @@ fun ProfileChangeScreen(
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             )
+
             // 닉네임 오류 메시지
             if (nicknameError.isNotEmpty()) {
                 Text(
@@ -124,12 +135,22 @@ fun ProfileChangeScreen(
             Text(text = "Introduce", style = Typography.titleMedium, color = customColors.Grey50)
             OutlinedTextField(
                 value = profileText,
-                onValueChange = { profileText = it },
+                onValueChange = { viewModel._profileText.value = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp),  // 높이를 고정해서 여러 줄 표시
+                    .height(120.dp), // 높이를 고정해서 여러 줄 표시
                 maxLines = 5,
             )
+
+            // 에러 메시지 표시
+            if (errorMessage.isNotEmpty()) {
+                Text(
+                    text = errorMessage,
+                    color = Color.Red,
+                    style = Typography.bodySmall,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
 
             // 4) 하단 버튼 (취소, 수정)
             Spacer(modifier = Modifier.weight(1f))
@@ -140,20 +161,33 @@ fun ProfileChangeScreen(
                 // 취소 버튼
                 OutlinedButton(
                     onClick = {
-                        navController.popBackStack()  // 이전 화면으로 돌아가기
+                        navController.popBackStack() // 이전 화면으로 돌아가기
                     }
                 ) {
                     Text("취소")
                 }
-                Spacer(modifier = Modifier.width(16.dp))
+
+//                Spacer(modifier = Modifier.width(16.dp))
+
                 // 수정 버튼
                 Button(
                     onClick = {
-                        // 수정 API 호출 등
-                        // 닉네임, 소개, 이미지 변경 등을 서버에 전송
-                    }
+                        // 닉네임 유효성 검사 후 업데이트 진행
+                        if (nicknameError.isEmpty()) {
+                            viewModel.updateProfile(nickname, profileText)
+                            navController.popBackStack()
+                        }
+                    },
+                    enabled = !isLoading && nicknameError.isEmpty()
                 ) {
-                    Text("수정")
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White
+                        )
+                    } else {
+                        Text("수정")
+                    }
                 }
             }
         }
