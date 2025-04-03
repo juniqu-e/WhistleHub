@@ -21,4 +21,7 @@ public class MemberDetailResponseDto {
     private String nickname;
     private String profileImage;
     private String profileText;
+    private int followerCount;
+    private int followingCount;
+    private int trackCount;
 }

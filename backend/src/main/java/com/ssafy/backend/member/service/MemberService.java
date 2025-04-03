@@ -65,11 +65,18 @@ public class MemberService {
                     return new NotFoundMemberException();
                 });
 
+        // 팔로워 수, 팔로잉 수, 트랙 수 조회
+        int followerCount = followRepository.countByToMemberId(member.getId());
+        int followingCount = followRepository.countByFromMemberId(member.getId());
+        int trackCount = trackRepository.countByMemberId(member.getId());
 
         return MemberDetailResponseDto.builder()
                 .nickname(member.getNickname())
                 .profileImage(member.getProfileImage())
                 .profileText(member.getProfileText())
+                .followerCount(followerCount)
+                .followingCount(followingCount)
+                .trackCount(trackCount)
                 .build();
     }
 
@@ -210,16 +217,11 @@ public class MemberService {
      */
     public List<MemberInfo> getFollower(Integer memberId, PageRequest pageRequest) {
         // 회원의 팔로워 목록 가져오기
-        Member member = null;
-        if (memberId == null) {
-            member = authService.getMember();
-        } else {
-            member = memberRepository.findById(memberId)
-                    .orElseThrow(() -> {
-                        log.warn("해당하는 회원이 없습니다. memberId : {}", memberId);
-                        return new NotFoundMemberException();
-                    });
-        }
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> {
+                    log.warn("해당하는 회원이 없습니다. memberId : {}", memberId);
+                    return new NotFoundMemberException();
+                });
 
         List<Follow> followerList = followRepository.findByToMemberId(member.getId(), pageRequest);
         List<MemberInfo> followerInfoList = new LinkedList<>();
