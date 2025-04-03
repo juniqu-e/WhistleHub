@@ -27,17 +27,17 @@ import com.whistlehub.common.view.theme.Typography
  *
  * @param track 표시할 트랙 데이터
  * @param onClick 아이템 클릭 시 실행할 콜백
+ * @param onLongClick 아이템 길게 클릭 시 실행할 콜백
  */
 @Composable
 fun TrackGridItem(
     track: ProfileResponse.GetMemberTracksResponse,
-    onClick: () -> Unit
+    modifier: Modifier
 ) {
     val customColors = CustomColors()
 
     Column(
         modifier = Modifier
-            .clickable { onClick() }
             .padding(4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

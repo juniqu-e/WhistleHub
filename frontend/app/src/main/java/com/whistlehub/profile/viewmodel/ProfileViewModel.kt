@@ -304,14 +304,21 @@ class ProfileViewModel @Inject constructor(
     }
 
     // 검색 프로필 목록을 불러오는 함수
+    // ProfileViewModel.kt의 searchProfiles 함수 수정
     fun searchProfiles(query: String, page: Int = 0, size: Int = 10) {
         viewModelScope.launch {
             try {
                 Log.d("ProfileViewModel", "Searching profiles with query: $query")
+
+                // 중요: 검색 시작 시 로딩 상태 명시적으로 설정
+                // 상태를 내보내는 함수가 있다면 사용
+
                 val searchResponse = profileService.searchProfile(query, page, size)
 
                 if (searchResponse.code == "SU") {
-                    _searchResults.emit(searchResponse.payload ?: emptyList())
+                    // 중요: 상태 값을 즉시 업데이트하고 UI에 반영되도록 함
+                    // value를 직접 수정하는 것이 emit보다 즉각적일 수 있음
+                    _searchResults.value = searchResponse.payload ?: emptyList()
                     Log.d("ProfileViewModel", "Search returned ${searchResponse.payload?.size ?: 0} results")
                 } else {
                     _errorMessage.value = searchResponse.message

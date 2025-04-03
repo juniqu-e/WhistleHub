@@ -28,6 +28,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -81,7 +82,8 @@ fun ProfileSearchBar(
     var searchJob by remember { mutableStateOf<Job?>(null) }
     var dropdownVisible by remember { mutableStateOf(false) }
 
-    val searchResults = viewModel.searchResults.value
+    val searchResults by viewModel.searchResults.collectAsState()
+
 
     // 컴포넌트가 dispose될 때 검색 결과 초기화
     DisposableEffect(Unit) {
@@ -117,12 +119,30 @@ fun ProfileSearchBar(
                         // 기존 검색 작업을 취소
                         searchJob?.cancel()
 
-                    // 디바운싱 적용 검색
-                    searchJob = coroutineScope.launch {
-
+                    if (newQuery.isEmpty()) {
+                        // 검색어가 비어있으면 결과 초기화
+                        viewModel.clearSearchResults()
+                        isSearching = false  // 검색 중 상태 해제
+                    } else {
+                        // 검색 중 상태 즉시 활성화 (로딩 표시)
                         isSearching = true
-                        viewModel.searchProfiles(newQuery)
-                        isSearching = false
+
+                        // 새 검색 작업 즉시 시작
+                        searchJob = coroutineScope.launch {
+                            try {
+                                // 검색 API 호출
+                                viewModel.searchProfiles(newQuery)
+
+                                // 중요: 현재 검색어가 아직 newQuery와 같은지 확인
+                                // 사용자가 더 입력했을 경우 로딩 상태 유지
+                                if (searchQuery == newQuery) {
+                                    isSearching = false
+                                }
+                            } catch (e: Exception) {
+                                // 에러 처리
+                                isSearching = false
+                            }
+                        }
                     }
                 },
                 modifier = Modifier
