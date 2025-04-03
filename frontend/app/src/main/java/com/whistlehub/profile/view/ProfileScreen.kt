@@ -1,6 +1,7 @@
 package com.whistlehub.profile.view
 
 import android.util.Log
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,6 +12,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Menu
@@ -49,6 +51,13 @@ import com.whistlehub.profile.viewmodel.ProfileViewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import com.whistlehub.common.data.remote.dto.response.TrackResponse
+import com.whistlehub.profile.view.components.ProfileTrackDetailSheet
+import com.whistlehub.profile.viewmodel.ProfileTrackDetailViewModel
+
 
 /**
  * 팔로워/팔로잉 목록 타입을 구분하는 열거형
@@ -62,7 +71,7 @@ enum class FollowListType {
  * 사용자 프로필 화면
  * 프로필 정보, 검색, 트랙 목록, 팔로워/팔로잉 정보를 표시합니다.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ProfileScreen(
     memberIdParam: Int?,
@@ -106,6 +115,11 @@ fun ProfileScreen(
     // LazyVerticalGrid의 스크롤 상태
     val gridState: LazyGridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
+
+    var selectedTrackId by remember { mutableStateOf<Int?>(null) }
+    var showTrackDetailSheet by remember { mutableStateOf(false) }
+    val trackDetailViewModel: ProfileTrackDetailViewModel = hiltViewModel()
+    val trackDetail by trackDetailViewModel.trackDetail.collectAsState()
 
     // 화면이 처음 구성될 때 프로필 데이터를 로드합니다.
     LaunchedEffect(memberId) {
@@ -237,7 +251,24 @@ fun ProfileScreen(
             // 트랙 아이템들 렌더링
             items(count = tracks.size) { index ->
                 val track = tracks[index]
-                TrackGridItem(track = track, onClick = { /* 트랙 클릭 처리 */ })
+                Box(
+                    modifier = Modifier
+                        .combinedClickable(
+                            onClick = {
+                                // TODO: Implement play functionality
+                            },
+                            onLongClick = {
+                                selectedTrackId = track.trackId
+                                trackDetailViewModel.loadTrackDetails(track.trackId)
+                                showTrackDetailSheet = true
+                            }
+                        )
+                ) {
+                    TrackGridItem(
+                        track = track,
+                        modifier = Modifier
+                    )
+                }
             }
 
             // 로딩 인디케이터 (옵션)
@@ -253,6 +284,18 @@ fun ProfileScreen(
                     }
                 }
             }
+
         }
+            if (showTrackDetailSheet && trackDetail != null) {
+                ProfileTrackDetailSheet(
+                    track = trackDetail!!,
+                    isOwnProfile = memberId == currentUserId,
+                    onDismiss = {
+                        showTrackDetailSheet = false
+                        selectedTrackId = null
+                    },
+                    viewModel = trackDetailViewModel
+                )
+            }
     }
 }
