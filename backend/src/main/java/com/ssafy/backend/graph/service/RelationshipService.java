@@ -54,7 +54,7 @@ public class RelationshipService {
         relationshipRepository.createWriteRelationship(memberId, trackId);
     }
 
-    public List<TagNode> getPreferTagsByMemberId(Integer memberId) {
+    public List<Integer> getPreferTagsByMemberId(Integer memberId) {
         return relationshipRepository.findPreferTagsByMemberId(memberId);
     }
 

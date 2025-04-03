@@ -60,15 +60,19 @@ public class DiscoveryService {
      */
     public List<TagDto> getPreferTag() {
         Member member = authService.getMember();
-        List<TagNode> preferTagNodeList = relationshipService.getPreferTagsByMemberId(member.getId());
+        List<Integer> preferTagNodeList = relationshipService.getPreferTagsByMemberId(member.getId());
 
         Set<Integer> preferTagIdSet = new HashSet<>();
         List<TagDto> resultList = new ArrayList<>();
 
         // 먼저 선호 태그들을 결과 리스트에 추가
-        for (TagNode tagNode : preferTagNodeList) {
-            Tag tag = tagRepository.findById(tagNode.getId())
-                    .orElseThrow(() -> new NotFoundException());
+        for (Integer tagIds : preferTagNodeList) {
+            Tag tag = tagRepository.findById(tagIds)
+                    .orElseThrow(() -> {
+                        log.warn("Tag not found with id: {}", tagIds);
+                        return new NotFoundException();
+                    });
+            // 선호 태그 ID를 Set에 추가하여 중복 방지
             preferTagIdSet.add(tag.getId());
 
             resultList.add(TagDto.builder()
