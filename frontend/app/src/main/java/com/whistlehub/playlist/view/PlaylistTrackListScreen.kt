@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.AlertDialog
@@ -54,26 +55,29 @@ import kotlinx.coroutines.launch
 @Composable
 fun PlaylistTrackListScreen(
     paddingValues: PaddingValues,
-    playlistId: Int,
+    playlistId: String,
     navController: NavHostController,
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
     playlistViewModel: PlaylistViewModel = hiltViewModel()
 ) {
     LaunchedEffect(playlistId) {
         Log.d("PlaylistTrackListScreen", "playlistId: $playlistId")
-        // 플레이리스트 트랙 목록을 가져옴
-        playlistViewModel.getPlaylistTrack(playlistId)
-        // 플레이리스트 정보를 가져옴
-        playlistViewModel.getPlaylistInfo(playlistId)
+        if (playlistId == "like") {
+            // playlistId가 "like"인 경우, 좋아요 트랙 목록을 가져옴
+            playlistViewModel.getLikeTracks()
+        } else {
+            // playlistId가 "like"가 아닌 경우
+            // 플레이리스트 트랙 목록을 가져옴
+            playlistViewModel.getPlaylistTrack(playlistId.toInt())
+            // 플레이리스트 정보를 가져옴
+            playlistViewModel.getPlaylistInfo(playlistId.toInt())
+        }
     }
     val coroutineScope = rememberCoroutineScope()
     var showPlayPlaylistDialog by remember { mutableStateOf(false) }
     var showDeletePlaylistDialog by remember { mutableStateOf(false) }
     val playlistTrack by playlistViewModel.playlistTrack.collectAsState()
     val playlistInfo by playlistViewModel.playlistInfo.collectAsState()
-
-    val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
-    val isPlaying by trackPlayViewModel.isPlaying.collectAsState(initial = false)
 
     Column(Modifier.fillMaxWidth()) {
         LazyColumn(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -83,20 +87,29 @@ fun PlaylistTrackListScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    AsyncImage(
-                        model = playlistInfo?.imageUrl,
-                        contentDescription = "Playlist Image",
-                        modifier = Modifier
-                            .size(50.dp)
-                            .clip(RoundedCornerShape(5.dp)),
-                        error = null,
-                        contentScale = ContentScale.Crop
-                    )
+                    if (playlistId == "like") {
+                        Icon(
+                            Icons.Rounded.Favorite,
+                            contentDescription = "Favorite",
+                            modifier = Modifier.size(50.dp),
+                            tint = CustomColors().Mint500
+                        )
+                    } else {
+                        AsyncImage(
+                            model = playlistInfo?.imageUrl,
+                            contentDescription = "Playlist Image",
+                            modifier = Modifier
+                                .size(50.dp)
+                                .clip(RoundedCornerShape(5.dp)),
+                            error = null,
+                            contentScale = ContentScale.Crop
+                        )
+                    }
                     Column {
                         Row(
                             Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(15.dp)
+                            horizontalArrangement = Arrangement.spacedBy(15.dp),
                         ) {
                             Text(
                                 playlistInfo?.name ?: "Playlist Name",
@@ -116,26 +129,28 @@ fun PlaylistTrackListScreen(
                                     },
                                 tint = CustomColors().Mint500
                             )
-                            Icon(
-                                Icons.Rounded.Edit,
-                                contentDescription = "Edit",
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .clickable {
-                                        navController.navigate(Screen.PlayListEdit.route + "/$playlistId")
-                                    },
-                                tint = CustomColors().Grey50
-                            )
-                            Icon(
-                                Icons.Rounded.Delete,
-                                contentDescription = "Delete",
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .clickable {
-                                        showDeletePlaylistDialog = true
-                                    },
-                                tint = CustomColors().Grey50
-                            )
+                            if (playlistId != "like") {
+                                Icon(
+                                    Icons.Rounded.Edit,
+                                    contentDescription = "Edit",
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clickable {
+                                            navController.navigate(Screen.PlayListEdit.route + "/$playlistId")
+                                        },
+                                    tint = CustomColors().Grey50
+                                )
+                                Icon(
+                                    Icons.Rounded.Delete,
+                                    contentDescription = "Delete",
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clickable {
+                                            showDeletePlaylistDialog = true
+                                        },
+                                    tint = CustomColors().Grey50
+                                )
+                            }
                         }
                         Row(
                             Modifier.fillMaxWidth(),
@@ -194,7 +209,7 @@ fun PlaylistTrackListScreen(
                 Button(
                     onClick = {
                         coroutineScope.launch {
-                            playlistViewModel.deletePlaylist(playlistId)
+                            playlistViewModel.deletePlaylist(playlistId.toInt())
                             navController.popBackStack()
                         }
                         showDeletePlaylistDialog = false
@@ -220,7 +235,6 @@ fun PlaylistTrackListScreen(
             }
         )
     }
-
     if (showPlayPlaylistDialog) {
         AlertDialog(
             onDismissRequest = { showPlayPlaylistDialog = false },
