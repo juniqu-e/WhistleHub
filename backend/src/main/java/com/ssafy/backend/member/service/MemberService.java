@@ -66,9 +66,9 @@ public class MemberService {
                 });
 
         // 팔로워 수, 팔로잉 수, 트랙 수 조회
-        int followerCount = followRepository.countByToMemberId(member.getId());
-        int followingCount = followRepository.countByFromMemberId(member.getId());
-        int trackCount = trackRepository.countByMemberId(member.getId());
+        int followerCount = followRepository.countByToMemberId(memberId);
+        int followingCount = followRepository.countByFromMemberId(memberId);
+        int trackCount = trackRepository.countByMemberId(memberId);
 
         return MemberDetailResponseDto.builder()
                 .nickname(member.getNickname())
