@@ -13,6 +13,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
 import javax.inject.Inject
+import android.content.Context
+import android.net.Uri
+import android.provider.OpenableColumns
 
 @HiltViewModel
 class ProfileChangeViewModel @Inject constructor(
@@ -131,5 +134,37 @@ class ProfileChangeViewModel @Inject constructor(
                 _isLoading.value = false
             }
         }
+    }
+
+    // Uri에서 파일 이름을 가져오는 헬퍼 함수 (필요한 경우 ProfileChangeScreen 파일 하단 등에 추가)
+    fun getFileName(context: Context, uri: Uri): String? {
+        var result: String? = null
+        if (uri.scheme == "content") {
+            val cursor = context.contentResolver.query(uri, null, null, null, null)
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (nameIndex != -1) { // 컬럼 인덱스 유효성 검사
+                        result = it.getString(nameIndex)
+                    }
+                }
+            }
+        }
+        if (result == null) {
+            result = uri.path
+            val cut = result?.lastIndexOf('/')
+            if (cut != -1 && cut != null) {
+                result = result?.substring(cut + 1)
+            }
+        }
+        // 파일 이름에 확장자가 없는 경우 MIME 타입 기반으로 추가 시도
+        if (result != null && !result!!.contains('.')) {
+            val mimeType = context.contentResolver.getType(uri)
+            val extension = mimeType?.substringAfterLast('/')
+            if (extension != null && extension != "*") { // 와일드카드 확장자는 제외
+                result = "$result.$extension"
+            }
+        }
+        return result
     }
 }

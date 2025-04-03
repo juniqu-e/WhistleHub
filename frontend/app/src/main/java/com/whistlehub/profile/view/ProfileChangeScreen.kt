@@ -10,13 +10,13 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
-import androidx.compose.ui.draw.clip
+
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import coil3.compose.AsyncImage
+
 import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
@@ -24,9 +24,13 @@ import com.whistlehub.profile.view.components.ProfileImageUpload
 import com.whistlehub.profile.viewmodel.ProfileChangeViewModel
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+
+import androidx.compose.runtime.rememberCoroutineScope // 이미 있을 수 있음
+import androidx.compose.ui.platform.LocalContext // 추가
 import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.asRequestBody
-import java.io.File
+import okhttp3.RequestBody.Companion.toRequestBody // 추가
+import java.util.UUID // 추가
+import android.util.Log // 로깅을 위해 추가
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,6 +60,8 @@ fun ProfileChangeScreen(
         )
     }
 
+    val context = LocalContext.current
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -78,24 +84,50 @@ fun ProfileChangeScreen(
                 .padding(innerPadding)
                 .padding(16.dp),
         ) {
-            // 1) 프로필 이미지 및 버튼
             ProfileImageUpload(
                 profileImageUrl = profileImageUrl,
                 onImageSelected = { uri ->
                     selectedImageUri = uri
-                    // 이미지가 선택되면 바로 업로드 처리
+                    // 이미지가 선택되면 바로 업로드 처리 (메모리 방식)
                     uri?.let { imageUri ->
                         scope.launch {
-                            val file = File(imageUri.path ?: return@launch)
-                            val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
-                            val imagePart = MultipartBody.Part.createFormData(
-                                "image",
-                                file.name,
-                                requestFile
-                            )
-                            viewModel.updateProfileImage(imagePart)
+                            try {
+                                // ContentResolver를 사용하여 InputStream 열기
+                                context.contentResolver.openInputStream(imageUri)?.use { inputStream ->
+                                    // InputStream에서 ByteArray로 읽기
+                                    val imageBytes = inputStream.readBytes()
+
+
+
+                                    // MIME 타입 가져오기 (ContentResolver 사용)
+                                    val mimeType = context.contentResolver.getType(imageUri) ?: "image/*" // 기본값 설정
+                                    val mediaType = mimeType.toMediaTypeOrNull() // MediaType 객체 미리 생성
+
+                                    // 파일 이름 생성 (Uri에서 가져오거나 UUID 사용)
+                                    val filename = viewModel.getFileName(context, imageUri) ?: "${UUID.randomUUID()}.${mimeType.substringAfterLast('/')}"
+
+                                    // ByteArray로부터 RequestBody 생성
+                                    val requestBody = imageBytes.toRequestBody(mimeType.toMediaTypeOrNull())
+
+                                    // MultipartBody.Part 생성 ("image" 이름 사용 확인됨)
+                                    val imagePart = MultipartBody.Part.createFormData(
+                                        "image",
+                                        filename,
+                                        requestBody
+                                    )
+
+                                    // ViewModel 호출
+                                    viewModel.updateProfileImage(imagePart)
+
+                                } ?: Log.e("ImageUpload", "Failed to open InputStream for URI: $imageUri")
+
+                            } catch (e: Exception) {
+                                Log.e("ImageUpload", "Error processing image URI: $imageUri", e)
+                                // 사용자에게 오류 메시지 표시 등 예외 처리
+                                // viewModel.showError("이미지 처리 중 오류가 발생했습니다.")
+                            }
                         }
-                    }
+                    } ?: Log.w("ImageUpload", "Selected URI is null") // uri가 null인 경우 로그
                 },
                 onDeleteImage = {
                     viewModel.deleteProfileImage()
@@ -153,7 +185,7 @@ fun ProfileChangeScreen(
             }
 
             // 4) 하단 버튼 (취소, 수정)
-            Spacer(modifier = Modifier.weight(1f))
+//            Spacer(modifier = Modifier.weight(1f))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
