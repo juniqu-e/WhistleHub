@@ -5,19 +5,23 @@ import com.ssafy.backend.auth.model.common.TagDto;
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.error.exception.NotFoundException;
 import com.ssafy.backend.common.error.exception.NotFoundPageException;
+import com.ssafy.backend.common.error.exception.NotFoundTrackException;
 import com.ssafy.backend.graph.model.entity.TagNode;
 import com.ssafy.backend.graph.service.RecommendationService;
 import com.ssafy.backend.graph.service.RelationshipService;
+import com.ssafy.backend.mysql.entity.ListenRecord;
 import com.ssafy.backend.mysql.entity.Member;
 import com.ssafy.backend.mysql.entity.Tag;
 import com.ssafy.backend.mysql.entity.Track;
 import com.ssafy.backend.mysql.repository.LikeRepository;
+import com.ssafy.backend.mysql.repository.ListenRecoredRepository;
 import com.ssafy.backend.mysql.repository.TagRepository;
 import com.ssafy.backend.mysql.repository.TrackRepository;
 import com.ssafy.backend.playlist.dto.TrackInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -39,13 +43,13 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Slf4j
 public class DiscoveryService {
-    private final LikeRepository likeRepository;
     private final RelationshipService relationshipService;
     private final AuthService authService;
     private final TagRepository tagRepository;
     private final RecommendationService recommendationService;
     private final TrackRepository trackRepository;
     private final RankingService rankingService;
+    private final ListenRecoredRepository listenRecoredRepository;
 
     /**
      * <pre>좋아요 랭킹 조회</pre>
@@ -55,24 +59,8 @@ public class DiscoveryService {
      * @return 좋아요 랭킹 리스트
      */
     public List<TrackInfo> getTagRanking(int tagId, String period, PageRequest pageRequest) {
-
         List<Integer> likeRankingByTag = rankingService.getTagRanking(tagId, period, pageRequest);
-
-        List<TrackInfo> trackInfoList = new ArrayList<>();
-        List<Track> trackList = trackRepository.findAllById(likeRankingByTag);
-        for (Track track : trackList) {
-            TrackInfo trackInfo = TrackInfo.builder()
-                    .trackId(track.getId())
-                    .title(track.getTitle())
-                    .nickname(track.getMember().getNickname())
-                    .imageUrl(track.getImageUrl())
-                    .duration(track.getDuration())
-                    .build();
-
-            trackInfoList.add(trackInfo);
-        }
-
-        return trackInfoList;
+        return getTrackInfoList(trackRepository.findAllById(likeRankingByTag));
     }
 
     /**
@@ -121,18 +109,59 @@ public class DiscoveryService {
         Member member = authService.getMember();
 
         List<Integer> trackIds = recommendationService.getRecommendTrackIds(member.getId(), tagId, size);
-        List<TrackInfo> resultList = new ArrayList<>();
 
-        if (trackIds.isEmpty()) {
-            trackIds = rankingService.getTagRanking(tagId, "WEEK", PageRequest.of(0, size));
+        // 태그 노드가 존재하지 않는 경우
+        // 주간 랭킹, 월간랭킹에서 추천 트랙을 가져온다.
+        if (trackIds.isEmpty() || trackIds.size() < size) {
+            trackIds.addAll(
+                    rankingService.getTagRanking(
+                            tagId,
+                            "WEEK",
+                            PageRequest.of(0, size - trackIds.size())
+                    )
+            );
         }
 
-        for (Integer trackId : trackIds) {
-            Track track = trackRepository.findById(trackId)
-                    .orElseThrow(() -> {
-                        log.warn("Track not found with id: {}", trackId);
-                        return new NotFoundException();
-                    });
+        if (trackIds.isEmpty() || trackIds.size() < size) {
+            trackIds.addAll(
+                    rankingService.getTagRanking(
+                            tagId,
+                            "MONTH",
+                            PageRequest.of(0, size - trackIds.size())
+                    )
+            );
+        }
+
+        return getTrackInfoList(trackRepository.findAllById(trackIds));
+    }
+
+    public List<TrackInfo> getRecentTrack(int size){
+        Member member = authService.getMember();
+        List<ListenRecord> listenRecordList = listenRecoredRepository.findByMemberId(member.getId(), PageRequest.of(0, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+        List<Track> trackList = new ArrayList<>();
+        for(ListenRecord listenRecord : listenRecordList) {
+            trackList.add(listenRecord.getTrack());
+        }
+
+        return getTrackInfoList(trackList);
+    }
+
+    public List<TrackInfo> getSimilarTracks(int trackId){
+        Track track = trackRepository.findById(trackId)
+                .orElseThrow(() -> {
+                    log.warn("Track not found with id: {}", trackId);
+                    return new NotFoundTrackException();
+                });
+
+        List<Integer> similarTrackIds = recommendationService.getSimilarTrackIds(track.getId());
+        List<Track> similarTracks = trackRepository.findAllById(similarTrackIds);
+        return getTrackInfoList(similarTracks);
+
+    }
+
+    private List<TrackInfo> getTrackInfoList(List<Track> trackList) {
+        List<TrackInfo> resultList = new ArrayList<>();
+        for (Track track : trackList) {
             TrackInfo trackInfo = TrackInfo.builder()
                     .trackId(track.getId())
                     .title(track.getTitle())

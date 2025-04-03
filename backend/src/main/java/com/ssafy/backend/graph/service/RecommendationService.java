@@ -2,6 +2,7 @@ package com.ssafy.backend.graph.service;
 
 import com.ssafy.backend.graph.repository.TrackNodeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,6 +23,10 @@ public class RecommendationService {
 
     public List<Integer> getRecommendTrackIds(int memberId, int tagId, int trackCount) {
         return trackNodeRepository.getRecommendTrackIds(memberId, tagId, trackCount);
+    }
+
+    public List<Integer> getSimilarTrackIds(int trackId) {
+        return trackNodeRepository.getSimilarTrackIds(trackId);
     }
 }
 

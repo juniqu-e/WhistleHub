@@ -48,5 +48,13 @@ public interface TrackNodeRepository extends Neo4jRepository<TrackNode, Integer>
             LIMIT $limit
             """)
     List<Integer> getRecommendTrackIds(@Param("memberId") Integer memberId, @Param("tagId") Integer tagId, @Param("limit") Integer limit);
+
+    @Query("""
+            MATCH (t:Track)-[similar:SIMILAR]->(other:Track)
+            WHERE t.id = $trackId
+            ORDER BY similar.similarity DESC
+            RETURN other.id
+            """)
+    List<Integer> getSimilarTrackIds(@Param("trackId") Integer trackId);
 }
 

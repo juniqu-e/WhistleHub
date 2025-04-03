@@ -94,4 +94,27 @@ public class DiscoveryController {
                 .payload(result)
                 .build();
     }
+
+    /**
+     * <pre>최근 들은 음악 조회</pre>
+     */
+    @GetMapping("/recent")
+    public ApiResponse<?> getRecentTrack(@RequestParam(value = "size", required = true)
+                                         @Min(value = 0)
+                                         Integer size) {
+        List<TrackInfo> result = discoveryService.getRecentTrack(size);
+        return new ApiResponse.builder<List<TrackInfo>>()
+                .payload(result)
+                .build();
+    }
+
+    @GetMapping("/similar")
+    public ApiResponse<?> getSimilarTracks(@RequestParam(value = "trackId", required = true)
+                                          @Min(value = 0)
+                                          Integer trackId) {
+        List<TrackInfo> result = discoveryService.getSimilarTracks(trackId);
+        return new ApiResponse.builder<List<TrackInfo>>()
+                .payload(result)
+                .build();
+    }
 }
