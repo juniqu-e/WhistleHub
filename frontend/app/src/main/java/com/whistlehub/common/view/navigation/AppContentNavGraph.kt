@@ -70,8 +70,8 @@ fun AppContentNavGraph(
                 navController
             )
         }
-        composable(route = Screen.Profile.route + "/{memberId}"){ backStackEntry ->
-        val memberId = backStackEntry.arguments?.getString("memberId")
+        composable(route = Screen.Profile.route + "/{memberId}") { backStackEntry ->
+            val memberId = backStackEntry.arguments?.getString("memberId")
             ProfileScreen(
                 memberId?.toInt() ?: -1,
                 paddingValues = paddingValues,
@@ -108,7 +108,7 @@ fun AppContentNavGraph(
             if (playlistId != null) {
                 PlaylistTrackListScreen(
                     paddingValues,
-                    playlistId.toInt(),
+                    playlistId,
                     navController,
                     trackPlayViewModel
                 )
