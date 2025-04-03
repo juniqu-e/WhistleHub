@@ -1,9 +1,10 @@
 package com.whistlehub.profile.view.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,21 +27,19 @@ import com.whistlehub.common.view.theme.Typography
  * 트랙 그리드 아이템을 표시하는 컴포넌트
  *
  * @param track 표시할 트랙 데이터
- * @param onClick 아이템 클릭 시 실행할 콜백
- * @param onLongClick 아이템 길게 클릭 시 실행할 콜백
  */
 @Composable
 fun TrackGridItem(
     track: ProfileResponse.GetMemberTracksResponse,
-    modifier: Modifier
 ) {
     val customColors = CustomColors()
 
     Column(
         modifier = Modifier
-            .padding(4.dp),
+            .padding(horizontal = 8.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // 트랙 이미지
         track.imageUrl?.let {
             AsyncImage(
                 model = it,
@@ -64,6 +63,10 @@ fun TrackGridItem(
             )
         }
 
+        // 이미지와 텍스트 사이 간격 추가
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // 트랙 제목
         Text(
             text = track.title,
             style = Typography.bodyMedium,
