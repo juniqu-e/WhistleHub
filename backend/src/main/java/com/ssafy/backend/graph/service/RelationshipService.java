@@ -69,6 +69,11 @@ public class RelationshipService {
     }
 
     @Transactional
+    public void deleteFollowRelationship(Integer followerId, Integer followingId) {
+        memberNodeRepository.deleteFollowRelationship(followerId, followingId);
+    }
+
+    @Transactional
     public void createLikeRelationship(Integer memberId, Integer trackId, Double weight) {
         memberNodeRepository.createLikeRelationship(memberId, trackId, weight);
     }

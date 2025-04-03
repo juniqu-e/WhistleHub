@@ -80,19 +80,15 @@ public class DiscoveryController {
      * <pre>추천 트랙 조회</pre>
      * Access Token의 멤버가 선호하는 태그에 따라 추천 트랙 리스트 반환.
      * @param tagId 태그 ID
-     * @param page 페이지 번호
      * @param size 페이지 크기
      * @return 추천 트랙 리스트
      */
     @GetMapping("/tag/recommend")
     public ApiResponse<?> getTagRecommend(@RequestParam(value = "tagId", required = true) Integer tagId,
-                                          @RequestParam(value = "page", required = true)
-                                          @Min(value = 0)
-                                          Integer page,
                                           @RequestParam(value = "size", required = true)
                                           @Min(value = 0)
                                           Integer size) {
-        List<TrackInfo> result = discoveryService.getTagRecommend(tagId, PageRequest.of(page, size));
+        List<TrackInfo> result = discoveryService.getTagRecommend(tagId, size);
 
         return new ApiResponse.builder<List<TrackInfo>>()
                 .payload(result)

@@ -6,6 +6,7 @@ import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.error.exception.NotFoundException;
 import com.ssafy.backend.common.error.exception.NotFoundPageException;
 import com.ssafy.backend.graph.model.entity.TagNode;
+import com.ssafy.backend.graph.service.RecommendationService;
 import com.ssafy.backend.graph.service.RelationshipService;
 import com.ssafy.backend.mysql.entity.Member;
 import com.ssafy.backend.mysql.entity.Tag;
@@ -42,7 +43,7 @@ public class DiscoveryService {
     private final RelationshipService relationshipService;
     private final AuthService authService;
     private final TagRepository tagRepository;
-    private final Neo4jContentRetrieverService neo4jContentRetrieverService;
+    private final RecommendationService recommendationService;
     private final TrackRepository trackRepository;
     private final RankingService rankingService;
 
@@ -116,15 +117,22 @@ public class DiscoveryService {
         return resultList;
     }
 
-    public List<TrackInfo> getTagRecommend(int tagId, PageRequest page) {
+    public List<TrackInfo> getTagRecommend(int tagId, int size) {
         Member member = authService.getMember();
 
-        List<Integer> trackIds = neo4jContentRetrieverService.retrieveTrackByMemberIdAndTagId(member.getId(), tagId, 5);
-        List<Track> trackList = trackRepository.findAllById(trackIds);
+        List<Integer> trackIds = recommendationService.getRecommendTrackIds(member.getId(), tagId, size);
+        List<TrackInfo> resultList = new ArrayList<>();
 
-        List<TrackInfo> result = new ArrayList<>();
+        if (trackIds.isEmpty()) {
+            trackIds = rankingService.getTagRanking(tagId, "WEEK", PageRequest.of(0, size));
+        }
 
-        for (Track track : trackList) {
+        for (Integer trackId : trackIds) {
+            Track track = trackRepository.findById(trackId)
+                    .orElseThrow(() -> {
+                        log.warn("Track not found with id: {}", trackId);
+                        return new NotFoundException();
+                    });
             TrackInfo trackInfo = TrackInfo.builder()
                     .trackId(track.getId())
                     .title(track.getTitle())
@@ -133,8 +141,8 @@ public class DiscoveryService {
                     .duration(track.getDuration())
                     .build();
 
-            result.add(trackInfo);
+            resultList.add(trackInfo);
         }
-        return result;
+        return resultList;
     }
 }
