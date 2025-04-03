@@ -44,7 +44,6 @@ fun NewTrackCard(
         Modifier
             .heightIn(max = 200.dp)
             .widthIn(max = 300.dp)
-            .background(CustomColors().Grey700, RoundedCornerShape(10.dp))
             .padding(8.dp)
             .clickable {
                 coroutineScope.launch {

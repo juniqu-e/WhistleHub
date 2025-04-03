@@ -22,6 +22,7 @@ import com.whistlehub.profile.view.ProfileScreen
 import com.whistlehub.search.view.SearchScreen
 import com.whistlehub.workstation.view.WorkStationScreen
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
+import kotlin.math.log
 
 /**
  * 메인 앱 화면 간의 네비게이션을 처리하는 콘텐츠 네비게이션 그래프
@@ -44,7 +45,8 @@ fun AppContentNavGraph(
             HomeScreen(
                 paddingValues,
                 trackPlayViewModel = trackPlayViewModel,
-                navController = navController
+                navController = navController,
+                logoutManager = logoutManager
             )
         }
         composable(route = Screen.Search.route) {
@@ -72,6 +74,7 @@ fun AppContentNavGraph(
             val memberId = backStackEntry.arguments?.getString("memberId")
             ProfileScreen(
                 memberId?.toInt() ?: -1,
+                paddingValues = paddingValues,
                 navController = navController,
                 logoutManager = logoutManager,
             )

@@ -1,11 +1,6 @@
 package com.whistlehub.common.view.component
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -21,6 +16,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.whistlehub.common.view.theme.CustomColors
+import com.whistlehub.common.view.theme.Typography
 
 @Composable
 fun CustomAlertDialog(
@@ -31,6 +28,8 @@ fun CustomAlertDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
+    val customColors = CustomColors()
+
     if (showDialog) {
         Dialog(
             onDismissRequest = onDismiss,
@@ -45,7 +44,7 @@ fun CustomAlertDialog(
                     .padding(16.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF121212) // 어두운 배경색
+                    containerColor = Color(0xFF1D1B20) // 어두운 배경색
                 )
             ) {
                 Column(
@@ -58,16 +57,16 @@ fun CustomAlertDialog(
                     // 제목
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = Color(0xFFE0E0E0), // 밝은 텍스트 색상
+                        style = Typography.titleLarge,
+                        color = customColors.Grey50, // 밝은 텍스트 색상
                         textAlign = TextAlign.Center
                     )
 
                     // 메시지
                     Text(
                         text = message,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFFBDBDBD), // 약간 어두운 텍스트 색상
+                        style = Typography.bodyLarge,
+                        color = customColors.Grey200, // 약간 어두운 텍스트 색상
                         textAlign = TextAlign.Center
                     )
 
@@ -81,12 +80,13 @@ fun CustomAlertDialog(
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF00BFA5) // 민트 색상 버튼
+                            containerColor = customColors.Mint500 // 민트 색상 버튼
                         )
                     ) {
                         Text(
                             text = confirmButtonText,
-                            color = Color(0xFF000000) // 버튼 텍스트 색상
+                            style = Typography.titleMedium,
+                            color = customColors.Grey950 // 버튼 텍스트 색상
                         )
                     }
                 }
