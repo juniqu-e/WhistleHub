@@ -25,6 +25,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * <pre>Discovery 서비스</pre>
+ *
+ * 곡 발견 관련 로직을 처리하는 클래스.
+ * @author 허현준
+ * @version 1.0
+ * @since 2025-04-03
+ */
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -35,6 +44,7 @@ public class DiscoveryService {
     private final TagRepository tagRepository;
     private final Neo4jContentRetrieverService neo4jContentRetrieverService;
     private final TrackRepository trackRepository;
+    private final RankingService rankingService;
 
     /**
      * <pre>좋아요 랭킹 조회</pre>
@@ -43,19 +53,30 @@ public class DiscoveryService {
      * @param pageRequest 페이지 요청
      * @return 좋아요 랭킹 리스트
      */
-    public List<TrackInfo> getTagRanking(String period, int tagId, PageRequest pageRequest) {
-        String startDate = getPeriodStartDate(period).toString();
-        List<TrackInfo> result = likeRepository.findLikeRankingByTagAndPeriod(tagId, startDate, pageRequest);
-        if (result.isEmpty()) {
-            log.warn("No ranking data found for period: {}", period);
-            throw new NotFoundPageException();
+    public List<TrackInfo> getTagRanking(int tagId, String period, PageRequest pageRequest) {
+
+        List<Integer> likeRankingByTag = rankingService.getTagRanking(tagId, period, pageRequest);
+
+        List<TrackInfo> trackInfoList = new ArrayList<>();
+        List<Track> trackList = trackRepository.findAllById(likeRankingByTag);
+        for (Track track : trackList) {
+            TrackInfo trackInfo = TrackInfo.builder()
+                    .trackId(track.getId())
+                    .title(track.getTitle())
+                    .nickname(track.getMember().getNickname())
+                    .imageUrl(track.getImageUrl())
+                    .duration(track.getDuration())
+                    .build();
+
+            trackInfoList.add(trackInfo);
         }
 
-        return result;
+        return trackInfoList;
     }
 
     /**
      * <pre>선호 태그 조회</pre>
+     *
      * @return 선호 태그 리스트
      */
     public List<TagDto> getPreferTag() {
@@ -95,10 +116,10 @@ public class DiscoveryService {
         return resultList;
     }
 
-    public List<TrackInfo> getTagRecommend(int tagId, int size) {
+    public List<TrackInfo> getTagRecommend(int tagId, PageRequest page) {
         Member member = authService.getMember();
 
-        List<Integer> trackIds = neo4jContentRetrieverService.retrieveTrackByMemberIdAndTagId(member.getId(), tagId, size);
+        List<Integer> trackIds = neo4jContentRetrieverService.retrieveTrackByMemberIdAndTagId(member.getId(), tagId, 5);
         List<Track> trackList = trackRepository.findAllById(trackIds);
 
         List<TrackInfo> result = new ArrayList<>();
@@ -115,40 +136,5 @@ public class DiscoveryService {
             result.add(trackInfo);
         }
         return result;
-    }
-    /**
-     * <pre>기간 시작일자</pre>
-     * 기간에 따라 시작일자를 계산한다.
-     *
-     * @param period 기간
-     * @return 시작일자
-     */
-    private LocalDateTime getPeriodStartDate(String period) {
-        LocalDateTime now = LocalDateTime.now();
-        switch (period) {
-            case "WEEK":
-                return now.minusWeeks(1);
-            case "MONTH":
-                return now.minusMonths(1);
-            default:
-                return now;
-        }
-    }
-
-    /**
-     * <pre>기간 유효성 검사</pre>
-     * 기간이 null, 빈 문자열, "WEEK", "MONTH" 중 하나인지 확인한다.
-     *
-     * @param period 기간
-     * @return 유효성 검사 결과
-     */
-    public boolean isValidPeriod(String period) {
-        if (period == null || period.isEmpty()) {
-            return false;
-        }
-        period = period.trim();
-        period = period.toUpperCase();
-
-        return period.equals("WEEK") || period.equals("MONTH");
     }
 }

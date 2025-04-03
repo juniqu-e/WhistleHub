@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
+
 /**
  * <pre>Redis 서비스</pre>
  * Redis의 CRUD를 담당하는 서비스, 기본적으로 String key, Object value로 저장.
@@ -102,4 +104,38 @@ public class RedisService {
         redisTemplate.expire(key, timeout, java.util.concurrent.TimeUnit.SECONDS);
     }
 
+    /**
+     * Sorted Set에 데이터 추가
+     *
+     * @param key 키
+     * @param value 값
+     * @param score 점수
+     */
+    public void addSortedSet(String key, String value, double score) {
+        redisTemplate.opsForZSet().add(key, value, score);
+    }
+
+    /**
+     * Sorted Set에서 범위로 데이터 조회 (높은 점수 순)
+     *
+     * @param key   키
+     * @param start 시작 인덱스
+     * @param end   종료 인덱스
+     * @return 조회된 값 목록
+     */
+    public Set<Object> getReverseRangeSortedSet(String key, long start, long end) {
+        return redisTemplate.opsForZSet().reverseRange(key, start, end);
+    }
+
+    /**
+     * Sorted Set에서 범위로 데이터 조회 (낮은 점수 순)
+     *
+     * @param key   키
+     * @param start 시작 인덱스
+     * @param end   종료 인덱스
+     * @return 조회된 값 목록
+     */
+    public Set<Object> getRangeSortedSet(String key, long start, long end) {
+        return redisTemplate.opsForZSet().range(key, start, end);
+    }
 }
