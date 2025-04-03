@@ -133,6 +133,18 @@ public class MemberService {
         return imageUrl;
     }
 
+    public void deleteImage() {
+        Member member = authService.getMember();
+        String memberProfileImageUrl = member.getProfileImage();
+
+        // 프로필 이미지 삭제
+        if (memberProfileImageUrl != null) {
+            s3Service.deleteFile(memberProfileImageUrl);
+            member.setProfileImage(null);
+            memberRepository.save(member);
+        }
+    }
+
     /**
      * 비밀번호 변경
      *
