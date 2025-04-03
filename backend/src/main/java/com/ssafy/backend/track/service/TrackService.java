@@ -156,6 +156,7 @@ public class TrackService {
         return TrackResponseDto.builder()
                 .trackId(track.getId())
                 .title(track.getTitle())
+                .duration(track.getDuration())
                 .description(track.getDescription())
                 .imageUrl(track.getImageUrl())
                 .artist(ArtistInfoDto.builder().memberId(track.getMember().getId()).nickname(track.getMember().getNickname()).profileImage(track.getMember().getProfileImage()).build())

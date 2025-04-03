@@ -14,6 +14,7 @@ public class TrackResponseDto {
     Integer trackId;
     String title;
     String description;
+    int duration;
     String imageUrl;
     ArtistInfoDto artist;
     Boolean isLiked;
