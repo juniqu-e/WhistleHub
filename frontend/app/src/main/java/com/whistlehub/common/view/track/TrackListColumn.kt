@@ -4,12 +4,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.ui.Modifier
-import com.whistlehub.common.data.remote.dto.response.TrackResponse
+import com.whistlehub.playlist.data.TrackEssential
 
 @Composable
 fun TrackListColumn(
     modifier: Modifier = Modifier,
-    trackList: State<List<TrackResponse.GetTrackDetailResponse>>,
+    trackList: State<List<TrackEssential>>,
 ) {
     if (trackList.value.isEmpty()) {
         return

@@ -1,10 +1,8 @@
 package com.whistlehub.common.view.navigation
 
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -17,9 +15,8 @@ import com.whistlehub.common.view.AppScaffold
 import com.whistlehub.common.view.login.LoginScreen
 import com.whistlehub.common.view.signup.SelectTagsScreen
 import com.whistlehub.common.view.signup.SignUpScreen
-import com.whistlehub.common.viewmodel.LoginViewModel
-import com.whistlehub.common.viewmodel.SignUpState
 import com.whistlehub.common.viewmodel.SignUpViewModel
+import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 
 /**
  * 앱의 전체 네비게이션 구조를 처리하는 메인 네비게이션 그래프
@@ -55,7 +52,6 @@ fun MainNavGraph(
                     navController.navigate("signup") {
                         popUpTo("login") { inclusive = true }
                     }
-
                 },
                 navController = navController
             )
@@ -65,7 +61,7 @@ fun MainNavGraph(
             SignUpScreen(
                 onNext = {
                     // 태그 선택 화면으로 전환
-                    userId, password, email, nickname, gender, birth ->
+                        userId, password, email, nickname, gender, birth ->
                     navController.navigate("selecttags/$userId/$password/$email/$nickname/$gender/$birth")
                 },
                 onLoginClick = {
@@ -94,7 +90,6 @@ fun MainNavGraph(
             val nickname = backStackEntry.arguments?.getString("nickname") ?: ""
             val genderString = backStackEntry.arguments?.getString("gender") ?: "M"
             val birth = backStackEntry.arguments?.getString("birth") ?: ""
-
             // Composable 컨텍스트에서 미리 ViewModel 인스턴스를 생성합니다.
             val signUpViewModel: SignUpViewModel = hiltViewModel()
 
@@ -136,6 +131,7 @@ fun MainScreenWithBottomNav(
     logoutManager: LogoutManager
 ) {
     val newNavController = rememberNavController()
+    val workStationViewModel: WorkStationViewModel = hiltViewModel()
     // 새로운 내부 네비게이션 컨트롤러 생성
     LaunchedEffect(key1 = logoutManager.logoutEventFlow) {
         logoutManager.logoutEventFlow.collect {
@@ -155,6 +151,7 @@ fun MainScreenWithBottomNav(
             navController = newNavController,
             logoutManager = logoutManager,
             paddingValues = paddingValues,
+            workStationViewModel = workStationViewModel
         )
     }
 }

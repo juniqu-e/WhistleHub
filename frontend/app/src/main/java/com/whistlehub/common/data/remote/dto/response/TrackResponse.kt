@@ -7,10 +7,10 @@ sealed class TrackResponse {
     data class GetTrackDetailResponse(
         val trackId: Int,
         val title: String,
-        val description: String,
+        val description: String?,
         val duration: Int,
-        val imageUrl: String,
-        val artist: ArtistInfo?,
+        val imageUrl: String?,
+        val artist: ArtistInfo,
         val isLiked: Boolean,
         val importCount: Int,
         val likeCount: Int,
@@ -25,7 +25,7 @@ sealed class TrackResponse {
     data class ArtistInfo(
         val memberId: Int,
         val nickname: String,
-        val profileImage: String
+        val profileImage: String?
     )
 
     // 태그 정보

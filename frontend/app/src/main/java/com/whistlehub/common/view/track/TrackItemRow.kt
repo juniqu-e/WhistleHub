@@ -26,15 +26,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
-import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
+import com.whistlehub.playlist.data.TrackEssential
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import kotlinx.coroutines.launch
 
 @Composable
 fun TrackItemRow(
-    track: TrackResponse.GetTrackDetailResponse,
+    track: TrackEssential,
     style: TrackItemStyle = TrackItemStyle.DEFAULT,
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
 ) {
@@ -84,7 +84,7 @@ fun TrackItemRow(
                 color = CustomColors().Grey50
             )
             Text(
-                track.artist?.nickname ?: "Unknown Artist",
+                track.artist,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = Typography.bodyMedium,
