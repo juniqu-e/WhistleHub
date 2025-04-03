@@ -3,6 +3,7 @@ package com.whistlehub.playlist.view
 import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,8 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.MoreVert
@@ -46,6 +45,7 @@ import coil3.compose.AsyncImage
 import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
+import com.whistlehub.common.view.track.TrackItemRow
 import com.whistlehub.playlist.data.TrackEssential
 import com.whistlehub.playlist.viewmodel.PlaylistViewModel
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
@@ -154,65 +154,20 @@ fun PlaylistTrackListScreen(
                 }
             }
             items(playlistTrack.size) { index ->
-                val track = playlistTrack[index]
+                val trackData = playlistTrack[index]
+                val track = TrackEssential(
+                    trackId = trackData.trackInfo.trackId,
+                    title = trackData.trackInfo.title,
+                    artist = trackData.trackInfo.nickname,
+                    imageUrl = trackData.trackInfo.imageUrl,
+                )
                 Row(
                     Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    AsyncImage(
-                        model = track.trackInfo.imageUrl,
-                        contentDescription = "Track Image",
-                        modifier = Modifier
-                            .size(50.dp)
-                            .clip(RoundedCornerShape(5.dp)),
-                        error = null,
-                        contentScale = ContentScale.Crop
-                    )
-                    Column(
-                        Modifier
-                            .weight(1f)
-                            .padding(horizontal = 10.dp)
-                    ) {
-                        Text(
-                            track.trackInfo.title,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            style = Typography.titleLarge,
-                            color = CustomColors().Grey50
-                        )
-                        Text(
-                            track.trackInfo.nickname,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            style = Typography.bodyMedium,
-                            color = CustomColors().Grey200
-                        )
-                    }
-                    if (currentTrack?.trackId == track.trackInfo.trackId && isPlaying) {
-                        IconButton({ trackPlayViewModel.pauseTrack() }) {
-                            Icon(
-                                Icons.Filled.Pause,
-                                contentDescription = "Pause",
-                                tint = CustomColors().Mint500
-                            )
-                        }
-                    } else {
-                        IconButton({
-                            if (currentTrack?.trackId == track.trackInfo.trackId) {
-                                trackPlayViewModel.resumeTrack()
-                            } else {
-                                coroutineScope.launch {
-                                    trackPlayViewModel.playTrack(track.trackInfo.trackId)
-                                }
-                            }
-                        }) {
-                            Icon(
-                                Icons.Filled.PlayArrow,
-                                contentDescription = "Play",
-                                tint = CustomColors().Grey50
-                            )
-                        }
+                    Box(Modifier.weight(1f)) {
+                        TrackItemRow(track)
                     }
                     IconButton({}) {
                         Icon(
