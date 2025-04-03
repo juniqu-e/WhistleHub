@@ -1,4 +1,4 @@
-package com.whistlehub.common.view.copmonent
+package com.whistlehub.common.view.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth

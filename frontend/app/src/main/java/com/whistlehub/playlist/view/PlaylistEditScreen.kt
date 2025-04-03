@@ -64,7 +64,7 @@ import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
 import com.whistlehub.common.util.uriToMultipartBodyPart
-import com.whistlehub.common.view.copmonent.ImageUpload
+import com.whistlehub.common.view.component.ImageUpload
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.viewmodel.PlaylistViewModel

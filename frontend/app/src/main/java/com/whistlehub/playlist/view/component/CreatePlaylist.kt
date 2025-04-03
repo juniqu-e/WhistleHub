@@ -23,7 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.whistlehub.common.util.uriToMultipartBodyPart
-import com.whistlehub.common.view.copmonent.ImageUpload
+import com.whistlehub.common.view.component.ImageUpload
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import okhttp3.MultipartBody

@@ -1,4 +1,4 @@
-package com.whistlehub.common.view.copmonent
+package com.whistlehub.common.view.component
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
