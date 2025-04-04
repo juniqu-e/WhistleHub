@@ -36,6 +36,11 @@ interface ProfileApi {
         @Part("memberId") memberId: RequestBody,
         @Part image: MultipartBody.Part
     ): Response<ApiResponse<String>>
+    // 프로필 사진 삭제 요청
+    @DELETE("member/image")
+    suspend fun deleteProfileImage(
+        @Query("memberId") memberId: Int
+    ): Response<ApiResponse<Unit>>
     // 비밀번호 변경
     @PUT("member/password")
     suspend fun changePassword(

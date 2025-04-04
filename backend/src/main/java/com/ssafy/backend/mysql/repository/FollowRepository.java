@@ -14,5 +14,6 @@ public interface FollowRepository extends JpaRepository<Follow, Integer> {
     Optional<Follow> findByFromMemberIdAndToMemberId(int followerId, int followingId);
     List<Follow> findByFromMemberId(int memberId, PageRequest pageRequest);
     List<Follow> findByToMemberId(int memberId, PageRequest pageRequest);
-
+    int countByFromMemberId(int memberId);
+    int countByToMemberId(int memberId);
 }

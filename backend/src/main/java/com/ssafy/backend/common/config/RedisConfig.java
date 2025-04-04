@@ -5,6 +5,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
@@ -34,6 +35,7 @@ public class RedisConfig {
         return new LettuceConnectionFactory(redisHost, redisPort);
     }
     @Bean
+    @Order(1)
     public ApplicationRunner flushAllOnStartup(RedisConnectionFactory connectionFactory) {
         return new ApplicationRunner() {
             @Override

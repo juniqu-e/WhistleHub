@@ -14,4 +14,5 @@ public interface TrackRepository extends JpaRepository<Track, Integer> {
 
     List<Track> findByMemberIdAndVisibility(int memberId, boolean visibility, PageRequest pageRequest);
     List<Track> findByMemberId(int memberId, PageRequest pageRequest);
+    int countByMemberId(int memberId);
 }
