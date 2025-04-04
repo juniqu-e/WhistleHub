@@ -22,10 +22,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
+import com.whistlehub.R
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.data.TrackEssential
@@ -36,6 +38,7 @@ import kotlinx.coroutines.launch
 fun TrackItemRow(
     track: TrackEssential,
     style: TrackItemStyle = TrackItemStyle.DEFAULT,
+    rank: Int = 0,
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -60,15 +63,22 @@ fun TrackItemRow(
             model = track.imageUrl,
             contentDescription = "Track Image",
             modifier = Modifier
+                .padding(10.dp)
                 .size(50.dp)
                 .clip(RoundedCornerShape(5.dp)),
-            error = null,
+            error = painterResource(R.drawable.default_track),
             contentScale = ContentScale.Crop
         )
 
+        // 랭킹인 경우
         if (style == TrackItemStyle.RANKING) {
-            // Add ranking specific UI here
-            TODO()
+            Text(
+                text = "$rank",
+                style = Typography.titleSmall,
+                color = CustomColors().Grey50,
+                modifier = Modifier
+                    .padding(bottom = 20.dp)
+            )
         }
 
         Column(
