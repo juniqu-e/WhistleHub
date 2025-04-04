@@ -196,7 +196,6 @@ public class DiscoveryService {
         return getTrackInfoList(trackList);
     }
 
-<<<<<<< HEAD
     public MemberInfo getRandomFollowingMember(){
         Member member = authService.getMember();
         if(followRepository.countByFromMemberId(member.getId()) == 0){
@@ -230,8 +229,6 @@ public class DiscoveryService {
         return getTrackInfoList(trackList);
     }
 
-=======
->>>>>>> origin/feature/discovery
     /**
      * <pre>트랙 정보 리스트 변환</pre>
      * 트랙 리스트를 TrackInfo 리스트로 변환.

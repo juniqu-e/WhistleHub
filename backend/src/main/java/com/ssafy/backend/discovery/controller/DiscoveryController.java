@@ -126,20 +126,14 @@ public class DiscoveryController {
 
     @GetMapping("/never")
     public ApiResponse<?> getNeverListenTrack(@RequestParam(value = "size", required = true)
-<<<<<<< HEAD
                                               @Min(value = 0)
                                               Integer size) {
-=======
-                                                  @Min(value = 0)
-                                                  Integer size) {
->>>>>>> origin/feature/discovery
         List<TrackInfo> result = discoveryService.getNeverListenTrack(size);
         return new ApiResponse.builder<List<TrackInfo>>()
                 .payload(result)
                 .build();
     }
 
-<<<<<<< HEAD
     @GetMapping("/fanmix/following")
     public ApiResponse<?> getRandomFollowingMember() {
         MemberInfo result = discoveryService.getRandomFollowingMember();
@@ -160,6 +154,4 @@ public class DiscoveryController {
                 .payload(result)
                 .build();
     }
-=======
->>>>>>> origin/feature/discovery
 }
