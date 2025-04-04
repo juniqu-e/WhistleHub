@@ -6,10 +6,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -20,15 +21,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.whistlehub.R
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.common.view.theme.CustomColors
+import com.whistlehub.common.view.theme.Pretendard
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import kotlinx.coroutines.launch
@@ -36,15 +38,15 @@ import kotlinx.coroutines.launch
 @Composable
 fun NewTrackCard(
     track: TrackResponse.GetTrackDetailResponse,
-    trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
+    trackPlayViewModel: TrackPlayViewModel,
     navController: NavHostController
 ) {
     val coroutineScope = rememberCoroutineScope()
 
     Box(
         Modifier
-            .heightIn(max = 200.dp)
-            .widthIn(max = 300.dp)
+            .height(180.dp)
+            .aspectRatio(1.618f)
             .padding(8.dp)
             .clickable {
                 coroutineScope.launch {
@@ -52,8 +54,29 @@ fun NewTrackCard(
                 }
             }
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(Modifier.clickable {
+        AsyncImage(
+            model = track.imageUrl,
+            contentDescription = track.imageUrl,
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(10.dp)),
+            error = painterResource(R.drawable.default_track),
+            contentScale = ContentScale.Crop,
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(CustomColors().Grey900.copy(alpha = 0.5f))
+                .clip(RoundedCornerShape(10.dp))
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(Modifier
+                .clickable {
                 navController.navigate(Screen.Profile.route + "/${track.artist.memberId}")
             }, verticalAlignment = Alignment.CenterVertically) {
                 AsyncImage(
@@ -85,33 +108,26 @@ fun NewTrackCard(
                     color = CustomColors().Grey700
                 )
             }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            Row(Modifier.weight(1f),
+                verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                AsyncImage(
-                    model = track.imageUrl,
-                    contentDescription = track.imageUrl,
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(RoundedCornerShape(5.dp)),
-                    error = painterResource(R.drawable.default_track),
-                    contentScale = ContentScale.Crop,
-                )
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
                         text = track.title,
                         modifier = Modifier,
-                        style = Typography.titleLarge,
+                        style = Typography.headlineMedium,
+                        fontFamily = Pretendard,
+                        fontWeight = FontWeight.Bold,
                         color = CustomColors().Grey50,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = track.artist.nickname,
+                        text = track.description ?: "",
                         modifier = Modifier,
                         style = Typography.bodyLarge,
-                        color = CustomColors().Mint500,
+                        color = CustomColors().Grey400,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )

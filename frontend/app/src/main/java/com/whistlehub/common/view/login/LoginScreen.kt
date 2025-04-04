@@ -40,7 +40,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -143,13 +142,6 @@ fun LoginScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         // 최상단: 로고
-//                        Text(
-//                            text = "Whistle Hub Logo",
-//                            style = MaterialTheme.typography.headlineMedium,
-//                            color = Color.White,
-//                            textAlign = TextAlign.Center,
-//                            modifier = Modifier.fillMaxWidth()
-//                        )
                         Image(
                             painter = painterResource(id = R.drawable.whistlehub_mainlogo),
                             contentDescription = "Logo",
@@ -157,7 +149,6 @@ fun LoginScreen(
                                 .fillMaxWidth()
                                 .height(150.dp)
                                 .padding(bottom = 20.dp),
-                            contentScale = ContentScale.Crop
                         )
                         // 최하단: 폼 영역
                         Column(
