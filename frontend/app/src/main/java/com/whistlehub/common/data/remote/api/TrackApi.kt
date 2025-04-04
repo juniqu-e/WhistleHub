@@ -135,7 +135,8 @@ interface TrackApi {
     suspend fun uploadTrackImage(
         @Part("trackId") trackId: RequestBody,
         @Part image: MultipartBody.Part
-    ): Response<ApiResponse<Unit>>
+    ): Response<ApiResponse<String>>
+
 
     // 태그 추천
     @GET("discovery/tag")
