@@ -4,6 +4,7 @@ import com.ssafy.backend.common.error.exception.FileUploadFailedException;
 import com.ssafy.backend.common.error.exception.UnreadableFileException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class S3Service {
     private final S3Client s3Client;
     @Value("${AWS_S3_BUCKET}")
@@ -66,12 +68,18 @@ public class S3Service {
             throw new UnreadableFileException();
 
         // 파일 확장자 제한
-        if(filenameExtension == null)
+        if(filenameExtension == null) {
+            log.warn("파일 확장자 없음");
             throw new UnreadableFileException();
-        if(folder.equals(IMAGE) && !filenameExtension.matches("jpg|jpeg|png|gif")) // 이미지 확장자
+        }
+        if(folder.equals(IMAGE) && !filenameExtension.matches("jpg|jpeg|png|gif")) { // 이미지 확장자
+            log.warn("잘못된 이미지 확장자: {}", filenameExtension);
             throw new UnreadableFileException();
-        if(folder.equals(MUSIC) && !filenameExtension.matches("mp3|wav|ogg")) // 음악 확장자
+        }
+        if(folder.equals(MUSIC) && !filenameExtension.matches("mp3|wav|ogg")) { // 음악 확장자
+            log.warn("잘못된 음악 확장자: {}", filenameExtension);
             throw new UnreadableFileException();
+        }
 
         // UUID + 시간값 + .확장자
         String fileName = folder + "/" + uuid + System.currentTimeMillis() + "." + filenameExtension;
