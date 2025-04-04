@@ -176,4 +176,12 @@ class TrackService @Inject constructor(
     ): ApiResponse<List<TrackResponse.SearchTrack>> {
         return tokenRefresh.execute { trackApi.getTagRanking(tagId, period, page, size) }
     }
+
+    // 태그별 추천 트랙 조회
+    suspend fun getTagRecommendTrack(
+        tagId: Int,
+        size: Int
+    ): ApiResponse<List<TrackResponse.SearchTrack>> {
+        return tokenRefresh.execute { trackApi.getTagRecommendTrack(tagId, size) }
+    }
 }

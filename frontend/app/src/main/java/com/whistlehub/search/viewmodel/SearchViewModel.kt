@@ -25,6 +25,10 @@ class SearchViewModel @Inject constructor(
         MutableStateFlow<List<TrackResponse.SearchTrack>>(emptyList())
     val tagRanking: StateFlow<List<TrackResponse.SearchTrack>> get() = _tagRanking
 
+    private val _tagRecommendTrack =
+        MutableStateFlow<List<TrackResponse.SearchTrack>>(emptyList())
+    val tagRecommendTrack: StateFlow<List<TrackResponse.SearchTrack>> get() = _tagRecommendTrack
+
     // 트랙 검색
     suspend fun searchTracks(keyword: String) {
         try {
@@ -78,6 +82,24 @@ class SearchViewModel @Inject constructor(
             }
         } catch (e: Exception) {
             Log.d("error", "Failed to get tag ranking: ${e.message}")
+        }
+    }
+
+    // 태그별 추천 트랙 받기
+    suspend fun getTagRecommendTrack(tagId: Int) {
+        try {
+            val response = trackService.getTagRecommendTrack(
+                tagId = tagId,
+                size = 3
+            )
+            if (response.code == "SU") {
+                // 태그 추천 트랙 성공
+                _tagRecommendTrack.value = response.payload ?: emptyList()
+            } else {
+                Log.d("error", "Failed to get tag recommend track: ${response.message}")
+            }
+        } catch (e: Exception) {
+            Log.d("error", "Failed to get tag recommend track: ${e.message}")
         }
     }
 }

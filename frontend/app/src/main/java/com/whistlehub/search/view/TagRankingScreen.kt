@@ -1,6 +1,5 @@
 package com.whistlehub.search.view
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +18,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.common.view.track.TrackItemRow
+import com.whistlehub.common.view.track.TrackItemStyle
 import com.whistlehub.common.view.track.TrackListRow
 import com.whistlehub.playlist.data.TrackEssential
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
@@ -34,8 +34,10 @@ fun TagRankingScreen(
 ) {
     LaunchedEffect(Unit) {
         searchViewModel.getRankingByTag(tagId, "WEEK")
+        searchViewModel.getTagRecommendTrack(tagId)
     }
     val tagRanking = searchViewModel.tagRanking.collectAsState().value
+    val tagRecommendTrack = searchViewModel.tagRecommendTrack.collectAsState().value
 
     LazyColumn(Modifier.fillMaxWidth()) {
         // 태그 제목
@@ -50,50 +52,10 @@ fun TagRankingScreen(
             )
         }
 
-        // 태그 Top 3 (가로 배열)
-        item {
-            if (tagRanking.size < 3) {
-                Text(
-                    text = "No ranking data available",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    style = Typography.titleLarge,
-                    color = CustomColors().Grey50,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
-                return@item
-            }
-            val trackTop3 = tagRanking.map {
-                TrackEssential(
-                    trackId = it.trackId,
-                    title = it.title,
-                    artist = it.nickname,
-                    imageUrl = it.imageUrl
-                )
-            }.take(3)  // 처음 3개만 가져옴
-            Column {
-                Text(
-                    text = "Top 3 This Week",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    style = Typography.titleLarge,
-                    color = CustomColors().Grey50,
-                    fontWeight = FontWeight.Bold
-                )
-                TrackListRow(trackList = trackTop3)
-            }
-        }
-        if (tagRanking.size < 4) {
-            return@LazyColumn
-        }
-
-        // 태그 4위 ~ 50위 (세로 배열)
+        // 추천 트랙
         item {
             Text(
-                text = "Best Tracs of \"$tagName\"",
+                text = "\"$tagName\" for YOU",
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
@@ -102,8 +64,60 @@ fun TagRankingScreen(
                 fontWeight = FontWeight.Bold
             )
         }
-        items(tagRanking.size - 3) { index ->
-            val track = tagRanking[index + 3]  // 4위부터 시작
+        item {
+            if (tagRecommendTrack.size < 3) {
+                Text(
+                    text = "We can't recommend tracks.",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    style = Typography.titleSmall,
+                    color = CustomColors().Grey200,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+                return@item
+            }
+            val tracks = tagRecommendTrack.map {
+                TrackEssential(
+                    trackId = it.trackId,
+                    title = it.title,
+                    artist = it.nickname,
+                    imageUrl = it.imageUrl
+                )
+            }
+            TrackListRow(modifier = Modifier, trackList = tracks)
+        }
+
+        // 랭킹
+        item {
+            Text(
+                text = "Best Tracks of \"$tagName\"",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                style = Typography.titleLarge,
+                color = CustomColors().Grey50,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        item {
+            if (tagRanking.isEmpty()) {
+                Text(
+                    text = "No tracks found",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    style = Typography.titleSmall,
+                    color = CustomColors().Grey200,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+                return@item
+            }
+        }
+        items(tagRanking.size) { index ->
+            val track = tagRanking[index]
             TrackItemRow(
                 track = TrackEssential(
                     trackId = track.trackId,
@@ -111,6 +125,8 @@ fun TagRankingScreen(
                     artist = track.nickname,
                     imageUrl = track.imageUrl
                 ),
+                style = TrackItemStyle.RANKING,
+                rank = index + 1,
                 trackPlayViewModel = trackPlayViewModel,
             )
         }

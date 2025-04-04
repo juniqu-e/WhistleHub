@@ -150,4 +150,11 @@ interface TrackApi {
         @Query("page") page: Int,
         @Query("size") size: Int,
     ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
+
+    //태그별 추천 트랙
+    @GET("discovery/tag/recommend")
+    suspend fun getTagRecommendTrack(
+        @Query("tagId") tagId: Int,
+        @Query("size") size: Int
+    ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
 }

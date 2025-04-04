@@ -36,6 +36,7 @@ import kotlinx.coroutines.launch
 fun TrackItemRow(
     track: TrackEssential,
     style: TrackItemStyle = TrackItemStyle.DEFAULT,
+    rank: Int = 0,
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -60,15 +61,22 @@ fun TrackItemRow(
             model = track.imageUrl,
             contentDescription = "Track Image",
             modifier = Modifier
+                .padding(10.dp)
                 .size(50.dp)
                 .clip(RoundedCornerShape(5.dp)),
             error = null,
             contentScale = ContentScale.Crop
         )
 
+        // 랭킹인 경우
         if (style == TrackItemStyle.RANKING) {
-            // Add ranking specific UI here
-            TODO()
+            Text(
+                text = "$rank",
+                style = Typography.titleSmall,
+                color = CustomColors().Grey50,
+                modifier = Modifier
+                    .padding(bottom = 20.dp)
+            )
         }
 
         Column(
