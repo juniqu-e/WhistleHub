@@ -75,7 +75,10 @@ aws:
     access-key: ${AWS_S3_ACCESS}
     secret-key: ${AWS_S3_SECRET}
     region: ${AWS_S3_REGION}
-
+logging:
+  level:
+    dev:
+      langchain4j=DEBUG:
 #management:
 #  endpoints:
 #    web:

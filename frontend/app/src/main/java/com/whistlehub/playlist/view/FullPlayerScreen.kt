@@ -1,7 +1,9 @@
 package com.whistlehub.playlist.view
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -553,13 +555,20 @@ fun PlayerController(
     val playerPosition by trackPlayViewModel.playerPosition.collectAsState()
     val trackDuration by trackPlayViewModel.trackDuration.collectAsState()
 
+    // 부드러운 슬라이더 애니메이션을 위해 animateFloatAsState 사용
+    val animatedPlayerPosition by animateFloatAsState(
+        targetValue = playerPosition.toFloat(),
+        animationSpec = tween(durationMillis = 100, easing = LinearEasing),
+        label = "Player Position"
+    )
+
     Column(
         Modifier
             .fillMaxWidth()
             .padding(16.dp)
     ) {
         Slider(
-            value = playerPosition.toFloat(),
+            value = animatedPlayerPosition,
             onValueChange = { newPosition ->
                 coroutineScope.launch {
                     trackPlayViewModel.seekTo(newPosition.toLong())
@@ -580,7 +589,7 @@ fun PlayerController(
                 ) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth(playerPosition.toFloat() / trackDuration.toFloat())
+                            .fillMaxWidth(animatedPlayerPosition / trackDuration.toFloat())
                             .height(8.dp)
                             .background(CustomColors().Mint500, RoundedCornerShape(4.dp))
                     )

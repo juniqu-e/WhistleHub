@@ -28,6 +28,6 @@ public interface RelationshipRepository extends Neo4jRepository<TrackNode, Integ
     void createWriteRelationship(@Param("memberId") Integer memberId,
                                  @Param("trackId") Integer trackId);
 
-    @Query("MATCH (m:Member{id: $memberId})-[p:PREFER]->(t:Tag) order by p.weight desc return t")
-    List<TagNode> findPreferTagsByMemberId(@Param("memberId") Integer memberId);
+    @Query("MATCH (m:Member{id: $memberId})-[p:PREFER]->(t:Tag) order by p.weight desc return t.id")
+    List<Integer> findPreferTagsByMemberId(@Param("memberId") Integer memberId);
 }

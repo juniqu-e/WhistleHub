@@ -20,6 +20,7 @@ import com.whistlehub.profile.view.ProfileChangeScreen
 import com.whistlehub.profile.view.ProfileMenuScreen
 import com.whistlehub.profile.view.ProfileScreen
 import com.whistlehub.search.view.SearchScreen
+import com.whistlehub.search.view.TagRankingScreen
 import com.whistlehub.workstation.view.WorkStationScreen
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 import kotlin.math.log
@@ -55,6 +56,18 @@ fun AppContentNavGraph(
                 navController,
                 trackPlayViewModel
             )
+        }
+        composable(route = Screen.TagRanking.route + "/{tagId}/{tagName}") { backStackEntry ->
+            val tagId = backStackEntry.arguments?.getString("tagId")
+            val tagName = backStackEntry.arguments?.getString("tagName")
+            if (tagId != null) {
+                TagRankingScreen(
+                    tagId.toInt(),
+                    tagName.toString(),
+                    paddingValues,
+                    trackPlayViewModel
+                )
+            }
         }
         composable(route = Screen.DAW.route) {
             WorkStationScreen(

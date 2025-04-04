@@ -2,6 +2,7 @@ package com.whistlehub.common.data.remote.api
 
 import com.whistlehub.common.data.remote.dto.request.TrackRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
+import com.whistlehub.common.data.remote.dto.response.AuthResponse
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -71,16 +72,19 @@ interface TrackApi {
     suspend fun playLayer(
         @Query("layerId") layerId: String
     ): Response<ApiResponse<TrackResponse.TrackLayerPlay>>
+
     // 트랙 좋아요
     @POST("track/like")
     suspend fun likeTrack(
         @Body request: TrackRequest.LikeTrackRequest
     ): Response<ApiResponse<Unit>>
+
     // 트랙 좋아요 취소
     @DELETE("track/like")
     suspend fun unlikeTrack(
         @Query("trackId") trackId: String
     ): Response<ApiResponse<Unit>>
+
     // 트랙 댓글 조회
     @GET("track/comment")
     suspend fun getTrackComments(
@@ -132,4 +136,26 @@ interface TrackApi {
         @Part("trackId") trackId: RequestBody,
         @Part image: MultipartBody.Part
     ): Response<ApiResponse<String>>
+
+
+    // 태그 추천
+    @GET("discovery/tag")
+    suspend fun getTagRecommendation(
+    ): Response<ApiResponse<List<AuthResponse.TagResponse>>>
+
+    // 태그 랭킹
+    @GET("discovery/tag/ranking")
+    suspend fun getTagRanking(
+        @Query("tagId") tagId: Int,
+        @Query("period") period: String,
+        @Query("page") page: Int,
+        @Query("size") size: Int,
+    ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
+
+    //태그별 추천 트랙
+    @GET("discovery/tag/recommend")
+    suspend fun getTagRecommendTrack(
+        @Query("tagId") tagId: Int,
+        @Query("size") size: Int
+    ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
 }

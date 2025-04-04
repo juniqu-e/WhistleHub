@@ -11,6 +11,7 @@ import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/workstation")
+@Slf4j
 public class WorkstationController {
     private final TrackService trackService;
     private final WorkstationService workstationService;
@@ -33,6 +35,7 @@ public class WorkstationController {
 
     @PostMapping()
     public ApiResponse<?> createTrack(TrackUploadRequestDto trackUploadRequestDto) {
+        log.info("⭐ Create new track ⭐ {}", trackUploadRequestDto.toString());
         return new ApiResponse.builder<Object>()
                 .payload(workstationService.createTrack(trackUploadRequestDto))
                 .build();

@@ -1,9 +1,9 @@
 package com.ssafy.backend.member.service;
 
 import com.ssafy.backend.auth.service.AuthService;
-import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.common.error.exception.*;
 import com.ssafy.backend.common.service.S3Service;
+import com.ssafy.backend.graph.service.RelationshipService;
 import com.ssafy.backend.member.model.common.MemberInfo;
 import com.ssafy.backend.member.model.request.RequestFollowRequestDto;
 import com.ssafy.backend.member.model.request.UpdateMemberRequestDto;
@@ -50,6 +50,7 @@ public class MemberService {
     private final FollowRepository followRepository;
     private final TrackRepository trackRepository;
     private final LikeRepository likeRepository;
+    private final RelationshipService relationshipService;
 
     /**
      * 회원 정보 조회
@@ -307,6 +308,7 @@ public class MemberService {
                     .build();
 
             followRepository.save(follow);
+            relationshipService.createFollowRelationship(member.getId(), targetMember.getId());
         } else { // 팔로우 취소 요청인 경우,
             Follow follow = followRepository.findByFromMemberIdAndToMemberId(member.getId(), targetMember.getId()).orElseThrow(()->{
                 log.warn("팔로우 신청하지 않은 회원입니다. memberId : {}", requestFollowRequestDto.getMemberId());
@@ -314,6 +316,7 @@ public class MemberService {
             });
 
             followRepository.delete(follow);
+            relationshipService.deleteFollowRelationship(member.getId(), targetMember.getId());
         }
     }
 
