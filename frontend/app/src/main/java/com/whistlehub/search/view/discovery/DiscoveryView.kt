@@ -43,7 +43,7 @@ fun DiscoveryView(
     val coroutineScope = rememberCoroutineScope()
 
     LazyVerticalGrid(
-        modifier = modifier,
+        modifier = modifier.padding(horizontal = 10.dp),
         columns = GridCells.Fixed(2),
         verticalArrangement = Arrangement.spacedBy(10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)

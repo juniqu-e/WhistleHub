@@ -22,10 +22,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
+import com.whistlehub.R
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.data.TrackEssential
@@ -64,7 +66,7 @@ fun TrackItemRow(
                 .padding(10.dp)
                 .size(50.dp)
                 .clip(RoundedCornerShape(5.dp)),
-            error = null,
+            error = painterResource(R.drawable.default_track),
             contentScale = ContentScale.Crop
         )
 

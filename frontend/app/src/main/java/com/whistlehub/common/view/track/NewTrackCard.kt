@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -53,18 +54,19 @@ fun NewTrackCard(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(Modifier.clickable {
-                navController.navigate(Screen.Profile.route + "/${track.artist?.memberId}")
+                navController.navigate(Screen.Profile.route + "/${track.artist.memberId}")
             }, verticalAlignment = Alignment.CenterVertically) {
                 AsyncImage(
-                    model = track.artist?.profileImage ?: R.drawable.default_profile,
-                    contentDescription = track.artist?.nickname,
+                    model = track.artist.profileImage ?: R.drawable.default_profile,
+                    contentDescription = track.artist.nickname,
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape),
+                    error = painterResource(R.drawable.default_profile),
                     contentScale = ContentScale.Crop
                 )
                 Text(
-                    text = track.artist?.nickname ?: "Unknown Artist",
+                    text = track.artist.nickname,
                     modifier = Modifier
                         .padding(start = 12.dp)
                         .weight(1f),
@@ -93,6 +95,7 @@ fun NewTrackCard(
                     modifier = Modifier
                         .size(100.dp)
                         .clip(RoundedCornerShape(5.dp)),
+                    error = painterResource(R.drawable.default_track),
                     contentScale = ContentScale.Crop,
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -105,7 +108,7 @@ fun NewTrackCard(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = track.artist?.nickname ?: "Unknown Artist",
+                        text = track.artist.nickname,
                         modifier = Modifier,
                         style = Typography.bodyLarge,
                         color = CustomColors().Mint500,
