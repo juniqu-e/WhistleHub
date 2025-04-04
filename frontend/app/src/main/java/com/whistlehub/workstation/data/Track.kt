@@ -1,7 +1,7 @@
 package com.whistlehub.workstation.data
 
 data class Layer(
-    val id: Int,
+    val id: Int = 0,
     val name: String,
     val description: String = "",
     val category: String = "",  // 예: "DRUM", "BASS", "OTHERS"

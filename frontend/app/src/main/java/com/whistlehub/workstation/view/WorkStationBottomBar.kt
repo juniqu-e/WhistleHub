@@ -1,84 +1,139 @@
 package com.whistlehub.workstation.view
 
-import androidx.compose.foundation.background
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.outlined.Save
-import androidx.compose.material.icons.outlined.Upload
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.workstation.data.BottomBarActions
 import com.whistlehub.workstation.di.WorkStationBottomBarProvider
 import javax.inject.Inject
 
 class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
     @Composable
-    override fun WorkStationBottomBar(actions: BottomBarActions) {
+    override fun WorkStationBottomBar(
+        actions: BottomBarActions,
+        context: Context,
+        isPlaying: Boolean
+    ) {
         var menuExpanded by remember { mutableStateOf(false) }
+        var showUploadDialog by remember { mutableStateOf(false) }
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-                .background(Color.Transparent),
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+//                .background(Color.Transparent),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            Button(
-                modifier = Modifier.weight(1f), onClick = actions.onPlayedClicked,
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White)
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text("재생", color = Color.Black, style = Typography.titleMedium)
-                }
-            }
+            val buttonSize = 64.dp
+            val iconSize = 32.dp
+            val backgroundColor = Color(0xFF1E1E1E)
+            val iconColor = Color(0xFFF0F0F0)  // 약간 따뜻한 흰색
+            val borderColor = Color(0xFF9575CD)  // 보라 강조
 
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Button(
-                onClick = actions.onTrackUploadClicked,
-//                onClick = { menuExpanded = true },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray)
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.Menu, contentDescription = null)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text("업로드", color = Color.Black, style = Typography.titleMedium)
-                }
-            }
+            GradientIconButton(
+                icon = if (isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
+                onClick = actions.onPlayedClicked,
+                gradientColors = listOf(Color(0xFF8E2DE2), Color(0xFF4A00E0)) // 보라 그라디언트
+            )
+            GradientIconButton(
+                icon = Icons.Default.Add,
+                onClick = actions.onAddInstrument,
+                gradientColors = listOf(Color(0xFF00F260), Color(0xFF0575E6)) // 그린-블루
+            )
+            GradientIconButton(
+                icon = Icons.Default.CloudUpload,
+                onClick = { showUploadDialog = true },
+                gradientColors = listOf(Color(0xFFFF758C), Color(0xFFFF7EB3)) // 핑크 계열
+            )
+//            IconButton(
+//                modifier = Modifier
+//                    .size(buttonSize)
+//                    .shadow(6.dp, shape = CircleShape)
+//                    .background(backgroundColor, shape = CircleShape)
+//                    .border(width = 1.dp, color = borderColor, shape = CircleShape),
+//                onClick = actions.onPlayedClicked,
+//                colors = IconButtonDefaults.iconButtonColors(
+//                    containerColor = Color.Transparent
+//                )
+//            ) {
+//                Icon(
+//                    Icons.Default.PlayArrow,
+//                    contentDescription = null,
+//                    modifier = Modifier.size(iconSize),
+//                    tint = iconColor
+//                )
+//            }
+//
+//            Spacer(modifier = Modifier.width(8.dp))
+//
+//            IconButton(
+//                modifier = Modifier
+//                    .size(buttonSize)
+//                    .shadow(6.dp, shape = CircleShape)
+//                    .background(backgroundColor, shape = CircleShape)
+//                    .border(width = 1.dp, color = borderColor, shape = CircleShape),
+//                onClick = actions.onPlayedClicked,
+//                colors = IconButtonDefaults.iconButtonColors(
+//                    containerColor = Color.Transparent
+//                )
+//            ) {
+//                Icon(
+//                    Icons.Default.Add,
+//                    contentDescription = null,
+//                    modifier = Modifier.size(iconSize),
+//                    tint = iconColor
+//                )
+//            }
+//
+//            Spacer(modifier = Modifier.width(8.dp))
+//
+//            IconButton(
+//                modifier = Modifier
+//                    .size(buttonSize)
+//                    .shadow(6.dp, shape = CircleShape)
+//                    .background(backgroundColor, shape = CircleShape)
+//                    .border(width = 1.dp, color = borderColor, shape = CircleShape),
+//                onClick = actions.onPlayedClicked,
+//                colors = IconButtonDefaults.iconButtonColors(
+//                    containerColor = Color.Transparent
+//                )
+//            ) {
+//                Icon(
+//                    Icons.Default.CloudUpload,
+//                    contentDescription = null,
+//                    modifier = Modifier.size(iconSize),
+//                    tint = iconColor
+//                )
+//            }
         }
 
+        if (showUploadDialog) {
+            UploadMixDialog(
+                onConfirm = { name ->
+                    showUploadDialog = false
+                    actions.onUploadConfirm(name)
+                },
+                onDismiss = {
+                    showUploadDialog = false
+                },
+                title = "너의 이름은"
+            )
+        }
 //        DropdownMenu(
 //            expanded = menuExpanded,
 //            onDismissRequest = { menuExpanded = false },

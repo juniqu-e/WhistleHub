@@ -73,13 +73,16 @@ Java_com_whistlehub_common_util_AudioEngineBridge_stopAudioEngine(JNIEnv *env, j
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_whistlehub_common_util_AudioEngineBridge_sendLayerInfoToNative(JNIEnv *env, jobject thiz,
-                                                                        jobject layer_info) {
-    // TODO: implement sendLayerInfoToNative()
-}
-extern "C"
-JNIEXPORT void JNICALL
 Java_com_whistlehub_common_util_AudioEngineBridge_setLayers(JNIEnv *env, jobject thiz, jobject layers) {
     std::vector<LayerAudioInfo> parsed = engine.parseLayerList(env, layers);
     engine.setLayers(parsed);
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_com_whistlehub_common_util_AudioEngineBridge_renderMixToWav(JNIEnv* env, jobject, jstring jPath) {
+    const char* path = env->GetStringUTFChars(jPath, nullptr);
+    bool result = engine.renderToFile(path, 44100 * 60);  // 예: 1분
+    env->ReleaseStringUTFChars(jPath, path);
+    return result;
 }
