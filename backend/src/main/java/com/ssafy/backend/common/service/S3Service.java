@@ -63,10 +63,6 @@ public class S3Service {
 
         // 파일 입력을 보고 잘못됨 -> BADREQUEST
 
-        // 파일 크기 제한
-        if(file.getSize() > 20 * 1024 * 1024) // 20MB
-            throw new UnreadableFileException();
-
         // 파일 확장자 제한
         if(filenameExtension == null) {
             log.warn("파일 확장자 없음");
