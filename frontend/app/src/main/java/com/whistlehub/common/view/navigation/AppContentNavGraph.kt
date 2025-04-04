@@ -69,6 +69,7 @@ fun AppContentNavGraph(
             )
         }
         composable(route = Screen.Profile.route + "/{memberId}"){ backStackEntry ->
+
         val memberId = backStackEntry.arguments?.getString("memberId")
             ProfileScreen(
                 memberId?.toInt() ?: -1,

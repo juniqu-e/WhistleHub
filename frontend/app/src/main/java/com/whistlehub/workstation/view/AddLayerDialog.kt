@@ -25,6 +25,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,6 +37,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.navigation.NavController
 import com.whistlehub.common.data.remote.dto.request.TrackRequest
 import com.whistlehub.common.data.remote.dto.request.WorkstationRequest
 import com.whistlehub.common.util.rawWavList
@@ -55,6 +57,7 @@ fun AddLayerDialog(
     onDismiss: () -> Unit,
     onLayerAdded: (Layer) -> Unit,
     viewModel: WorkStationViewModel,
+    navController: NavController,
 ) {
     if (!showDialog) return
 
@@ -132,29 +135,33 @@ fun AddLayerDialog(
                         }
 
                         LayerButtonType.SEARCH -> {
-                            val searchResults by viewModel.searchTrackResults.collectAsState();
-                            val layersOfTrack by viewModel.layersOfSearchTrack;
-
-                            SearchLayerSection(searchResults = searchResults?.payload
-                                ?: emptyList(),
-                                onSearchClicked = { keyword ->
-                                    viewModel.searchTrack(
-                                        TrackRequest.SearchTrackRequest(
-                                            keyword = keyword, 0, 10, "asc"
-                                        )
-                                    )
-                                },
-                                onTrackSelected = { trackId ->
-                                    viewModel.addLayerFromSearchTrack(
-                                        WorkstationRequest.ImportTrackRequest(
-                                            trackId = trackId
-                                        ),
-                                        context = context,
-                                    )
-                                },
-                                onBack = {
-                                    selectedType = null
-                                })
+                            LaunchedEffect(Unit) {
+                                onDismiss()
+                                navController.navigate("search")
+                            }
+//                            val searchResults by viewModel.searchTrackResults.collectAsState();
+//                            val layersOfTrack by viewModel.layersOfSearchTrack;
+//
+//                            SearchLayerSection(searchResults = searchResults?.payload
+//                                ?: emptyList(),
+//                                onSearchClicked = { keyword ->
+//                                    viewModel.searchTrack(
+//                                        TrackRequest.SearchTrackRequest(
+//                                            keyword = keyword, 0, 10, "asc"
+//                                        )
+//                                    )
+//                                },
+//                                onTrackSelected = { trackId ->
+//                                    viewModel.addLayerFromSearchTrack(
+//                                        WorkstationRequest.ImportTrackRequest(
+//                                            trackId = trackId
+//                                        ),
+//                                        context = context,
+//                                    )
+//                                },
+//                                onBack = {
+//                                    selectedType = null
+//                                })
                         }
 
                         LayerButtonType.RECORD -> {

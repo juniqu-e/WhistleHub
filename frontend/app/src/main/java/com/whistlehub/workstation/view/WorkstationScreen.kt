@@ -140,6 +140,7 @@ fun WorkStationScreen(
                 viewModel.addLayer(newLayer)
             },
             viewModel = viewModel,
+            navController = navController,
         )
 
         Column(
