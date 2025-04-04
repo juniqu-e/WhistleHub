@@ -62,7 +62,7 @@ public class DiscoveryService {
      */
     public List<TrackInfo> getTagRanking(int tagId, String period, PageRequest pageRequest) {
         List<Integer> likeRankingByTag = rankingService.getTagRanking(tagId, period, pageRequest);
-        return getTrackInfoList(trackRepository.findAllById(likeRankingByTag));
+        return getTrackInfoList(findTrackByIds(likeRankingByTag));
     }
 
     /**
@@ -143,7 +143,7 @@ public class DiscoveryService {
             );
         }
 
-        return getTrackInfoList(trackRepository.findAllById(trackIds));
+        return getTrackInfoList(findTrackByIds(trackIds));
     }
 
     /**
@@ -178,9 +178,8 @@ public class DiscoveryService {
                 });
 
         List<Integer> similarTrackIds = recommendationService.getSimilarTrackIds(track.getId());
-        List<Track> similarTracks = trackRepository.findAllById(similarTrackIds);
 
-        return getTrackInfoList(similarTracks);
+        return getTrackInfoList(findTrackByIds(similarTrackIds));
     }
 
     /**
@@ -224,9 +223,21 @@ public class DiscoveryService {
 
     public List<TrackInfo> getMemberFanMix(int memberId, int size) {
         List<Integer> trackIds = recommendationService.getMemberFanMix(memberId, size);
-        List<Track> trackList = trackRepository.findAllById(trackIds);
 
-        return getTrackInfoList(trackList);
+        return getTrackInfoList(findTrackByIds(trackIds));
+    }
+
+    private List<Track> findTrackByIds(List<Integer> trackIds) {
+        List<Track> trackList = new ArrayList<>();
+        for (Integer trackId : trackIds) {
+            Track track = trackRepository.findById(trackId)
+                    .orElseThrow(() -> {
+                        log.warn("Track not found with id: {}", trackId);
+                        return new NotFoundTrackException();
+                    });
+            trackList.add(track);
+        }
+        return trackList;
     }
 
     /**
