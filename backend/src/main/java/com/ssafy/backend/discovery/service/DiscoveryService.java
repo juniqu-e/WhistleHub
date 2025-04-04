@@ -4,19 +4,18 @@ import com.ssafy.backend.ai.service.Neo4jContentRetrieverService;
 import com.ssafy.backend.auth.model.common.TagDto;
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.error.exception.NotFoundException;
+import com.ssafy.backend.common.error.exception.NotFoundMemberException;
 import com.ssafy.backend.common.error.exception.NotFoundPageException;
 import com.ssafy.backend.common.error.exception.NotFoundTrackException;
 import com.ssafy.backend.graph.model.entity.TagNode;
 import com.ssafy.backend.graph.service.RecommendationService;
 import com.ssafy.backend.graph.service.RelationshipService;
+import com.ssafy.backend.member.model.common.MemberInfo;
 import com.ssafy.backend.mysql.entity.ListenRecord;
 import com.ssafy.backend.mysql.entity.Member;
 import com.ssafy.backend.mysql.entity.Tag;
 import com.ssafy.backend.mysql.entity.Track;
-import com.ssafy.backend.mysql.repository.LikeRepository;
-import com.ssafy.backend.mysql.repository.ListenRecoredRepository;
-import com.ssafy.backend.mysql.repository.TagRepository;
-import com.ssafy.backend.mysql.repository.TrackRepository;
+import com.ssafy.backend.mysql.repository.*;
 import com.ssafy.backend.playlist.dto.TrackInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +49,8 @@ public class DiscoveryService {
     private final RecommendationService recommendationService;
     private final TrackRepository trackRepository;
     private final RankingService rankingService;
+    private final MemberRepository memberRepository;
+    private final FollowRepository followRepository;
     private final ListenRecoredRepository listenRecoredRepository;
 
     /**
@@ -195,6 +196,42 @@ public class DiscoveryService {
         return getTrackInfoList(trackList);
     }
 
+<<<<<<< HEAD
+    public MemberInfo getRandomFollowingMember(){
+        Member member = authService.getMember();
+        if(followRepository.countByFromMemberId(member.getId()) == 0){
+            log.warn("No following members found for member id: {}", member.getId());
+            return null;
+        }
+
+        Integer randomFollowing =  followRepository.findRandomFollowing(member.getId());
+        if(randomFollowing == null){
+            log.warn("No random following member found for member id: {}", member.getId());
+            return null;
+        }
+
+        Member randomFollowingMember = memberRepository.findById(randomFollowing)
+                .orElseThrow(()-> {
+                    log.warn("Member not found with id: {}", randomFollowing);
+                    return new NotFoundMemberException();
+                });
+
+        return MemberInfo.builder()
+                .memberId(randomFollowingMember.getId())
+                .nickname(randomFollowingMember.getNickname())
+                .profileImg(randomFollowingMember.getProfileImage())
+                .build();
+    }
+
+    public List<TrackInfo> getMemberFanMix(int memberId, int size) {
+        List<Integer> trackIds = recommendationService.getMemberFanMix(memberId, size);
+        List<Track> trackList = trackRepository.findAllById(trackIds);
+
+        return getTrackInfoList(trackList);
+    }
+
+=======
+>>>>>>> origin/feature/discovery
     /**
      * <pre>트랙 정보 리스트 변환</pre>
      * 트랙 리스트를 TrackInfo 리스트로 변환.

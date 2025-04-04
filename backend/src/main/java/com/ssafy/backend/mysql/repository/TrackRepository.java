@@ -16,7 +16,10 @@ public interface TrackRepository extends JpaRepository<Track, Integer> {
 
     List<Track> findByMemberIdAndVisibility(int memberId, boolean visibility, PageRequest pageRequest);
     List<Track> findByMemberId(int memberId, PageRequest pageRequest);
+<<<<<<< HEAD
     int countByMemberId(int memberId);
+=======
+>>>>>>> origin/feature/discovery
 
     @Query(value = "SELECT t.* FROM track t WHERE t.track_id NOT IN " +
                    "(SELECT lr.track_id FROM listen_record lr WHERE lr.member_id = :memberId) " +
