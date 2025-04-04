@@ -154,7 +154,7 @@ class TrackService @Inject constructor(
     suspend fun uploadTrackImage(
         trackId: Int,
         image: MultipartBody.Part
-    ): ApiResponse<Unit> {
+    ): ApiResponse<String> {
         val trackIdBody: RequestBody =
             trackId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
         return tokenRefresh.execute { trackApi.uploadTrackImage(trackIdBody, image) }

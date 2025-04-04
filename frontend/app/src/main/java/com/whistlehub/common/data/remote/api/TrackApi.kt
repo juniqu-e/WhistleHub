@@ -131,5 +131,5 @@ interface TrackApi {
     suspend fun uploadTrackImage(
         @Part("trackId") trackId: RequestBody,
         @Part image: MultipartBody.Part
-    ): Response<ApiResponse<Unit>>
+    ): Response<ApiResponse<String>>
 }

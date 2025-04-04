@@ -31,7 +31,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.motionEventSpy
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -288,13 +287,14 @@ fun ProfileScreen(
 
         // 트랙 상세 정보 바텀 시트
         if (showTrackDetailSheet && trackDetail != null) {
+            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
             ProfileTrackDetailSheet(
                 track = trackDetail!!,
                 isOwnProfile = memberId == currentUserId,
                 onDismiss = {
                     showTrackDetailSheet = false
-                    selectedTrackId = null
                 },
+                sheetState = sheetState,
                 viewModel = trackDetailViewModel
             )
         }
