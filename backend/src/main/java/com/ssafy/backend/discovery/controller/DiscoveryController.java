@@ -117,4 +117,15 @@ public class DiscoveryController {
                 .payload(result)
                 .build();
     }
+
+    @GetMapping("/never")
+    public ApiResponse<?> getNeverListenTrack(@RequestParam(value = "size", required = true)
+                                                  @Min(value = 0)
+                                                  Integer size) {
+        List<TrackInfo> result = discoveryService.getNeverListenTrack(size);
+        return new ApiResponse.builder<List<TrackInfo>>()
+                .payload(result)
+                .build();
+    }
+
 }

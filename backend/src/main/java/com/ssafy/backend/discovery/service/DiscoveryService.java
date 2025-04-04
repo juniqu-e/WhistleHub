@@ -32,8 +32,9 @@ import java.util.Set;
 
 /**
  * <pre>Discovery 서비스</pre>
- *
+ * <p>
  * 곡 발견 관련 로직을 처리하는 클래스.
+ *
  * @author 허현준
  * @version 1.0
  * @since 2025-04-03
@@ -105,9 +106,18 @@ public class DiscoveryService {
         return resultList;
     }
 
+    /**
+     * <pre>추천 트랙 조회</pre>
+     * Access Token의 멤버가 선호하는 태그에 따라 추천 트랙 리스트 반환.
+     *
+     * @param tagId 태그 ID
+     * @param size  추천 트랙 갯수
+     * @return 추천 트랙 리스트
+     */
     public List<TrackInfo> getTagRecommend(int tagId, int size) {
         Member member = authService.getMember();
 
+        // 추천 트랙을 가져온다.
         List<Integer> trackIds = recommendationService.getRecommendTrackIds(member.getId(), tagId, size);
 
         // 태그 노드가 존재하지 않는 경우
@@ -135,18 +145,31 @@ public class DiscoveryService {
         return getTrackInfoList(trackRepository.findAllById(trackIds));
     }
 
-    public List<TrackInfo> getRecentTrack(int size){
+    /**
+     * <pre>최근 청취 트랙 조회</pre>
+     *
+     * @param size 최근 청취 트랙 갯수
+     * @return 최근 청취 트랙 리스트
+     */
+    public List<TrackInfo> getRecentTrack(int size) {
         Member member = authService.getMember();
         List<ListenRecord> listenRecordList = listenRecoredRepository.findByMemberId(member.getId(), PageRequest.of(0, size, Sort.by(Sort.Direction.DESC, "createdAt")));
         List<Track> trackList = new ArrayList<>();
-        for(ListenRecord listenRecord : listenRecordList) {
+        for (ListenRecord listenRecord : listenRecordList) {
             trackList.add(listenRecord.getTrack());
         }
 
         return getTrackInfoList(trackList);
     }
 
-    public List<TrackInfo> getSimilarTracks(int trackId){
+    /**
+     * <pre>유사 트랙 조회</pre>
+     * 트랙 ID를 기반으로 유사한 트랙 리스트를 반환.
+     *
+     * @param trackId 트랙 ID
+     * @return 유사 트랙 리스트
+     */
+    public List<TrackInfo> getSimilarTracks(int trackId) {
         Track track = trackRepository.findById(trackId)
                 .orElseThrow(() -> {
                     log.warn("Track not found with id: {}", trackId);
@@ -155,10 +178,30 @@ public class DiscoveryService {
 
         List<Integer> similarTrackIds = recommendationService.getSimilarTrackIds(track.getId());
         List<Track> similarTracks = trackRepository.findAllById(similarTrackIds);
-        return getTrackInfoList(similarTracks);
 
+        return getTrackInfoList(similarTracks);
     }
 
+    /**
+     * <pre>한번도 들어보지 못한 음원</pre>
+     * Access Token의 멤버가 한번도 들어보지 못한 음원 리스트를 반환.
+     *
+     * @param size 한번도 들어보지 못한 음원 갯수
+     * @return 한번도 들어보지 못한 음원 리스트
+     */
+    public List<TrackInfo> getNeverListenTrack(int size) {
+        Member member = authService.getMember();
+        List<Track> trackList = trackRepository.findRandomTracksNotListenedByMember(member.getId(), size);
+        return getTrackInfoList(trackList);
+    }
+
+    /**
+     * <pre>트랙 정보 리스트 변환</pre>
+     * 트랙 리스트를 TrackInfo 리스트로 변환.
+     *
+     * @param trackList TrackInfo로 만들 트랙 리스트
+     * @return 변환된 TrackInfo 리스트
+     */
     private List<TrackInfo> getTrackInfoList(List<Track> trackList) {
         List<TrackInfo> resultList = new ArrayList<>();
         for (Track track : trackList) {
@@ -172,6 +215,7 @@ public class DiscoveryService {
 
             resultList.add(trackInfo);
         }
+
         return resultList;
     }
 }
