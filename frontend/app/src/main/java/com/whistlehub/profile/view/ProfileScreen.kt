@@ -1,26 +1,23 @@
 package com.whistlehub.profile.view
 
 import android.util.Log
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,17 +31,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.motionEventSpy
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.whistlehub.common.util.LogoutManager
+import com.whistlehub.common.view.component.CommonAppBar
 import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.common.view.theme.CustomColors
-import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.profile.view.components.ProfileFollowSheet
 import com.whistlehub.profile.view.components.ProfileHeader
 import com.whistlehub.profile.view.components.ProfileSearchBar
+import com.whistlehub.profile.view.components.ProfileTrackDetailSheet
 import com.whistlehub.profile.view.components.TrackGridItem
+import com.whistlehub.profile.viewmodel.ProfileTrackDetailViewModel
 import com.whistlehub.profile.viewmodel.ProfileViewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -62,15 +62,17 @@ enum class FollowListType {
  * 사용자 프로필 화면
  * 프로필 정보, 검색, 트랙 목록, 팔로워/팔로잉 정보를 표시합니다.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ProfileScreen(
     memberIdParam: Int?,
+    paddingValues: PaddingValues,
     logoutManager: LogoutManager,
     navController: NavHostController,
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val customColors = CustomColors()
+    val coroutineScope = rememberCoroutineScope()
 
     // 로그인한 유저의 memberId는 ViewModel에서 가져옵니다.
     val currentUserId by viewModel.memberId.collectAsState()
@@ -105,7 +107,11 @@ fun ProfileScreen(
 
     // LazyVerticalGrid의 스크롤 상태
     val gridState: LazyGridState = rememberLazyGridState()
-    val coroutineScope = rememberCoroutineScope()
+
+    var selectedTrackId by remember { mutableStateOf<Int?>(null) }
+    var showTrackDetailSheet by remember { mutableStateOf(false) }
+    val trackDetailViewModel: ProfileTrackDetailViewModel = hiltViewModel()
+    val trackDetail by trackDetailViewModel.trackDetail.collectAsState()
 
     // 화면이 처음 구성될 때 프로필 데이터를 로드합니다.
     LaunchedEffect(memberId) {
@@ -142,24 +148,19 @@ fun ProfileScreen(
     // Main content
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Whistle Hub", style = Typography.titleLarge, color = customColors.Grey50) },
-                actions = {
-                    IconButton(onClick = {
-                        navController.navigate(Screen.ProfileMenu.route)
-                    }) {
-                        Icon(Icons.Default.Menu, contentDescription = "메뉴", tint = customColors.Grey50)
-                    }
-                    IconButton(onClick = {
-                        coroutineScope.launch {
-                            logoutManager.emitLogout()
-                        }
-                    }) {
-                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "로그아웃", tint = customColors.Grey50)
-                    }
-                }
+            CommonAppBar(
+                title = "Whistle Hub",
+                navController = navController,
+                logoutManager = logoutManager,
+                coroutineScope = coroutineScope,
             )
         },
+        bottomBar = {
+            Spacer(
+                Modifier
+                .height(paddingValues.calculateBottomPadding())
+            )
+        }
     ) { innerPadding ->
         // Display the bottom sheet if needed
         if (showBottomSheet && currentFollowListType != null) {
@@ -167,8 +168,8 @@ fun ProfileScreen(
                 followListType = currentFollowListType!!,
                 followers = followerList,
                 followings = followingList,
-                hasMoreFollowers = hasMoreFollowersState,  // ViewModel의 상태 사용
-                hasMoreFollowing = hasMoreFollowingsState,  // ViewModel의 상태 사용
+                hasMoreFollowers = hasMoreFollowersState,
+                hasMoreFollowing = hasMoreFollowingsState,
                 onDismiss = { showBottomSheet = false },
                 onUserClick = { userId ->
                     showBottomSheet = false
@@ -179,11 +180,17 @@ fun ProfileScreen(
             )
         }
 
+        // Scaffold에서 제공하는 innerPadding과 BottomNavigationBar 패딩 모두 고려
         LazyVerticalGrid(
             state = gridState,
             columns = GridCells.Fixed(3),
             modifier = Modifier.padding(innerPadding),
-            contentPadding = PaddingValues(8.dp),
+            contentPadding = PaddingValues(
+                start = 8.dp,
+                top = 8.dp,
+                end = 8.dp,
+                bottom = 8.dp // 하단 네비게이션 높이만큼 패딩 추가
+            ),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -237,7 +244,27 @@ fun ProfileScreen(
             // 트랙 아이템들 렌더링
             items(count = tracks.size) { index ->
                 val track = tracks[index]
-                TrackGridItem(track = track, onClick = { /* 트랙 클릭 처리 */ })
+
+                Box(
+                    modifier = Modifier
+                        .combinedClickable(
+                            onClick = {
+                                // 트랙 클릭 시 수행할 작업 (예: 재생)
+                                // TODO: 트랙 플레이어로 이동하거나 미니 플레이어 표시
+                            },
+                            onLongClick = {
+                                // 트랙 길게 클릭 시 수행할 작업 (예: 상세 정보 표시)
+                                selectedTrackId = track.trackId
+                                trackDetailViewModel.loadTrackDetails(track.trackId)
+                                showTrackDetailSheet = true
+                            }
+                        )
+                ) {
+                    // 기존 TrackGridItem 컴포넌트 사용 (수정 없이)
+                    TrackGridItem(
+                        track = track
+                    )
+                }
             }
 
             // 로딩 인디케이터 (옵션)
@@ -253,6 +280,19 @@ fun ProfileScreen(
                     }
                 }
             }
+        }
+
+        // 트랙 상세 정보 바텀 시트
+        if (showTrackDetailSheet && trackDetail != null) {
+            ProfileTrackDetailSheet(
+                track = trackDetail!!,
+                isOwnProfile = memberId == currentUserId,
+                onDismiss = {
+                    showTrackDetailSheet = false
+                    selectedTrackId = null
+                },
+                viewModel = trackDetailViewModel
+            )
         }
     }
 }

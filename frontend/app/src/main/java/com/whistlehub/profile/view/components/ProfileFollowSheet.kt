@@ -82,21 +82,6 @@ fun ProfileFollowSheet(
         sheetState = sheetState,
         containerColor = customColors.Grey900,
         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-        dragHandle = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Box(
-                    modifier = Modifier
-                        .padding(vertical = 8.dp)
-                        .width(40.dp)
-                        .height(4.dp)
-                        .clip(RoundedCornerShape(2.dp))
-                        .background(customColors.Grey600)
-                )
-            }
-        }
     ) {
         Column(
             modifier = Modifier

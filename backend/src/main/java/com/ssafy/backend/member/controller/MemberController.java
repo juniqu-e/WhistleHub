@@ -88,6 +88,15 @@ public class MemberController {
                 .build();
     }
 
+    @DeleteMapping("/image")
+    public ApiResponse<?> deleteImage() {
+        memberService.deleteImage();
+
+        return new ApiResponse.builder<Object>()
+                .payload(null)
+                .build();
+    }
+
     /**
      * 비밀번호 변경
      *

@@ -19,7 +19,6 @@ import androidx.compose.material.icons.rounded.AddCircleOutline
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Favorite
-import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -69,9 +68,11 @@ fun PlayListScreen(
 
     // 플레이리스트 화면
     Column(Modifier.fillMaxWidth()) {
-        LazyColumn(Modifier
-            .height(800.dp)
-            .padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp))
+        LazyColumn(
+            Modifier
+                .height(800.dp)
+                .padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)
+        )
         {
             // 페이지 제목
             item {
@@ -83,31 +84,26 @@ fun PlayListScreen(
                     color = CustomColors().Grey50,
                 )
             }
-            // 내가 만든 트랙 목록
-            item {
-                Row(Modifier
-                    .fillMaxWidth()
-                    .clickable {},
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.MusicNote, contentDescription = "내 트랙", tint = CustomColors().Mint500, modifier = Modifier.size(40.dp))
-                    Text("My Track",
-                        modifier = Modifier.weight(1f),
-                        fontSize = Typography.titleLarge.fontSize,
-                        fontFamily = Pretendard,
-                        color = CustomColors().Grey50
-                    )
-                }
-            }
             // 좋아하는 트랙 목록
             item {
-                Row(Modifier
-                    .fillMaxWidth()
-                    .clickable {},
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            // 좋아하는 트랙 클릭 시 트랙 목록 받아옴
+                            navController.navigate(Screen.PlayListTrackList.route + "/like")
+                        },
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.Favorite, contentDescription = "좋아하는 트랙", tint = CustomColors().Mint500, modifier = Modifier.size(40.dp))
-                    Text("Liked Track",
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Rounded.Favorite,
+                        contentDescription = "좋아하는 트랙",
+                        tint = CustomColors().Mint500,
+                        modifier = Modifier.size(40.dp)
+                    )
+                    Text(
+                        "Liked Track",
                         modifier = Modifier.weight(1f),
                         fontSize = Typography.titleLarge.fontSize,
                         fontFamily = Pretendard,
@@ -118,14 +114,16 @@ fun PlayListScreen(
             // 플레이리스트
             items(playlists.value.size) { index ->
                 val playlist = playlists.value[index]
-                Row(Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        // 플레이리스트 클릭 시 트랙 목록 받아옴
-                        navController.navigate(Screen.PlayListTrackList.route + "/${playlist.playlistId}")
-                    },
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            // 플레이리스트 클릭 시 트랙 목록 받아옴
+                            navController.navigate(Screen.PlayListTrackList.route + "/${playlist.playlistId}")
+                        },
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically) {
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     AsyncImage(
                         model = playlist.imageUrl,
                         contentDescription = "${playlist.name} 이미지",
@@ -134,7 +132,8 @@ fun PlayListScreen(
                             .clip(RoundedCornerShape(10.dp)),
                         contentScale = ContentScale.Crop
                     )
-                    Text(playlist.name,
+                    Text(
+                        playlist.name,
                         modifier = Modifier.weight(1f),
                         fontSize = Typography.titleLarge.fontSize,
                         fontFamily = Pretendard,
@@ -171,15 +170,26 @@ fun PlayListScreen(
 
             // 플레이리스트 추가
             item {
-                Row(Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        showCreatePlaylistDialog = true
-                    },
-                    horizontalArrangement = Arrangement.spacedBy(10.dp, alignment = Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.AddCircleOutline, contentDescription = "플레이리스트 추가", tint = CustomColors().Grey50, modifier = Modifier.size(24.dp))
-                    Text("Create Playlist",
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            showCreatePlaylistDialog = true
+                        },
+                    horizontalArrangement = Arrangement.spacedBy(
+                        10.dp,
+                        alignment = Alignment.CenterHorizontally
+                    ),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Rounded.AddCircleOutline,
+                        contentDescription = "플레이리스트 추가",
+                        tint = CustomColors().Grey50,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        "Create Playlist",
                         modifier = Modifier.padding(10.dp),
                         fontSize = Typography.titleLarge.fontSize,
                         fontFamily = Pretendard,
@@ -201,18 +211,22 @@ fun PlayListScreen(
     if (showCreatePlaylistDialog) {
         AlertDialog(
             onDismissRequest = { showCreatePlaylistDialog = false },
-            title = { Text(
-                text = "플레이리스트 생성",
-                style = Typography.titleLarge,
-                color = CustomColors().Grey50,
-            ) },
-            text = { CreatePlaylist(
-                onInputTitle = { playlistTitle = it},
-                onInputDescription = { playlistDescription = it },
-                onInputImage = {
-                    playlistImage = it
-                }
-            ) },
+            title = {
+                Text(
+                    text = "플레이리스트 생성",
+                    style = Typography.titleLarge,
+                    color = CustomColors().Grey50,
+                )
+            },
+            text = {
+                CreatePlaylist(
+                    onInputTitle = { playlistTitle = it },
+                    onInputDescription = { playlistDescription = it },
+                    onInputImage = {
+                        playlistImage = it
+                    }
+                )
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .background(CustomColors().Grey950),
@@ -226,7 +240,8 @@ fun PlayListScreen(
                                 image = playlistImage
                             )
                             showCreatePlaylistDialog = false
-                        }},
+                        }
+                    },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = CustomColors().Mint500,
                         contentColor = CustomColors().Grey950,
@@ -254,7 +269,7 @@ fun PlayListScreen(
             title = { Text("플레이리스트 삭제") },
             text = { Text("플레이리스트를 삭제하시겠습니까?") },
             confirmButton = {
-                Button (
+                Button(
                     onClick = {
                         coroutineScope.launch {
                             playlistViewModel.deletePlaylist(playlistId)
@@ -270,11 +285,13 @@ fun PlayListScreen(
                 }
             },
             dismissButton = {
-                Button(onClick = { showDeletePlaylistDialog = false },
+                Button(
+                    onClick = { showDeletePlaylistDialog = false },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = CustomColors().Grey400,
                         contentColor = CustomColors().Grey950
-                    )) {
+                    )
+                ) {
                     Text("취소")
                 }
             }

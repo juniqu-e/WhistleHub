@@ -25,10 +25,9 @@ object TrackModule {
     @Singleton
     fun provideTrackPlayViewModel(
         @ApplicationContext context: Context,
-        exoPlayer: ExoPlayer,
         trackService: TrackService,
         userRepository: UserRepository
     ): TrackPlayViewModel {
-        return TrackPlayViewModel(context, exoPlayer, trackService, userRepository)
+        return TrackPlayViewModel(context, trackService, userRepository)
     }
 }

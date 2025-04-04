@@ -1,9 +1,9 @@
 package com.ssafy.backend.member.service;
 
 import com.ssafy.backend.auth.service.AuthService;
-import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.common.error.exception.*;
 import com.ssafy.backend.common.service.S3Service;
+import com.ssafy.backend.graph.service.RelationshipService;
 import com.ssafy.backend.member.model.common.MemberInfo;
 import com.ssafy.backend.member.model.request.RequestFollowRequestDto;
 import com.ssafy.backend.member.model.request.UpdateMemberRequestDto;
@@ -50,6 +50,7 @@ public class MemberService {
     private final FollowRepository followRepository;
     private final TrackRepository trackRepository;
     private final LikeRepository likeRepository;
+    private final RelationshipService relationshipService;
 
     /**
      * 회원 정보 조회
@@ -65,11 +66,18 @@ public class MemberService {
                     return new NotFoundMemberException();
                 });
 
+        // 팔로워 수, 팔로잉 수, 트랙 수 조회
+        int followerCount = followRepository.countByToMemberId(memberId);
+        int followingCount = followRepository.countByFromMemberId(memberId);
+        int trackCount = trackRepository.countByMemberId(memberId);
 
         return MemberDetailResponseDto.builder()
                 .nickname(member.getNickname())
                 .profileImage(member.getProfileImage())
                 .profileText(member.getProfileText())
+                .followerCount(followerCount)
+                .followingCount(followingCount)
+                .trackCount(trackCount)
                 .build();
     }
 
@@ -131,6 +139,18 @@ public class MemberService {
         memberRepository.save(member);
 
         return imageUrl;
+    }
+
+    public void deleteImage() {
+        Member member = authService.getMember();
+        String memberProfileImageUrl = member.getProfileImage();
+
+        // 프로필 이미지 삭제
+        if (memberProfileImageUrl != null) {
+            s3Service.deleteFile(memberProfileImageUrl);
+            member.setProfileImage(null);
+            memberRepository.save(member);
+        }
     }
 
     /**
@@ -198,16 +218,11 @@ public class MemberService {
      */
     public List<MemberInfo> getFollower(Integer memberId, PageRequest pageRequest) {
         // 회원의 팔로워 목록 가져오기
-        Member member = null;
-        if (memberId == null) {
-            member = authService.getMember();
-        } else {
-            member = memberRepository.findById(memberId)
-                    .orElseThrow(() -> {
-                        log.warn("해당하는 회원이 없습니다. memberId : {}", memberId);
-                        return new NotFoundMemberException();
-                    });
-        }
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> {
+                    log.warn("해당하는 회원이 없습니다. memberId : {}", memberId);
+                    return new NotFoundMemberException();
+                });
 
         List<Follow> followerList = followRepository.findByToMemberId(member.getId(), pageRequest);
         List<MemberInfo> followerInfoList = new LinkedList<>();
@@ -293,6 +308,7 @@ public class MemberService {
                     .build();
 
             followRepository.save(follow);
+            relationshipService.createFollowRelationship(member.getId(), targetMember.getId());
         } else { // 팔로우 취소 요청인 경우,
             Follow follow = followRepository.findByFromMemberIdAndToMemberId(member.getId(), targetMember.getId()).orElseThrow(()->{
                 log.warn("팔로우 신청하지 않은 회원입니다. memberId : {}", requestFollowRequestDto.getMemberId());
@@ -300,6 +316,7 @@ public class MemberService {
             });
 
             followRepository.delete(follow);
+            relationshipService.deleteFollowRelationship(member.getId(), targetMember.getId());
         }
     }
 

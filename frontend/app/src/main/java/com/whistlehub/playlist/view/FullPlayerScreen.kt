@@ -1,9 +1,12 @@
 package com.whistlehub.playlist.view
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -53,10 +57,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -96,8 +102,52 @@ fun FullPlayerScreen(
     var playlistDescription by remember { mutableStateOf("") }
     var playlistImage by remember { mutableStateOf<MultipartBody.Part?>(null) }
 
+    // 아래로 드래그를 감지하는 offset 변수
+    var dragOffsetY by remember { mutableStateOf(0f) }
+    // 좌우 드래그를 감지하는 변수
+    var dragOffsetX by remember { mutableStateOf(0f) }
+    // 애니메이션을 위한 offset 변수
+    val animatedOffsetY by animateFloatAsState(targetValue = dragOffsetY, label = "")
+
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .offset { IntOffset(0, animatedOffsetY.toInt()) } // 부드러운 애니메이션 적용
+            .pointerInput(Unit) {
+                detectVerticalDragGestures(
+                    onDragEnd = {
+                        if (dragOffsetY > 150) { // 일정 거리 이상 드래그 시 뒤로 가기
+                            navController.popBackStack()
+                        }
+                        dragOffsetY = 0f // 초기화
+                    },
+                    onVerticalDrag = { _, dragAmount ->
+                        dragOffsetY += dragAmount
+                    }
+                )
+            }
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures(
+                    onDragEnd = {
+                        // 왼쪽으로 드래그하면 다음곡
+                        if (dragOffsetX < -150) {
+                            coroutineScope.launch {
+                                trackPlayViewModel.nextTrack()
+                            }
+                        }
+                        // 오른쪽으로 드래그하면 이전곡
+                        else if (dragOffsetX > 150) {
+                            coroutineScope.launch {
+                                trackPlayViewModel.previousTrack()
+                            }
+                        }
+                        dragOffsetX = 0f // 초기화
+                    },
+                    onHorizontalDrag = { _, dragAmount ->
+                        dragOffsetX += dragAmount
+                    }
+                )
+            },
         topBar = { PlayerHeader(navController, onMoreClick = { showPlayerMenu = true }) },
         bottomBar = {
             Column(Modifier.padding(bottom = paddingValues.calculateBottomPadding())) {

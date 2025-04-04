@@ -1,10 +1,11 @@
-package com.whistlehub.common.view.copmonent
+package com.whistlehub.common.view.component
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,9 +34,11 @@ import com.whistlehub.common.view.theme.CustomColors
 
 @Composable
 fun ImageUpload(
-    onChangeImage: (Uri) -> Unit // 선택된 이미지 URI를 업로드하는 함수
+    onChangeImage: (Uri) -> Unit, // 선택된 이미지 URI를 업로드하는 함수
+    originImageUri: Uri? = null, // 선택된 이미지 URI (기본값은 null)
+    canDelete: Boolean = true // 이미지 삭제 가능 여부
 ) {
-    var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var imageUri by remember { mutableStateOf<Uri?>(originImageUri) }
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -43,7 +46,7 @@ fun ImageUpload(
             imageUri = it
             onChangeImage(it) // 선택된 이미지 URI를 업로드하는 함수 호출
         } ?: run {
-            imageUri = null
+            imageUri = originImageUri
             onChangeImage(Uri.EMPTY) // 이미지가 선택되지 않았을 때 빈 URI 전달
         }
     }
@@ -63,27 +66,33 @@ fun ImageUpload(
             modifier = Modifier
                 .size(100.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .border(2.dp, Color.Gray, RoundedCornerShape(8.dp)),
+                .border(2.dp, Color.Gray, RoundedCornerShape(8.dp))
+                .clickable(
+                    enabled = true,
+                    onClick = { launcher.launch("image/*") } // 이미지 선택
+                ),
             contentScale = ContentScale.Crop
         )
 
-        Row(
-            Modifier.padding(top = 5.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Button(onClick = { launcher.launch("image/*") }) {
-                Text("이미지 선택")
-            }
-            Button(
-                onClick = {
-                    imageUri = null
-                    onChangeImage(Uri.EMPTY) // 이미지 삭제 시 빈 URI 전달
-                },
-                enabled = imageUri != null,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = CustomColors().Error500, contentColor = CustomColors().Grey50
-                ),
+        if (canDelete) {
+            Row(
+                Modifier.padding(top = 5.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text("이미지 삭제")
+                Button(onClick = { launcher.launch("image/*") }) {
+                    Text("이미지 선택")
+                }
+                Button(
+                    onClick = {
+                        imageUri = null
+                        onChangeImage(Uri.EMPTY) // 이미지 삭제 시 빈 URI 전달
+                    },
+                    enabled = imageUri != null,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CustomColors().Error500, contentColor = CustomColors().Grey50
+                    ),
+                ) {
+                    Text("이미지 삭제")
+                }
             }
         }
     }

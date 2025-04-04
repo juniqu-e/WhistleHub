@@ -48,6 +48,11 @@ class ProfileService @Inject constructor(
         val memberIdBody: RequestBody = memberId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
         return tokenRefresh.execute { profileApi.uploadProfileImage(memberIdBody, image) }
     }
+    suspend fun deleteProfileImage(
+        memberId: Int
+    ): ApiResponse<Unit> {
+        return tokenRefresh.execute { profileApi.deleteProfileImage(memberId) }
+    }
     // 비밀번호 변경
     suspend fun changePassword(
         request: ProfileRequest.ChangePasswordRequest
