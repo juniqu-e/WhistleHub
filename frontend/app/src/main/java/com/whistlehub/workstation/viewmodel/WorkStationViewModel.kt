@@ -57,6 +57,9 @@ class WorkStationViewModel @Inject constructor(
         mutableStateOf<ApiResponse<WorkstationResponse.ImportTrackResponse>?>(null);
     val layersOfSearchTrack: State<ApiResponse<WorkstationResponse.ImportTrackResponse>?> get() = _layersOfSearchTrack;
 
+    private val _isPlaying = mutableStateOf(false)
+    val isPlaying: State<Boolean> get() = _isPlaying
+
     fun addLayerByInstrument(type: InstrumentType) {
         val newId = (_tracks.value.maxOfOrNull { it.id } ?: 0) + 1
         val newLayer = Layer(
@@ -185,16 +188,23 @@ class WorkStationViewModel @Inject constructor(
 
     fun onPlayClicked() {
         val infos = getAudioLayerInfos();
-        stopAudioEngine()
-        setLayers(infos);
-        startAudioEngine();
+        if (_isPlaying.value) {
+            stopAudioEngine()
+        } else {
+            stopAudioEngine()
+            setLayers(infos)
+            startAudioEngine()
+        }
+        _isPlaying.value = !_isPlaying.value
     }
 
     fun onUpload(context: Context, fileName: String, onResult: (Boolean) -> Unit = {}) {
+        val safeFileName = if (fileName.endsWith(".wav")) fileName else "$fileName.wav"
+        val mix = File(context.filesDir, safeFileName)
+
         viewModelScope.launch {
             val infos = getAudioLayerInfos();
             setLayers(infos);
-            val mix = File(context.filesDir, fileName)
             val success = renderMixToWav(mix.absolutePath)
 
             if (!success) {
@@ -206,8 +216,8 @@ class WorkStationViewModel @Inject constructor(
                     "description" to createRequestBody("Description Hard Coding (。・ω・。)"),
                     "duration" to createRequestBody("120"),
                     "visibility" to createRequestBody("1"),
-                    "tag" to createRequestBody("1,2,3,4"),
-                    "sourceTrack" to createRequestBody("1,2"),
+                    "tags" to createRequestBody("1,2,3,4"),
+                    "sourceTracks" to createRequestBody("1,2"),
                     "layerName" to createRequestBody("layer1, layer2"),
                     "instrumentType" to createRequestBody("1,2")
                 )
@@ -217,6 +227,11 @@ class WorkStationViewModel @Inject constructor(
                     Log.d("Upload", File(layer.wavPath).toString())
                     createMultipart(File(layer.wavPath), "layerSoundFiles")
                 }
+
+                requestBodyMap.forEach { (key, value) ->
+                    Log.d("Upload", "$key => ${value.contentType()}")
+                }
+
                 Log.d(
                     "Upload",
                     "TrackSoundFile -> name: ${trackSoundFile.headers}, body type: ${trackSoundFile.body.contentType()}"

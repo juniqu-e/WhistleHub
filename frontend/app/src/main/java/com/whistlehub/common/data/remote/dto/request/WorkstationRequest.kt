@@ -18,7 +18,7 @@ sealed class WorkstationRequest {
         val duration: Int,
         val visibility: Boolean,
         val tags: List<String>,
-        val sourceTrack: List<String>,
+        val sourceTracks: List<String>,
         val trackImg: File,
         val layerSoundFiles: List<File>,
         val layerName: List<String>,
