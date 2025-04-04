@@ -3,18 +3,21 @@ package com.whistlehub.playlist.view
 import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.AlertDialog
@@ -43,23 +46,32 @@ import coil3.compose.AsyncImage
 import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
+import com.whistlehub.common.view.track.TrackItemRow
+import com.whistlehub.playlist.data.TrackEssential
 import com.whistlehub.playlist.viewmodel.PlaylistViewModel
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import kotlinx.coroutines.launch
 
 @Composable
 fun PlaylistTrackListScreen(
-    playlistId: Int,
+    paddingValues: PaddingValues,
+    playlistId: String,
     navController: NavHostController,
-    playlistViewModel: PlaylistViewModel = hiltViewModel(),
-    trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
+    trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
+    playlistViewModel: PlaylistViewModel = hiltViewModel()
 ) {
     LaunchedEffect(playlistId) {
         Log.d("PlaylistTrackListScreen", "playlistId: $playlistId")
-        // 플레이리스트 트랙 목록을 가져옴
-        playlistViewModel.getPlaylistTrack(playlistId)
-        // 플레이리스트 정보를 가져옴
-        playlistViewModel.getPlaylistInfo(playlistId)
+        if (playlistId == "like") {
+            // playlistId가 "like"인 경우, 좋아요 트랙 목록을 가져옴
+            playlistViewModel.getLikeTracks()
+        } else {
+            // playlistId가 "like"가 아닌 경우
+            // 플레이리스트 트랙 목록을 가져옴
+            playlistViewModel.getPlaylistTrack(playlistId.toInt())
+            // 플레이리스트 정보를 가져옴
+            playlistViewModel.getPlaylistInfo(playlistId.toInt())
+        }
     }
     val coroutineScope = rememberCoroutineScope()
     var showPlayPlaylistDialog by remember { mutableStateOf(false) }
@@ -67,154 +79,122 @@ fun PlaylistTrackListScreen(
     val playlistTrack by playlistViewModel.playlistTrack.collectAsState()
     val playlistInfo by playlistViewModel.playlistInfo.collectAsState()
 
-    val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
-    val isPlaying by trackPlayViewModel.isPlaying.collectAsState(initial = false)
-
-    LazyColumn(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        item {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                AsyncImage(
-                    model = playlistInfo?.imageUrl,
-                    contentDescription = "Playlist Image",
-                    modifier = Modifier
-                        .size(50.dp)
-                        .clip(RoundedCornerShape(5.dp)),
-                    error = null,
-                    contentScale = ContentScale.Crop
-                )
-                Column {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(15.dp)
-                    ) {
-                        Text(
-                            playlistInfo?.name ?: "Playlist Name",
-                            style = Typography.titleLarge,
-                            fontSize = Typography.displaySmall.fontSize,
-                            modifier = Modifier.weight(1f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+    Column(Modifier.fillMaxWidth()) {
+        LazyColumn(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            item {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    if (playlistId == "like") {
                         Icon(
-                            Icons.Rounded.PlayArrow,
-                            contentDescription = "Play",
-                            modifier = Modifier
-                                .size(30.dp)
-                                .clickable {
-                                    showPlayPlaylistDialog = true
-                                },
+                            Icons.Rounded.Favorite,
+                            contentDescription = "Favorite",
+                            modifier = Modifier.size(50.dp),
                             tint = CustomColors().Mint500
                         )
-                        Icon(
-                            Icons.Rounded.Edit,
-                            contentDescription = "Edit",
+                    } else {
+                        AsyncImage(
+                            model = playlistInfo?.imageUrl,
+                            contentDescription = "Playlist Image",
                             modifier = Modifier
-                                .size(24.dp)
-                                .clickable {
-                                    navController.navigate(Screen.PlayListEdit.route + "/$playlistId")
-                                },
-                            tint = CustomColors().Grey50
-                        )
-                        Icon(
-                            Icons.Rounded.Delete,
-                            contentDescription = "Delete",
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clickable {
-                                    showDeletePlaylistDialog = true
-                                },
-                            tint = CustomColors().Grey50
+                                .size(50.dp)
+                                .clip(RoundedCornerShape(5.dp)),
+                            error = null,
+                            contentScale = ContentScale.Crop
                         )
                     }
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Text(
-                            playlistInfo?.description ?: "",
-                            style = Typography.bodyLarge,
-                            color = CustomColors().Grey200,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
+                    Column {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(15.dp),
+                        ) {
+                            Text(
+                                playlistInfo?.name ?: "Playlist Name",
+                                style = Typography.titleLarge,
+                                fontSize = Typography.displaySmall.fontSize,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Icon(
+                                Icons.Rounded.PlayArrow,
+                                contentDescription = "Play",
+                                modifier = Modifier
+                                    .size(30.dp)
+                                    .clickable {
+                                        showPlayPlaylistDialog = true
+                                    },
+                                tint = CustomColors().Mint500
+                            )
+                            if (playlistId != "like") {
+                                Icon(
+                                    Icons.Rounded.Edit,
+                                    contentDescription = "Edit",
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clickable {
+                                            navController.navigate(Screen.PlayListEdit.route + "/$playlistId")
+                                        },
+                                    tint = CustomColors().Grey50
+                                )
+                                Icon(
+                                    Icons.Rounded.Delete,
+                                    contentDescription = "Delete",
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clickable {
+                                            showDeletePlaylistDialog = true
+                                        },
+                                    tint = CustomColors().Grey50
+                                )
+                            }
+                        }
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Text(
+                                playlistInfo?.description ?: "",
+                                style = Typography.bodyLarge,
+                                color = CustomColors().Grey200,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+            }
+            items(playlistTrack.size) { index ->
+                val trackData = playlistTrack[index]
+                val track = TrackEssential(
+                    trackId = trackData.trackInfo.trackId,
+                    title = trackData.trackInfo.title,
+                    artist = trackData.trackInfo.nickname,
+                    imageUrl = trackData.trackInfo.imageUrl,
+                )
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(Modifier.weight(1f)) {
+                        TrackItemRow(track)
+                    }
+                    IconButton({}) {
+                        Icon(
+                            Icons.Rounded.MoreVert,
+                            contentDescription = "More Options",
+                            tint = CustomColors().Grey50
                         )
                     }
                 }
             }
-        }
-        items(playlistTrack.size) { index ->
-            val track = playlistTrack[index]
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                AsyncImage(
-                    model = track.trackInfo.imageUrl,
-                    contentDescription = "Track Image",
-                    modifier = Modifier
-                        .size(50.dp)
-                        .clip(RoundedCornerShape(5.dp)),
-                    error = null,
-                    contentScale = ContentScale.Crop
-                )
-                Column(
-                    Modifier
-                        .weight(1f)
-                        .padding(horizontal = 10.dp)
-                ) {
-                    Text(
-                        track.trackInfo.title,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = Typography.titleLarge,
-                        color = CustomColors().Grey50
-                    )
-                    Text(
-                        track.trackInfo.nickname,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = Typography.bodyMedium,
-                        color = CustomColors().Grey200
-                    )
-                }
-                if (currentTrack?.trackId == track.trackInfo.trackId && isPlaying) {
-                    IconButton({ trackPlayViewModel.pauseTrack() }) {
-                        Icon(
-                            Icons.Filled.Pause,
-                            contentDescription = "Pause",
-                            tint = CustomColors().Mint500
-                        )
-                    }
-                } else {
-                    IconButton({
-                        if (currentTrack?.trackId == track.trackInfo.trackId) {
-                            trackPlayViewModel.resumeTrack()
-                        } else {
-                            coroutineScope.launch {
-                                trackPlayViewModel.playTrack(track.trackInfo.trackId)
-                            }
-                        }
-                    }) {
-                        Icon(
-                            Icons.Filled.PlayArrow,
-                            contentDescription = "Play",
-                            tint = CustomColors().Grey50
-                        )
-                    }
-                }
-                IconButton({}) {
-                    Icon(
-                        Icons.Rounded.MoreVert,
-                        contentDescription = "More Options",
-                        tint = CustomColors().Grey50
-                    )
-                }
+            item {
+                Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
             }
         }
     }
@@ -229,7 +209,7 @@ fun PlaylistTrackListScreen(
                 Button(
                     onClick = {
                         coroutineScope.launch {
-                            playlistViewModel.deletePlaylist(playlistId)
+                            playlistViewModel.deletePlaylist(playlistId.toInt())
                             navController.popBackStack()
                         }
                         showDeletePlaylistDialog = false
@@ -255,7 +235,6 @@ fun PlaylistTrackListScreen(
             }
         )
     }
-
     if (showPlayPlaylistDialog) {
         AlertDialog(
             onDismissRequest = { showPlayPlaylistDialog = false },
@@ -266,7 +245,12 @@ fun PlaylistTrackListScreen(
                     onClick = {
                         coroutineScope.launch {
                             val convertedTracks = playlistTrack.map { track ->
-                                trackPlayViewModel.getTrackbyTrackId(track.trackInfo.trackId)!!
+                                TrackEssential(
+                                    trackId = track.trackInfo.trackId,
+                                    title = track.trackInfo.title,
+                                    artist = track.trackInfo.nickname,
+                                    imageUrl = track.trackInfo.imageUrl,
+                                )
                             }
                             trackPlayViewModel.playPlaylist(convertedTracks)
                         }

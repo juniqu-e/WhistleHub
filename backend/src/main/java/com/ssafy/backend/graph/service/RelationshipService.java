@@ -1,5 +1,6 @@
 package com.ssafy.backend.graph.service;
 
+import com.ssafy.backend.graph.model.entity.TagNode;
 import com.ssafy.backend.graph.repository.MemberNodeRepository;
 import com.ssafy.backend.graph.repository.RelationshipRepository;
 import com.ssafy.backend.graph.repository.TagNodeRepository;
@@ -10,7 +11,7 @@ import org.springframework.data.neo4j.core.Neo4jTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -53,6 +54,10 @@ public class RelationshipService {
         relationshipRepository.createWriteRelationship(memberId, trackId);
     }
 
+    public List<Integer> getPreferTagsByMemberId(Integer memberId) {
+        return relationshipRepository.findPreferTagsByMemberId(memberId);
+    }
+
     /**
      * (Member)-[FOLLOW]->(Member)
      * @param followerId from
@@ -61,6 +66,11 @@ public class RelationshipService {
     @Transactional
     public void createFollowRelationship(Integer followerId, Integer followingId) {
         memberNodeRepository.createFollowRelationship(followerId, followingId);
+    }
+
+    @Transactional
+    public void deleteFollowRelationship(Integer followerId, Integer followingId) {
+        memberNodeRepository.deleteFollowRelationship(followerId, followingId);
     }
 
     @Transactional

@@ -36,6 +36,11 @@ interface ProfileApi {
         @Part("memberId") memberId: RequestBody,
         @Part image: MultipartBody.Part
     ): Response<ApiResponse<String>>
+    // 프로필 사진 삭제 요청
+    @DELETE("member/image")
+    suspend fun deleteProfileImage(
+        @Query("memberId") memberId: Int
+    ): Response<ApiResponse<Unit>>
     // 비밀번호 변경
     @PUT("member/password")
     suspend fun changePassword(
@@ -69,12 +74,14 @@ interface ProfileApi {
     @GET("member/follower")
     suspend fun getFollowers(
         @Query("memberId") memberId: Int,
-        @Query("page") page: Int
+        @Query("page") page: Int,
+        @Query("size") size: Int,
     ): Response<ApiResponse<List<ProfileResponse.GetFollowersResponse>>>
     // 멤버의 팔로잉 목록 조회
     @GET("member/following")
     suspend fun getFollowings(
         @Query("memberId") memberId: Int,
-        @Query("page") page: Int
+        @Query("page") page: Int,
+        @Query("size") size: Int,
     ): Response<ApiResponse<List<ProfileResponse.GetFollowingsResponse>>>
 }

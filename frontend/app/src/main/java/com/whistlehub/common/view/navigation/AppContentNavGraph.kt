@@ -5,10 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
 import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.common.view.home.HomeScreen
 import com.whistlehub.common.view.login.LoginScreen
@@ -23,6 +21,8 @@ import com.whistlehub.profile.view.ProfileMenuScreen
 import com.whistlehub.profile.view.ProfileScreen
 import com.whistlehub.search.view.SearchScreen
 import com.whistlehub.workstation.view.WorkStationScreen
+import com.whistlehub.workstation.viewmodel.WorkStationViewModel
+import kotlin.math.log
 
 /**
  * 메인 앱 화면 간의 네비게이션을 처리하는 콘텐츠 네비게이션 그래프
@@ -33,6 +33,7 @@ fun AppContentNavGraph(
     logoutManager: LogoutManager,
     paddingValues: PaddingValues,
     modifier: Modifier = Modifier,
+    workStationViewModel: WorkStationViewModel,
 ) {
     val trackPlayViewModel = hiltViewModel<TrackPlayViewModel>()
     NavHost(
@@ -44,30 +45,38 @@ fun AppContentNavGraph(
             HomeScreen(
                 paddingValues,
                 trackPlayViewModel = trackPlayViewModel,
-                navController = navController
+                navController = navController,
+                logoutManager = logoutManager
             )
         }
         composable(route = Screen.Search.route) {
-            SearchScreen(navController)
+            SearchScreen(
+                paddingValues,
+                navController,
+                trackPlayViewModel
+            )
         }
         composable(route = Screen.DAW.route) {
-            WorkStationScreen(navController = navController)
+            WorkStationScreen(
+                navController = navController,
+                viewModel = workStationViewModel,
+                paddingValues = paddingValues
+            )
 //            DAWScreen()
         }
         composable(route = Screen.PlayList.route) {
-            PlayListScreen(navController = navController)
+            PlayListScreen(
+                paddingValues,
+                navController
+            )
         }
-        composable(route = Screen.Profile.route, arguments = listOf(navArgument("memberId") {
-            type = NavType.IntType
-            defaultValue = -1 // 기본값을 -1은 로그인한 유저의 프로필을 의미
-        })) { backStackEntry ->
-            // 네비게이션 인자에서 memberId 읽기
-            val memberIdArg = backStackEntry.arguments?.getInt("memberId")
+        composable(route = Screen.Profile.route + "/{memberId}") { backStackEntry ->
+            val memberId = backStackEntry.arguments?.getString("memberId")
             ProfileScreen(
+                memberId?.toInt() ?: -1,
+                paddingValues = paddingValues,
                 navController = navController,
                 logoutManager = logoutManager,
-                // memberIdArg가 -1이면 ProfileScreen 내부에서 로그인한 유저의 memberId 사용
-                memberIdParam = if (memberIdArg == -1) null else memberIdArg
             )
         }
         // 프로필 메뉴 화면으로 이동
@@ -85,7 +94,6 @@ fun AppContentNavGraph(
         composable(route = Screen.Login.route) {
             LoginScreen(navController = navController)
         }
-
         // 플레이어 화면
         composable(route = Screen.Player.route) {
             FullPlayerScreen(
@@ -99,9 +107,10 @@ fun AppContentNavGraph(
             val playlistId = backStackEntry.arguments?.getString("playlistId")
             if (playlistId != null) {
                 PlaylistTrackListScreen(
-                    playlistId.toInt(),
+                    paddingValues,
+                    playlistId,
                     navController,
-                    trackPlayViewModel = trackPlayViewModel
+                    trackPlayViewModel
                 )
             }
         }
@@ -109,7 +118,11 @@ fun AppContentNavGraph(
         composable(route = Screen.PlayListEdit.route + "/{playlistId}") { backStackEntry ->
             val playlistId = backStackEntry.arguments?.getString("playlistId")
             if (playlistId != null) {
-                PlaylistEditScreen(playlistId.toInt(), navController)
+                PlaylistEditScreen(
+                    paddingValues,
+                    playlistId.toInt(),
+                    navController
+                )
             }
         }
     }

@@ -1,19 +1,27 @@
 package com.whistlehub.playlist.view
 
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -45,13 +53,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
+import com.whistlehub.common.util.uriToMultipartBodyPart
+import com.whistlehub.common.view.component.ImageUpload
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.viewmodel.PlaylistViewModel
@@ -60,8 +73,9 @@ import kotlin.math.roundToInt
 
 @Composable
 fun PlaylistEditScreen(
+    paddingValues: PaddingValues,
     playlistId: Int,
-    navController: androidx.navigation.NavHostController,
+    navController: NavHostController,
     playlistViewModel: PlaylistViewModel = hiltViewModel(),
 ) {
     LaunchedEffect(playlistId) {
@@ -74,8 +88,10 @@ fun PlaylistEditScreen(
     val playlistTrack by playlistViewModel.playlistTrack.collectAsState()
     val playlistInfo by playlistViewModel.playlistInfo.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     var showConfirmDialog by remember { mutableStateOf(false) }
     var showDismissDialog by remember { mutableStateOf(false) }
+    var showImageDialog by remember { mutableStateOf(false) }
 
     // 플레이리스트 정보 수정 관련
     var isEditTitle by remember { mutableStateOf(false) } // 제목 수정 모드
@@ -83,18 +99,22 @@ fun PlaylistEditScreen(
     // playlistInfo를 구독하여 제목과 설명 자동 업데이트
     var playlistTitle by remember { mutableStateOf("") }
     var playlistDescription by remember { mutableStateOf("") }
+    var playlistImage: Uri? by remember { mutableStateOf<Uri?>(null) }
 
     LaunchedEffect(playlistInfo) {
         if (!isEditTitle) playlistTitle = playlistInfo?.name ?: ""
         if (!isEditDescription) playlistDescription = playlistInfo?.description ?: ""
+        if (playlistInfo?.imageUrl != null) playlistImage = playlistInfo?.imageUrl?.toUri()
     }
 
     // 트랙 순서 변경 관련
     var itemHeightPx by remember { mutableFloatStateOf(0f) } // 아이템 높이(픽셀 단위)
     var trackList by remember { mutableStateOf(emptyList<PlaylistResponse.PlaylistTrackResponse>()) }
-    var draggedIndex by remember { mutableStateOf<Int?>(null) }
-    var dragOffsetY by remember { mutableFloatStateOf(0f) }
+    var draggedVerticalIndex by remember { mutableStateOf<Int?>(null) }  // 트랙 순서 변경 시작 위치
     var targetIndex by remember { mutableStateOf<Int?>(null) } // 드롭 예상 위치
+
+    // 트랙 삭제 관련
+    var draggedHorizontalIndex by remember { mutableStateOf<Int?>(null) } // 삭제하려는 index
 
     // 트랙 리스트가 변경될 때마다 로컬 상태 업데이트
     LaunchedEffect(playlistTrack) {
@@ -106,7 +126,18 @@ fun PlaylistEditScreen(
         showDismissDialog = true
     }
 
-    LazyColumn(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    LazyColumn(Modifier
+        .padding(10.dp)
+        .pointerInput(Unit) {
+            detectTapGestures(
+                onTap = {
+                    draggedHorizontalIndex = null
+                    draggedVerticalIndex = null
+                }
+            )
+        },
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
         // 플레이리스트 정보 수정
         item {
             Row(Modifier.fillMaxWidth(),
@@ -114,11 +145,14 @@ fun PlaylistEditScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 AsyncImage(
-                    model = playlistInfo?.imageUrl,
+                    model = playlistImage,
                     contentDescription = "Playlist Image",
                     modifier = Modifier
                         .size(50.dp)
-                        .clip(RoundedCornerShape(5.dp)),
+                        .clip(RoundedCornerShape(5.dp))
+                        .clickable {
+                            showImageDialog = true
+                        },
                     error = null,
                     contentScale = ContentScale.Crop
                 )
@@ -261,12 +295,17 @@ fun PlaylistEditScreen(
             }
         }
 
-        // 플레이리스트 트랙 순서 수정
+        // 플레이리스트 트랙 순서 수정, 트랙 삭제
         itemsIndexed(trackList) { index, track ->
-            val isCurrentDragging = index == draggedIndex
+            val isCurrentVerticalDragging = index == draggedVerticalIndex
+            var dragOffsetX by remember { mutableFloatStateOf(0f) }
+            var dragOffsetY by remember { mutableFloatStateOf(0f) }
             val animatedOffsetY by animateFloatAsState(
-                targetValue = if (isCurrentDragging) dragOffsetY else 0f
+                targetValue = dragOffsetY,
+                label = "dragY"
             )
+            var showDeleteButton by remember { mutableStateOf(false) }
+
             if (index == targetIndex) {
                 // 예상 위치에 Divider 삽입
                 HorizontalDivider(modifier = Modifier
@@ -276,61 +315,97 @@ fun PlaylistEditScreen(
                     thickness = 2.dp
                 )
             }
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp)
                     .background(
                         when {
-                            isCurrentDragging -> CustomColors().Grey400.copy(alpha = 0.3f)
+                            isCurrentVerticalDragging -> CustomColors().Grey400.copy(alpha = 0.3f)
                             else -> Color.Transparent
                         },
                         RoundedCornerShape(8.dp)
                     )
-                    .zIndex(if (isCurrentDragging) 1f else 0f)
-                    .offset { IntOffset(0, animatedOffsetY.roundToInt()) }
+                    .zIndex(if (isCurrentVerticalDragging) 1f else 0f)
+                    .offset { IntOffset( 0, animatedOffsetY.roundToInt()) }
                     // 아이템 높이 측정 추가
                     .onGloballyPositioned { coordinates ->
                         itemHeightPx = coordinates.size.height.toFloat()
                     }
                     .pointerInput(Unit) {
-                    detectDragGestures(
-                        onDragStart = {
-                            draggedIndex = index
-                        },
-                        onDragEnd = {
-                            draggedIndex?.let { fromIndex ->
-                                targetIndex?.let { toIndex ->
-                                    if (fromIndex != toIndex) {
-                                        trackList = trackList.toMutableList().apply {
-                                            add(toIndex, removeAt(fromIndex))
-                                        }
-                                        playlistViewModel.moveTrack(fromIndex, toIndex)
-                                    }
+                        detectHorizontalDragGestures(
+                            onDragStart = {
+                                // 드래그 시작 시 드래그 인덱스 설정
+                                if (draggedHorizontalIndex != index) {
+                                    dragOffsetX = 0f
+                                    draggedHorizontalIndex = index
+                                }
+                                dragOffsetY = 0f
+                            },
+                            onDragEnd = {
+                                if (dragOffsetX < -100) {
+                                    showDeleteButton = true
+                                    dragOffsetX = -70f
+                                } else {
+                                    dragOffsetX = 0f
+                                }
+                            },
+                            onHorizontalDrag = { change, dragAmount ->
+                                change.consume()
+                                dragOffsetX += dragAmount
+
+                                if (dragOffsetX < -100) {
+                                    showDeleteButton = true
+                                } else {
+                                    showDeleteButton = false
                                 }
                             }
-                            draggedIndex = null
-                            dragOffsetY = 0f
-                            targetIndex = null
-                        },
-                        onDrag = { _, dragAmount ->
-                            dragOffsetY += dragAmount.y
-
-                            // 예상 위치 계산 (아이템 높이를 기준으로)
-                            val movedItems = (dragOffsetY / itemHeightPx).toInt()
-                            targetIndex = (index + movedItems).coerceIn(0, trackList.size - 1)
-                        }
-                    )
-                }
+                        )
+                    }
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Menu,
+                        contentDescription = "Drag Handle",
+                        tint = CustomColors().Grey200,
+                        modifier = Modifier
+                            .pointerInput(Unit) {
+                                detectDragGestures(
+                                    onDragStart = {
+                                        draggedHorizontalIndex = null
+                                        draggedVerticalIndex = index
+                                    },
+                                    onDragEnd = {
+                                        draggedVerticalIndex?.let { fromIndex ->
+                                            targetIndex?.let { toIndex ->
+                                                if (fromIndex != toIndex) {
+                                                    trackList = trackList.toMutableList().apply {
+                                                        add(toIndex, removeAt(fromIndex))
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        draggedVerticalIndex = null
+                                        dragOffsetY = 0f
+                                        targetIndex = null
+                                    },
+                                    onDrag = { _, dragAmount ->
+                                        dragOffsetY += dragAmount.y
+
+                                        val movedItems = (dragOffsetY / itemHeightPx).toInt()
+                                        targetIndex = (index + movedItems).coerceIn(0, trackList.size - 1)
+                                    }
+                                )
+                            }
+                    )
                     Row(
-                        Modifier.fillMaxWidth(),
+                        Modifier
+                            .weight(1f)
+                            .padding(horizontal = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
@@ -363,12 +438,43 @@ fun PlaylistEditScreen(
                                 color = CustomColors().Grey200
                             )
                         }
-                    Icon(
-                        imageVector = Icons.Rounded.Menu,
-                        contentDescription = "Drag",
-                        tint = CustomColors().Grey200
-                    )
-                }
+                    }
+                    if ( draggedHorizontalIndex == index ) {
+                        Box(Modifier
+                            .background(Color.Red)
+                            .heightIn(min = 50.dp)
+                            .widthIn(max = 70.dp)
+                            .width(
+                                if (!showDeleteButton && dragOffsetX < 0) {
+                                    -dragOffsetX.dp
+                                } else if (showDeleteButton && dragOffsetX >= 0) {
+                                    dragOffsetX.dp
+                                } else if (showDeleteButton && dragOffsetX < 0) {
+                                    70.dp
+                                } else {
+                                    0.dp
+                                }
+                            )
+                            .clickable {
+                                if (showDeleteButton) {
+                                    // 리스트에서 삭제
+                                    trackList = trackList.toMutableList().apply {
+                                        removeAt(index)
+                                        draggedHorizontalIndex = null
+                                    }
+                                }
+                                showDeleteButton = false
+                            },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (showDeleteButton) {
+                                Text("삭제",
+                                    style = Typography.titleMedium,
+                                    color = CustomColors().Grey50,
+                                )
+                            }
+                        }
+                    }
             }
         }
         // 마지막 아이템 뒤에도 Divider를 추가할 수 있음 (필요 시)
@@ -378,10 +484,13 @@ fun PlaylistEditScreen(
                 .height(2.dp)
                 .background(CustomColors().Mint500),
                 thickness = 2.dp
-            )
+                )
+            }
+        }
+        item {
+            Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
         }
     }
-}
 
     if (showConfirmDialog) {
         AlertDialog(
@@ -392,11 +501,17 @@ fun PlaylistEditScreen(
                 Button({
                     showConfirmDialog = false
                     coroutineScope.launch {
+                        val image = if (playlistImage != null && playlistImage != playlistInfo?.imageUrl?.toUri()) {
+                            uriToMultipartBodyPart(context, playlistImage!!)
+                        } else {
+                            null
+                        }
                         playlistViewModel.updatePlaylist(
                             playlistId = playlistId,
                             name = playlistTitle,
                             description = playlistDescription,
-                            trackIds = trackList.map { it.trackInfo.trackId }
+                            trackIds = trackList.map { it.trackInfo.trackId },
+                            image = image
                         )
                         navController.popBackStack()
                     } },
@@ -443,6 +558,47 @@ fun PlaylistEditScreen(
             dismissButton = {
                 Button({
                     showDismissDialog = false
+                },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CustomColors().Grey400,
+                        contentColor = CustomColors().Grey950
+                    )
+                ) {
+                    Text("취소")
+                }
+            }
+        )
+    }
+    if (showImageDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                playlistImage = playlistInfo?.imageUrl?.toUri()
+                showImageDialog = false
+            },
+            title = { Text("플레이리스트 이미지 수정") },
+            text = { ImageUpload(
+                onChangeImage = { uri ->
+                    playlistImage = uri
+                },
+                originImageUri = playlistInfo?.imageUrl?.toUri(),
+                canDelete = false
+            ) },
+            confirmButton = {
+                Button({
+                    showImageDialog = false
+                },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CustomColors().Mint500,
+                        contentColor = CustomColors().Grey950
+                    )
+                ) {
+                    Text("적용")
+                }
+            },
+            dismissButton = {
+                Button({
+                    playlistImage = playlistInfo?.imageUrl?.toUri()
+                    showImageDialog = false
                 },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = CustomColors().Grey400,

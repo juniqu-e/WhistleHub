@@ -48,6 +48,11 @@ class ProfileService @Inject constructor(
         val memberIdBody: RequestBody = memberId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
         return tokenRefresh.execute { profileApi.uploadProfileImage(memberIdBody, image) }
     }
+    suspend fun deleteProfileImage(
+        memberId: Int
+    ): ApiResponse<Unit> {
+        return tokenRefresh.execute { profileApi.deleteProfileImage(memberId) }
+    }
     // 비밀번호 변경
     suspend fun changePassword(
         request: ProfileRequest.ChangePasswordRequest
@@ -85,16 +90,17 @@ class ProfileService @Inject constructor(
     // 멤버의 팔로워 목록 조회
     suspend fun getFollowers(
         memberId: Int,
-        page: Int
+        page: Int,
+        size: Int
     ): ApiResponse<List<ProfileResponse.GetFollowersResponse>> {
-        return tokenRefresh.execute { profileApi.getFollowers(memberId, page) }
+        return tokenRefresh.execute { profileApi.getFollowers(memberId, page, size) }
     }
     // 멤버의 팔로잉 목록 조회
     suspend fun getFollowings(
-        token: String,
         memberId: Int,
-        page: Int
+        page: Int,
+        size: Int
     ): ApiResponse<List<ProfileResponse.GetFollowingsResponse>> {
-        return tokenRefresh.execute { profileApi.getFollowings( memberId, page) }
+        return tokenRefresh.execute { profileApi.getFollowings( memberId, page, size) }
     }
 }

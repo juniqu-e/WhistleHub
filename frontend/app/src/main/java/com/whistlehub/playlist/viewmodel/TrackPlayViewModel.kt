@@ -1,33 +1,25 @@
 package com.whistlehub.playlist.viewmodel
 
 import android.content.Context
-import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.media3.common.C
-import androidx.media3.common.MediaItem
-import androidx.media3.common.PlaybackException
-import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
+import com.whistlehub.WhistleHub
 import com.whistlehub.common.data.local.entity.UserEntity
 import com.whistlehub.common.data.local.room.UserRepository
 import com.whistlehub.common.data.remote.dto.request.TrackRequest
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.data.repository.TrackService
+import com.whistlehub.playlist.data.TrackEssential
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
 import java.util.Timer
 import javax.inject.Inject
 import kotlin.concurrent.timer
@@ -35,43 +27,37 @@ import kotlin.concurrent.timer
 @HiltViewModel
 class TrackPlayViewModel @Inject constructor(
     @ApplicationContext val context: Context,
-    val exoPlayer: ExoPlayer,
     val trackService: TrackService,
     val userRpository: UserRepository,
 ) : ViewModel() {
+    // exoPlayer 관련 변수
+    // 앱 context
+    private val app = context.applicationContext as WhistleHub
+    // ExoPlayer 인스턴스
+    val exoPlayer get() = app.exoPlayer
+    // 현재 재생 중인 트랙
+    val currentTrack: StateFlow<TrackResponse.GetTrackDetailResponse?> get() = app.currentTrack
+    // 재생 상태 (재생 중/일시 정지)
+    val isPlaying: StateFlow<Boolean> get() = app.isPlaying
+    // 현재 트랙 위치
+    val playerPosition: StateFlow<Long> get() = app.playerPosition
+    // 현재 트랙 길이
+    val trackDuration: StateFlow<Long> get() = app.trackDuration
+    // 플레이어 내부 트랙 리스트
+    val playerTrackList: MutableStateFlow<List<TrackEssential>> get() = app.playerTrackList
+
+
+    // 내부 고유 상태
+    // 현재 유저 정보
     private val _user = MutableStateFlow<UserEntity?>(null)
     val user: StateFlow<UserEntity?> get() = _user
-
     // 테스트용 트랙 리스트 (최종 API 연결 후 삭제)
     private val _trackList =
-        MutableStateFlow<List<TrackResponse.GetTrackDetailResponse>>(emptyList())
-    val trackList: StateFlow<List<TrackResponse.GetTrackDetailResponse>> get() = _trackList
-
-    // 현재 재생 중인 트랙
-    private val _currentTrack = MutableStateFlow<TrackResponse.GetTrackDetailResponse?>(null)
-    val currentTrack: StateFlow<TrackResponse.GetTrackDetailResponse?> get() = _currentTrack
-
-    // 재생 상태 (재생 중/일시 정지)
-    private val _isPlaying = MutableStateFlow<Boolean>(false)
-    val isPlaying: StateFlow<Boolean> get() = _isPlaying
-
+        MutableStateFlow<List<TrackEssential>>(emptyList())
+    val trackList: StateFlow<List<TrackEssential>> get() = _trackList
     // 플레이어 화면 상태
     private val _playerViewState = MutableStateFlow<PlayerViewState>(PlayerViewState.PLAYING)
     val playerViewState: StateFlow<PlayerViewState> get() = _playerViewState
-
-    // 플레이어 내부 트랙 리스트
-    private val _playerTrackList =
-        MutableStateFlow<List<TrackResponse.GetTrackDetailResponse>>(emptyList())
-    val playerTrackList: MutableStateFlow<List<TrackResponse.GetTrackDetailResponse>> get() = _playerTrackList
-
-    // 현재 트랙 위치
-    private val _playerPosition = MutableStateFlow(0L)
-    val playerPosition: StateFlow<Long> get() = _playerPosition
-
-    // 현재 트랙 길이
-    private val _trackDuration = MutableStateFlow(0L)
-    val trackDuration: StateFlow<Long> get() = _trackDuration
-
     // 트랙 로그 기준 시간
     private val _LOG_TIME = 15L
 
@@ -83,36 +69,6 @@ class TrackPlayViewModel @Inject constructor(
             // 임시 트랙 리스트 가져오기
             getTempTrackList()
         }
-        // ExoPlayer 이벤트 리스너 추가
-        exoPlayer.addListener(object : Player.Listener {
-            override fun onPlaybackStateChanged(state: Int) {
-                if (state == Player.STATE_ENDED) {
-                    _playerPosition.value = 0L
-                    _trackDuration.value = 0L
-                    viewModelScope.launch {
-                        nextTrack() // 트랙이 끝나면 다음 곡 자동 재생
-                    }
-                }
-                when (state) {
-                    Player.STATE_IDLE -> Log.d("ExoPlayer", "IDLE 상태")
-                    Player.STATE_BUFFERING -> Log.d("ExoPlayer", "버퍼링 중")
-                    Player.STATE_READY -> Log.d("ExoPlayer", "준비 완료, 재생 가능")
-                    Player.STATE_ENDED -> Log.d("ExoPlayer", "재생 완료")
-                }
-            }
-
-            override fun onPlayerError(error: PlaybackException) {
-                Log.e("ExoPlayer", "재생 오류 발생: ${error.message}")
-            }
-        })
-        viewModelScope.launch {
-            while (true) {
-                _playerPosition.value = exoPlayer.currentPosition
-                _trackDuration.value =
-                    if (exoPlayer.duration != C.TIME_UNSET) exoPlayer.duration else 0L
-                delay(1000)
-            }
-        }
     }
 
     suspend fun getTempTrackList() {
@@ -120,14 +76,22 @@ class TrackPlayViewModel @Inject constructor(
             viewModelScope.launch(Dispatchers.IO) {
                 val trackRequests = (1 until 7).map { trackId ->
                     async {
-                        val resopnse = trackService.getTrackDetail(trackId.toString())
-                        Log.d("TrackPlayViewModel", "트랙 ID: $trackId")
-                        Log.d("TrackPlayViewModel", "트랙 응답: $resopnse")
-                        resopnse
+                        val resopnse = trackService.getTrackDetail(trackId.toString()).payload
+                        if (resopnse == null) {
+                            Log.d("TrackPlayViewModel", "트랙 정보가 없습니다.")
+                            return@async null
+                        }
+                        val track = TrackEssential(
+                            trackId = resopnse.trackId,
+                            title = resopnse.title,
+                            artist = resopnse.artist?.nickname ?: "Unknown Artist",
+                            imageUrl = resopnse.imageUrl
+                        )
+                        track
                     } // 병렬 요청
                 }
                 val trackResults =
-                    trackRequests.awaitAll().mapNotNull { it.payload } // 모든 요청 완료 후 리스트 생성
+                    trackRequests.awaitAll().mapNotNull { it } // 모든 요청 완료 후 리스트 생성
 
                 withContext(Dispatchers.Main) {
                     _trackList.emit(trackResults)
@@ -161,33 +125,11 @@ class TrackPlayViewModel @Inject constructor(
 
     suspend fun playTrack(trackId: Int) {
         try {
-            val trackResponse = trackService.getTrackDetail(trackId.toString())  // 트랙 정보 가져오기
-            if (trackResponse.code != "SU") {
-                Log.d("TrackPlayViewModel", "Failed to get track detail: ${trackResponse.message}")
-                stopTrack()
-                return  // 트랙 정보 가져오기 실패 시 플레이어 종료
-            }
-            val track = trackResponse.payload ?: return  // 트랙 정보가 없으면 종료
-            resetTimer() // 기존 타이머 초기화
-            val trackData = trackService.playTrack(trackId.toString())
-
-            if (trackData != null) {
-                val mediaItem = MediaItem.fromUri(byteArrayToUri(context, trackData) ?: Uri.EMPTY)
-                exoPlayer.setMediaItem(mediaItem)
-                exoPlayer.prepare()
-                exoPlayer.playWhenReady = true
-                exoPlayer.play()
-
-                _currentTrack.value = track
-                _isPlaying.value = true
+            resetTimer()
+            if (app.playTrack(trackId)) {
                 getTrackComment(trackId.toString())  // 댓글 정보 업데이트
                 startTimer() // 타이머 시작
-
-                // 플레이어 트랙 리스트 업데이트
-                val existingIndex = _playerTrackList.value.indexOfFirst { it.trackId == trackId }
-                if (existingIndex == -1) {
-                    _playerTrackList.value += track  // 현재 재생 목록 맨 뒤에 트랙 추가
-                }
+                return
             }
         } catch (e: Exception) {
             Log.e("TrackPlayViewModel", "Error playing track: ${e.message}")
@@ -196,54 +138,33 @@ class TrackPlayViewModel @Inject constructor(
 
     // 트랙 일시 정지
     fun pauseTrack() {
-        exoPlayer.playWhenReady = false
-        exoPlayer.pause()
-        _isPlaying.value = false
+        app.pauseTrack()
         pauseTimer() // 타이머 일시 정지
     }
 
     // 트랙 재개
     fun resumeTrack() {
-        exoPlayer.playWhenReady = true
-        exoPlayer.play()
-        _isPlaying.value = true
+        app.resumeTrack()
         startTimer() // 타이머 재개
     }
 
     // 트랙 정지
     fun stopTrack() {
-        _currentTrack.value = null
-        exoPlayer.stop()
-        exoPlayer.clearMediaItems()
-        _isPlaying.value = false
+        app.stopTrack()
         resetTimer() // 타이머 초기화
     }
 
     suspend fun previousTrack() {
-        val currentIndex =
-            _playerTrackList.value.indexOfFirst { it.trackId == _currentTrack.value?.trackId }
-        if (currentIndex > 0) {
-            playTrack(_playerTrackList.value[currentIndex - 1].trackId)
-        } else {
-//            stopTrack() // 첫 곡이면 정지
-            playTrack(_playerTrackList.value.last().trackId) // 첫 곡이면 마지막 곡으로 돌아감
-        }
+        app.previousTrack()
     }
 
     suspend fun nextTrack() {
-        val currentIndex =
-            _playerTrackList.value.indexOfFirst { it.trackId == _currentTrack.value?.trackId }
-        if (currentIndex != -1 && currentIndex < _playerTrackList.value.size - 1) {
-            playTrack(_playerTrackList.value[currentIndex + 1].trackId)
-        } else {
-//            stopTrack() // 마지막 곡이면 정지
-            playTrack(_playerTrackList.value[0].trackId) // 마지막 곡이면 첫 곡으로 돌아감
-        }
+        app.nextTrack()
     }
 
-    suspend fun playPlaylist(tracks: List<TrackResponse.GetTrackDetailResponse>) {
+    suspend fun playPlaylist(tracks: List<TrackEssential>) {
         // 플레이리스트 재생
-        _playerTrackList.value = tracks
+        app.setTrackList(tracks)
         playTrack(tracks[0].trackId)
     }
 
@@ -254,7 +175,7 @@ class TrackPlayViewModel @Inject constructor(
     // 트랙 좋아요
     suspend fun likeTrack(trackId: Int): Boolean {
         return try {
-            val response = if (_currentTrack.value?.isLiked == true) {
+            val response = if (currentTrack.value?.isLiked == true) {
                 trackService.unlikeTrack(trackId.toString())
             } else {
                 trackService.likeTrack(
@@ -266,8 +187,10 @@ class TrackPlayViewModel @Inject constructor(
             if (response.code == "SU") {
                 // 트랙 상태 업데이트
                 val updateTrack =
-                    trackService.getTrackDetail(_currentTrack.value!!.trackId.toString())
-                _currentTrack.value = updateTrack.payload
+                    trackService.getTrackDetail(currentTrack.value!!.trackId.toString())
+                if (updateTrack.payload != null) {
+                    app.setCurrentTrack(updateTrack.payload)
+                }
                 true
             } else {
                 Log.d("TrackPlayViewModel", "Failed to like track: ${response.message}")
@@ -309,7 +232,7 @@ class TrackPlayViewModel @Inject constructor(
         return try {
             val response = trackService.createTrackComment(request)
             if (response.code == "SU") {
-                getTrackComment(_currentTrack.value?.trackId.toString()) // 댓글 작성 후 댓글 리스트 갱신
+                getTrackComment(currentTrack.value?.trackId.toString()) // 댓글 작성 후 댓글 리스트 갱신
                 true
             } else {
                 Log.d("TrackPlayViewModel", "Failed to post track comment: ${response.message}")
@@ -330,7 +253,7 @@ class TrackPlayViewModel @Inject constructor(
         return try {
             val response = trackService.updateTrackComment(request)
             if (response.code == "SU") {
-                getTrackComment(_currentTrack.value?.trackId.toString()) // 댓글 수정 후 댓글 리스트 갱신
+                getTrackComment(currentTrack.value?.trackId.toString()) // 댓글 수정 후 댓글 리스트 갱신
                 true
             } else {
                 Log.d("TrackPlayViewModel", "Failed to update track comment: ${response.message}")
@@ -347,7 +270,7 @@ class TrackPlayViewModel @Inject constructor(
         return try {
             val response = trackService.deleteTrackComment(commentId.toString())
             if (response.code == "SU") {
-                getTrackComment(_currentTrack.value?.trackId.toString()) // 댓글 삭제 후 댓글 리스트 갱신
+                getTrackComment(currentTrack.value?.trackId.toString()) // 댓글 삭제 후 댓글 리스트 갱신
                 true
             } else {
                 Log.d("TrackPlayViewModel", "Failed to delete track comment: ${response.message}")
@@ -374,7 +297,7 @@ class TrackPlayViewModel @Inject constructor(
                     try {
                         val response = trackService.increasePlayCount(
                             TrackRequest.TrackPlayCountRequest(
-                                trackId = _currentTrack.value?.trackId ?: 0
+                                trackId = currentTrack.value?.trackId ?: 0
                             )
                         )
                         if (response.code == "SU") {
@@ -402,31 +325,11 @@ class TrackPlayViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        exoPlayer.release()
-    }
-}
-
-fun byteArrayToUri(context: Context, byteArray: ByteArray): Uri? {
-    // 임시 파일을 만들기 위한 파일 이름 지정
-    val file = File(context.cacheDir, "temp_file")
-
-    try {
-        // 파일에 ByteArray를 씁니다.
-        val fileOutputStream = FileOutputStream(file)
-        fileOutputStream.write(byteArray)
-        fileOutputStream.close()
-
-        // 파일의 Uri를 반환합니다.
-        return Uri.fromFile(file)
-    } catch (e: IOException) {
-        e.printStackTrace()
-        return null
     }
 }
 
 enum class PlayerViewState {
     PLAYING,
     COMMENT,
-    PLAYLIST,
-    MORE
+    PLAYLIST
 }

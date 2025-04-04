@@ -18,10 +18,12 @@ import com.whistlehub.common.view.theme.Typography
 
 @Composable
 fun DiscoveryView(
+    modifier: Modifier,
     tags: List<String>,
     navController: NavHostController
 ) {
     LazyVerticalGrid(
+        modifier = modifier,
         columns = GridCells.Adaptive(minSize = 150.dp)
     ) {
         items(tags.size) { index ->

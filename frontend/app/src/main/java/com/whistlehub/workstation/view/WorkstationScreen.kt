@@ -9,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -52,7 +53,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.workstation.data.Layer
@@ -60,10 +60,13 @@ import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WorkStationScreen(navController: NavController) {
+fun WorkStationScreen(
+    navController: NavController,
+    viewModel: WorkStationViewModel,
+    paddingValues: PaddingValues
+) {
     val context = LocalContext.current
     val activity = LocalActivity.current as? Activity
-    val viewModel: WorkStationViewModel = hiltViewModel()
     val tracks by viewModel.tracks.collectAsState()
     val verticalScrollState = rememberScrollState()
     val bottomBarActions = viewModel.bottomBarActions.copy(
@@ -77,117 +80,70 @@ fun WorkStationScreen(navController: NavController) {
     )
     val selectedLayerId = remember { mutableStateOf<Int?>(null) }
     var showDialog by remember { mutableStateOf(false) }
-    // Immersive mode (fullscreen)
-//    LaunchedEffect(Unit) {
-//        activity?.window?.let { window ->
-//            val controller = WindowInsetsControllerCompat(window, window.decorView)
-//            controller.hide(WindowInsetsCompat.Type.systemBars())
-//            controller.systemBarsBehavior =
-//                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-//        }
-//    }
-    // Restore system bars when leaving screen
-//    DisposableEffect(Unit) {
-//        onDispose {
-//            activity?.window?.let { window ->
-//                val controller = WindowInsetsControllerCompat(window, window.decorView)
-//                controller.show(WindowInsetsCompat.Type.systemBars())
-//            }
-//        }
-//    }
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-//            .windowInsetsPadding(WindowInsets.displayCutout)
-                .background(Color.Black)
-        ) {
-            //좌측 악기
-            Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-            ) {
-                LayerPanel(
-                    tracks = tracks,
-                    verticalScrollState = verticalScrollState,
-                    modifier = Modifier.fillMaxWidth(),
-                    onAddInstrument = {
-                        showDialog = true
-                    },
-                    onDeleteLayer = {
-                        viewModel.deleteLayer(it)
-                    },
-                    onResetLayer = {
-                        //믹싱 옵션 초기화
-                    },
-                    onBeatAdjustment = { layer ->
-//                    beatAdjustmentLayer = layer
-                        selectedLayerId.value = layer.id
-                    },
-                )
 
-                AddLayerDialog(
-                    context = context,
-                    showDialog = showDialog,
-                    onDismiss = { showDialog = false },
-                    onLayerAdded = { newLayer ->
-                        viewModel.addLayer(newLayer)
-                    }
-                )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)
+//            .background(Color(0xFF9090C0))
+    ) {
+        //좌측 악기
+        LayerPanel(
+            tracks = tracks,
+            verticalScrollState = verticalScrollState,
+            modifier = Modifier.weight(5f),
+            onAddInstrument = {
+                showDialog = true
+            },
+            onDeleteLayer = {
+                viewModel.deleteLayer(it)
+            },
+            onResetLayer = {
+            },
+            onBeatAdjustment = { layer ->
+                selectedLayerId.value = layer.id
+            },
+        )
+
+        AddLayerDialog(
+            context = context,
+            showDialog = showDialog,
+            onDismiss = { showDialog = false },
+            onLayerAdded = { newLayer ->
+                viewModel.addLayer(newLayer)
             }
-            val selectedLayer = tracks.firstOrNull { it.id == selectedLayerId.value }
-            selectedLayer?.let { layer ->
-                ModalBottomSheet(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .windowInsetsPadding(WindowInsets.displayCutout)
-                        .padding(horizontal = 16.dp),
-                    onDismissRequest = { selectedLayerId.value = null }
-                ) {
-                    BeatAdjustmentPanel(
-                        layer = layer,
-                        onDismiss = { selectedLayerId.value = null },
-                        onGridClick = { index ->
-                            viewModel.toggleBeat(layer.id, index)
-                            Log.d("WhistleHubAudioEngine", layer.patternBlocks.toString())
-                        },
-                        onAutoRepeatApply = { start, interval ->
-                            viewModel.applyPatternAutoRepeat(selectedLayer.id, start, interval)
-                            Log.d("WhistleHubAudioEngine", layer.patternBlocks.toString())
-                        }
-                    )
-                }
-            }
-//        // 박자 조정 바텀시트 표시
-//        if (beatAdjustmentLayer != null) {
-//            ModalBottomSheet(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .windowInsetsPadding(WindowInsets.displayCutout)
-//                    .padding(horizontal = 16.dp),
-//                onDismissRequest = { beatAdjustmentLayer = null }
-//            ) {
-//                BeatAdjustmentPanel(
-//                    layer = beatAdjustmentLayer!!,
-//                    onDismiss = { beatAdjustmentLayer = null },
-//                    onGridClick = { index ->
-//                        viewModel.toggleBeat(beatAdjustmentLayer!!.id, index)
-//                    }
-//                )
-//            }
-//        }
-        }
-        Box(
-            modifier = Modifier.align(Alignment.BottomCenter)
+        )
+
+        Column(
+            modifier = Modifier.background(Color(0xFF9090C0)),
+            verticalArrangement = Arrangement.Center,
         ) {
-            viewModel.bottomBarProvider.WorkStationBottomBar(
-                actions =
-                bottomBarActions
+            viewModel.bottomBarProvider.WorkStationBottomBar(actions = bottomBarActions)
+        }
+    }
+    val selectedLayer = tracks.firstOrNull { it.id == selectedLayerId.value }
+    selectedLayer?.let { layer ->
+        ModalBottomSheet(
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.displayCutout)
+                .padding(horizontal = 16.dp),
+            onDismissRequest = { selectedLayerId.value = null }
+        ) {
+            BeatAdjustmentPanel(
+                layer = layer,
+                onDismiss = { selectedLayerId.value = null },
+                onGridClick = { index ->
+                    viewModel.toggleBeat(layer.id, index)
+                    Log.d("WhistleHubAudioEngine", layer.patternBlocks.toString())
+                },
+                onAutoRepeatApply = { start, interval ->
+                    viewModel.applyPatternAutoRepeat(selectedLayer.id, start, interval)
+                    Log.d("WhistleHubAudioEngine", layer.patternBlocks.toString())
+                }
             )
         }
     }
-
 }
 
 @Composable
@@ -202,8 +158,7 @@ fun LayerPanel(
 ) {
     Column(
         modifier = modifier
-            .fillMaxHeight()
-            .background(Color.Gray)
+            .background(Color(0xFF9090C0))
             .verticalScroll(verticalScrollState)
             .padding(8.dp)
     ) {
