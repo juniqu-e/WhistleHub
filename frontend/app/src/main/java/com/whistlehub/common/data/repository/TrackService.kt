@@ -4,7 +4,6 @@ import com.whistlehub.common.data.remote.api.TrackApi
 import com.whistlehub.common.data.remote.dto.request.TrackRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
 import com.whistlehub.common.data.remote.dto.response.AuthResponse
-import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.util.TokenRefresh
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -174,7 +173,7 @@ class TrackService @Inject constructor(
         period: String,
         page: Int,
         size: Int
-    ): ApiResponse<List<PlaylistResponse.PlaylistTrackResponse>> {
+    ): ApiResponse<List<TrackResponse.SearchTrack>> {
         return tokenRefresh.execute { trackApi.getTagRanking(tagId, period, page, size) }
     }
 }

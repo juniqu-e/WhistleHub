@@ -3,7 +3,6 @@ package com.whistlehub.common.data.remote.api
 import com.whistlehub.common.data.remote.dto.request.TrackRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
 import com.whistlehub.common.data.remote.dto.response.AuthResponse
-import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -150,5 +149,5 @@ interface TrackApi {
         @Query("period") period: String,
         @Query("page") page: Int,
         @Query("size") size: Int,
-    ): Response<ApiResponse<List<PlaylistResponse.PlaylistTrackResponse>>>
+    ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
 }

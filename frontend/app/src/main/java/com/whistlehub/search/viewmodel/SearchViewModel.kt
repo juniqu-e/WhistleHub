@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.whistlehub.common.data.remote.dto.request.TrackRequest
 import com.whistlehub.common.data.remote.dto.response.AuthResponse
-import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.data.repository.TrackService
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,8 +22,8 @@ class SearchViewModel @Inject constructor(
     val tagList: StateFlow<List<AuthResponse.TagResponse>> get() = _tagList
 
     private val _tagRanking =
-        MutableStateFlow<List<PlaylistResponse.PlaylistTrackResponse>>(emptyList())
-    val tagRanking: StateFlow<List<PlaylistResponse.PlaylistTrackResponse>> get() = _tagRanking
+        MutableStateFlow<List<TrackResponse.SearchTrack>>(emptyList())
+    val tagRanking: StateFlow<List<TrackResponse.SearchTrack>> get() = _tagRanking
 
     // 트랙 검색
     suspend fun searchTracks(keyword: String) {

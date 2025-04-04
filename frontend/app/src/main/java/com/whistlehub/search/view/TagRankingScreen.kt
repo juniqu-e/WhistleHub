@@ -67,10 +67,10 @@ fun TagRankingScreen(
             }
             val trackTop3 = tagRanking.map {
                 TrackEssential(
-                    trackId = it.trackInfo.trackId,
-                    title = it.trackInfo.title,
-                    artist = it.trackInfo.nickname,
-                    imageUrl = it.trackInfo.imageUrl
+                    trackId = it.trackId,
+                    title = it.title,
+                    artist = it.nickname,
+                    imageUrl = it.imageUrl
                 )
             }.take(3)  // 처음 3개만 가져옴
             Column {
@@ -103,7 +103,7 @@ fun TagRankingScreen(
             )
         }
         items(tagRanking.size - 3) { index ->
-            val track = tagRanking[index + 3].trackInfo  // 4위부터 시작
+            val track = tagRanking[index + 3]  // 4위부터 시작
             TrackItemRow(
                 track = TrackEssential(
                     trackId = track.trackId,
