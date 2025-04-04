@@ -28,7 +28,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -50,12 +51,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.workstation.data.Layer
+import com.whistlehub.workstation.data.ToastData
+import com.whistlehub.workstation.data.rememberToastState
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,17 +73,35 @@ fun WorkStationScreen(
     val activity = LocalActivity.current as? Activity
     val tracks by viewModel.tracks.collectAsState()
     val verticalScrollState = rememberScrollState()
+    val selectedLayerId = remember { mutableStateOf<Int?>(null) }
+    var showDialog by remember { mutableStateOf(false) }
+    val toastState = rememberToastState()
+    val isPlaying by viewModel.isPlaying
     val bottomBarActions = viewModel.bottomBarActions.copy(
         onPlayedClicked = {
             viewModel.onPlayClicked()
         },
-        onExitClicked = {
-            navController.popBackStack()
-            Log.d("Exit", "EXIT")
+        onAddInstrument = {
+            showDialog = true
+        },
+        onUploadConfirm = { name ->
+            viewModel.onUpload(context, name) { success ->
+                toastState.value = if (success) {
+                    ToastData("믹스 저장 성공", Icons.Default.CheckCircle, Color(0xFF4CAF50))
+                } else {
+                    ToastData("믹스 저장 실패", Icons.Default.Error, Color(0xFFF44336))
+                }
+//                Toast.makeText(
+//                    context,
+//                    if (success) "믹스 저장 성공 🎉" else "믹스 저장 실패 ❌",
+//                    Toast.LENGTH_SHORT
+//                ).show()
+            }
         }
     )
-    val selectedLayerId = remember { mutableStateOf<Int?>(null) }
-    var showDialog by remember { mutableStateOf(false) }
+
+
+
 
     Column(
         modifier = Modifier
@@ -87,6 +109,11 @@ fun WorkStationScreen(
             .padding(paddingValues)
 //            .background(Color(0xFF9090C0))
     ) {
+        CustomToast(
+            toastData = toastState.value,
+            onDismiss = { toastState.value = null },
+            position = Alignment.Center
+        )
         //좌측 악기
         LayerPanel(
             tracks = tracks,
@@ -111,14 +138,19 @@ fun WorkStationScreen(
             onDismiss = { showDialog = false },
             onLayerAdded = { newLayer ->
                 viewModel.addLayer(newLayer)
-            }
+            },
+            viewModel = viewModel,
+            navController = navController,
         )
 
         Column(
-            modifier = Modifier.background(Color(0xFF9090C0)),
             verticalArrangement = Arrangement.Center,
         ) {
-            viewModel.bottomBarProvider.WorkStationBottomBar(actions = bottomBarActions)
+            viewModel.bottomBarProvider.WorkStationBottomBar(
+                actions = bottomBarActions,
+                context = context,
+                isPlaying = isPlaying
+            )
         }
     }
     val selectedLayer = tracks.firstOrNull { it.id == selectedLayerId.value }
@@ -158,10 +190,24 @@ fun LayerPanel(
 ) {
     Column(
         modifier = modifier
-            .background(Color(0xFF9090C0))
             .verticalScroll(verticalScrollState)
-            .padding(8.dp)
+            .padding(16.dp)
     ) {
+        if (tracks.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "악기를 추가하고 \n 트랙을 만들어보세요!",
+                    color = Color.White.copy(alpha = 0.8f), // 연한 흰색
+                    style = Typography.titleLarge,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
         tracks.forEach { layer ->
             LayerItem(
                 layer = layer,
@@ -175,22 +221,22 @@ fun LayerPanel(
             Spacer(modifier = Modifier.heightIn(8.dp))
         }
         // + 버튼
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .padding(8.dp)
-                .background(Color.DarkGray, RoundedCornerShape(6.dp))
-                .clickable { onAddInstrument() },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Add Instrument",
-                tint = Color(0xFF4ECCA3),
-                modifier = Modifier.size(32.dp)
-            )
-        }
+//        Box(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .height(60.dp)
+//                .padding(8.dp)
+//                .background(Color.DarkGray, RoundedCornerShape(6.dp))
+//                .clickable { onAddInstrument() },
+//            contentAlignment = Alignment.Center
+//        ) {
+//            Icon(
+//                imageVector = Icons.Default.Add,
+//                contentDescription = "Add Instrument",
+//                tint = Color(0xFF4ECCA3),
+//                modifier = Modifier.size(32.dp)
+//            )
+//        }
     }
 }
 

@@ -18,10 +18,12 @@ suspend fun downloadWavFromS3Url(
     connection.requestMethod = "GET"
     connection.connectTimeout = 10000
     connection.readTimeout = 15000
+
     // 연결 확인
     if (connection.responseCode != HttpURLConnection.HTTP_OK) {
         throw Exception("S3 다운로드 실패: HTTP ${connection.responseCode}")
     }
+
     val inputStream = connection.inputStream
     val outputFile = File(context.filesDir, fileName)
     val outputStream = FileOutputStream(outputFile)

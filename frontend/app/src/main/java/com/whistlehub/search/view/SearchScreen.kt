@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
@@ -17,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -53,20 +57,11 @@ fun SearchScreen(
     var searchText by remember { mutableStateOf("") }
     var searchMode by remember { mutableStateOf(SearchMode.DISCOVERY) }  // 기본 탐색 모드
     val searchResult by searchViewModel.searchResult.collectAsState()
+    val tagList by searchViewModel.tagList.collectAsState()
 
-    // 임시 추천 태그
-    val tags = listOf(
-        "Pop",
-        "Rock",
-        "Hip-Hop",
-        "R&B",
-        "Jazz",
-        "Classical",
-        "Electronic",
-        "Reggae",
-        "Country",
-        "Folk"
-    )
+    LaunchedEffect(Unit) {
+        searchViewModel.recommendTag()
+    }
 
     Column(Modifier.fillMaxSize()) {
         // 검색창
@@ -84,6 +79,7 @@ fun SearchScreen(
                 .fillMaxWidth()
                 .onFocusEvent {
                     if (it.isFocused) {
+                        searchText = ""
                         searchMode = SearchMode.SEARCHING
                     }
                 },
@@ -101,6 +97,16 @@ fun SearchScreen(
             shape = RoundedCornerShape(20.dp),
             textStyle = Typography.bodyMedium,
             singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Search
+            ),
+            keyboardActions = KeyboardActions {
+                coroutineScope.launch {
+                    searchViewModel.searchTracks(searchText)
+                    searchMode = SearchMode.COMPLETE_SEARCH
+                    keyboardController?.hide()
+                }
+            },
             trailingIcon = {
                 IconButton({
                     coroutineScope.launch {
@@ -121,12 +127,13 @@ fun SearchScreen(
                 Column(Modifier.weight(1f)) {
                     DiscoveryView(
                         Modifier.weight(1f),
-                        tags,
+                        tagList,
                         navController = navController
                     )
                     Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
                 }
             }
+
             SearchMode.SEARCHING -> {}
             SearchMode.COMPLETE_SEARCH -> {
                 if (searchResult.isEmpty()) {
@@ -142,7 +149,6 @@ fun SearchScreen(
                     )
                 } else {
                     // 검색 결과를 보여주는 UI
-                    // 임시 UI
                     LazyColumn(Modifier.weight(1f)) {
                         items(searchResult.size) { index ->
                             val track = TrackEssential(
@@ -151,7 +157,7 @@ fun SearchScreen(
                                 artist = searchResult[index].nickname,
                                 imageUrl = searchResult[index].imageUrl,
                             )
-                            TrackItemRow(track, trackPlayViewModel=trackPlayViewModel)
+                            TrackItemRow(track, trackPlayViewModel = trackPlayViewModel)
                         }
                         item {
                             Spacer(Modifier.height(paddingValues.calculateBottomPadding()))

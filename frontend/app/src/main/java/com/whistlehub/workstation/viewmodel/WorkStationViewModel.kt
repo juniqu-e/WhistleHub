@@ -14,8 +14,12 @@ import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.data.remote.dto.response.WorkstationResponse
 import com.whistlehub.common.data.repository.TrackService
 import com.whistlehub.common.data.repository.WorkstationService
+import com.whistlehub.common.util.AudioEngineBridge.renderMixToWav
 import com.whistlehub.common.util.AudioEngineBridge.setLayers
 import com.whistlehub.common.util.AudioEngineBridge.startAudioEngine
+import com.whistlehub.common.util.AudioEngineBridge.stopAudioEngine
+import com.whistlehub.common.util.createMultipart
+import com.whistlehub.common.util.createRequestBody
 import com.whistlehub.common.util.downloadWavFromS3Url
 import com.whistlehub.workstation.data.BottomBarActions
 import com.whistlehub.workstation.data.InstrumentType
@@ -30,6 +34,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.UUID
 import javax.inject.Inject
 
@@ -46,11 +51,14 @@ class WorkStationViewModel @Inject constructor(
     private val _wavPathMap = mutableStateOf<Map<Int, String>>(emptyMap())
     val wavPathMap: State<Map<Int, String>> get() = _wavPathMap
     private val _searchTrackResults =
-        mutableStateOf<ApiResponse<List<TrackResponse.SearchTrack>>?>(null);
-    val searchTrackResults: State<ApiResponse<List<TrackResponse.SearchTrack>>?> get() = _searchTrackResults;
+        MutableStateFlow<ApiResponse<List<TrackResponse.SearchTrack>>?>(null);
+    val searchTrackResults: StateFlow<ApiResponse<List<TrackResponse.SearchTrack>>?> get() = _searchTrackResults;
     private val _layersOfSearchTrack =
         mutableStateOf<ApiResponse<WorkstationResponse.ImportTrackResponse>?>(null);
     val layersOfSearchTrack: State<ApiResponse<WorkstationResponse.ImportTrackResponse>?> get() = _layersOfSearchTrack;
+
+    private val _isPlaying = mutableStateOf(false)
+    val isPlaying: State<Boolean> get() = _isPlaying
 
     fun addLayerByInstrument(type: InstrumentType) {
         val newId = (_tracks.value.maxOfOrNull { it.id } ?: 0) + 1
@@ -66,12 +74,14 @@ class WorkStationViewModel @Inject constructor(
     }
 
     fun addLayer(newLayer: Layer) {
-        val newId = _nextId.value  // 현재 ID 가져오기
-        _nextId.value += 1  // ID 증가
+        val newId = _nextId.intValue  // 현재 ID 가져오기
+        _nextId.intValue += 1  // ID 증가
         // ID가 증가된 새로운 Layer 객체 생성
         val layerWithId = newLayer.copy(id = newId)
         // 레이어를 _tracks에 추가
         _tracks.value += layerWithId
+
+        Log.d("Search", "In LOCAL : ${_tracks.value.size}")
     }
 
     fun deleteLayer(layer: Layer) {
@@ -116,7 +126,7 @@ class WorkStationViewModel @Inject constructor(
                 var i = startBeat
                 while (i < 60) {
                     val newBlock = PatternBlock(i, length)
-                    val alreadyExists = blocks.any { it.start == newBlock.start }
+//                    val alreadyExists = blocks.any { it.start == newBlock.start }
                     val overlaps = blocks.any { isOverlapping(newBlock, it) }
                     if (!overlaps) {
                         blocks.add(newBlock)
@@ -149,20 +159,26 @@ class WorkStationViewModel @Inject constructor(
                 val payload = results.payload ?: return@launch
                 val layers = payload.layers.map { layerRes ->
                     val s3Url = layerRes.soundUrl
-                    val fileName = "layer_${UUID.randomUUID()}.mp3"
+
+                    Log.d("Search", "S3 Url : $s3Url")
+                    Log.d("Search", "layer : $layerRes")
+                    val fileName = "layer_${UUID.randomUUID()}.wav"
                     val localFile = downloadWavFromS3Url(context, s3Url, fileName)
                     Log.d("Search", "불러온 레이어 수: $localFile")
                     Layer(
-                        id = layerRes.layerId,
                         name = layerRes.name,
                         description = "Imported from ${payload.title}",
                         category = layerRes.instrumentType.toString(),
                         colorHex = "#BDBDBD",
                         length = 4,
-//                        wavPath = localFile.absolutePath
+                        wavPath = localFile.absolutePath
                     )
                 }
-                _tracks.value += layers
+
+                layers.forEach { layer ->
+                    addLayer(layer)
+                }
+//                _tracks.value += layers
                 Log.d("Search", "불러온 레이어 수: ${layers.size}")
             } catch (e: Exception) {
                 Log.d("Search", "Layer 오류 ${e.message}");
@@ -172,30 +188,89 @@ class WorkStationViewModel @Inject constructor(
 
     fun onPlayClicked() {
         val infos = getAudioLayerInfos();
-        startAudioEngine();
-        setLayers(infos);
-        startAudioEngine();
+        if (_isPlaying.value) {
+            stopAudioEngine()
+        } else {
+            stopAudioEngine()
+            setLayers(infos)
+            startAudioEngine()
+        }
+        _isPlaying.value = !_isPlaying.value
     }
+
+    fun onUpload(context: Context, fileName: String, onResult: (Boolean) -> Unit = {}) {
+        val safeFileName = if (fileName.endsWith(".wav")) fileName else "$fileName.wav"
+        val mix = File(context.filesDir, safeFileName)
+
+        viewModelScope.launch {
+            val infos = getAudioLayerInfos();
+            setLayers(infos);
+            val success = renderMixToWav(mix.absolutePath)
+
+            if (!success) {
+                onResult(false)
+            } else {
+                //MultiPart
+                val requestBodyMap = hashMapOf(
+                    "title" to createRequestBody(fileName),
+                    "description" to createRequestBody("Description Hard Coding (。・ω・。)"),
+                    "duration" to createRequestBody("120"),
+                    "visibility" to createRequestBody("1"),
+                    "tags" to createRequestBody("1,2,3,4"),
+                    "sourceTracks" to createRequestBody("1,2"),
+                    "layerName" to createRequestBody("layer1, layer2"),
+                    "instrumentType" to createRequestBody("1,2")
+                )
+                val trackImg = null
+                val trackSoundFile = createMultipart(mix, "trackSoundFile")
+                val layerSoundFiles = tracks.value.map { layer ->
+                    Log.d("Upload", File(layer.wavPath).toString())
+                    createMultipart(File(layer.wavPath), "layerSoundFiles")
+                }
+
+                requestBodyMap.forEach { (key, value) ->
+                    Log.d("Upload", "$key => ${value.contentType()}")
+                }
+
+                Log.d(
+                    "Upload",
+                    "TrackSoundFile -> name: ${trackSoundFile.headers}, body type: ${trackSoundFile.body.contentType()}"
+                )
+
+                layerSoundFiles.forEachIndexed { index, part ->
+                    Log.d(
+                        "Upload",
+                        "Layer[$index] -> name: ${part.headers}, body type: ${part.body.contentType()}"
+                    )
+                }
+                val result = workstationService.uploadTrack(
+                    WorkstationRequest.UploadTrackRequest(
+                        partMap = requestBodyMap,
+                        trackImg = trackImg,
+                        layerSoundFiles = layerSoundFiles,
+                        trackSoundFile = trackSoundFile,
+                    )
+                )
+
+                Log.d("Upload", result.toString())
+            }
+
+            onResult(success)
+        }
+
+    }
+
 
     private fun getAudioLayerInfos(): List<LayerAudioInfo> {
         return tracks.value.map { it.toAudioInfo() }
     }
 
-    private fun audioEngineTest() {
-        startAudioEngine()
-    }
-
     val bottomBarActions = BottomBarActions(
-        onPlayedClicked = {
-//            playAllLayers(_tracks.value)
-//            audioEngineTest()
-        },
-        onTrackSavedClicked = {},
-        onTrackUploadClicked = {},
-        onTrackDownloadClicked = {},
-        onExitClicked = {}
+        onPlayedClicked = {},
+        onTrackUploadClicked = { },
+        onAddInstrument = {},
     )
-    //    fun toggleBeat(layerId: Int, index: Int) {
+//    fun toggleBeat(layerId: Int, index: Int) {
 //        _tracks.value = _tracks.value.map { layer ->
 //            if (layer.id == layerId) {
 //                Log.d("Toggle", "Layer ${layer.id} toggle at $index")

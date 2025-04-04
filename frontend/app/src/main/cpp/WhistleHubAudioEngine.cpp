@@ -144,7 +144,7 @@ void WhistleHubAudioEngine::setLayers(const std::vector<LayerAudioInfo> &layers)
     mTotalFrameRendered = 0;
 
     int layerId = 0;
-    for(const auto& info : layers) {
+    for (const auto &info: layers) {
         Layer layer;
         layer.id = layerId++;
         layer.samplePath = info.path;
@@ -178,30 +178,35 @@ void WhistleHubAudioEngine::renderAudio(float *outputBuffer, int32_t numFrames) 
 
     if (currentBar >= mLoopLengthInBeats) return;
 
-    int barIndex = static_cast<int>(currentBar);
+    int barIndex = static_cast<int>(std::floor(currentBar));
     if (barIndex != mPreviousBar && barIndex < mLoopLengthInBeats) {
         LOGI("🎼 현재 마디 = %d", barIndex);
         mPreviousBar = barIndex;
     }
 
-    for (auto& layer: mLayers) {
-        for (const auto& block : layer.patternBlocks) {
+    for (auto &layer: mLayers) {
+        if (layer.sampleBuffer.empty()){
+            continue;
+        }
+        for (const auto &block: layer.patternBlocks) {
             if (currentBar >= block.start && currentBar < block.start + block.length) {
                 float barOffset = currentBar - block.start;
                 float secondsOffset = barOffset * 4.0f * 60.0f / mBpm;
-                int startSample = static_cast<int>(secondsOffset * mSampleRate);
+                float floatSampleIndex = secondsOffset * static_cast<float>(mSampleRate);
+                int startSample = static_cast<int>(floatSampleIndex);
                 int bufferIndex = startSample * layer.numChannels;
 
                 for (int i = 0; i < numFrames; ++i) {
                     for (int ch = 0; ch < layer.numChannels && ch < 2; ++ch) {
                         int idx = bufferIndex + i * layer.numChannels + ch;
-                        if (idx < layer.sampleBuffer.size()) {
-                            outputBuffer[i * 2 + ch] += layer.sampleBuffer[idx] / 32768.0f;
+                        if (idx >= 0) {
+                            size_t uidx = static_cast<size_t>(idx);
+                            if (uidx < layer.sampleBuffer.size()) {
+                                outputBuffer[i * 2 + ch] += layer.sampleBuffer[uidx] / 32768.0f;
+                            }
                         }
                     }
                 }
-
-//                LOGI("▶️ Layer %d: block %.2f ~ %.2f 재생 중", layer.id, block.start, block.start + block.length);
             }
         }
     }

@@ -3,6 +3,7 @@ package com.whistlehub.common.data.repository
 import com.whistlehub.common.data.remote.api.TrackApi
 import com.whistlehub.common.data.remote.dto.request.TrackRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
+import com.whistlehub.common.data.remote.dto.response.AuthResponse
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.util.TokenRefresh
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -124,6 +125,7 @@ class TrackService @Inject constructor(
     ): ApiResponse<Unit> {
         return tokenRefresh.execute { trackApi.deleteTrackComment(commentId) }
     }
+
     // 트랙 검색
 //    suspend fun searchTracks(
 //        request: TrackRequest.SearchTrackRequest
@@ -154,11 +156,32 @@ class TrackService @Inject constructor(
     suspend fun uploadTrackImage(
         trackId: Int,
         image: MultipartBody.Part
-    ): ApiResponse<Unit> {
+    ): ApiResponse<String> {
         val trackIdBody: RequestBody =
             trackId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
         return tokenRefresh.execute { trackApi.uploadTrackImage(trackIdBody, image) }
     }
 
-    companion object
+    // 태그 추천 조회
+    suspend fun getTagRecommendation(): ApiResponse<List<AuthResponse.TagResponse>> {
+        return tokenRefresh.execute { trackApi.getTagRecommendation() }
+    }
+
+    // 태그별 랭킹 조회
+    suspend fun getTagRanking(
+        tagId: Int,
+        period: String,
+        page: Int,
+        size: Int
+    ): ApiResponse<List<TrackResponse.SearchTrack>> {
+        return tokenRefresh.execute { trackApi.getTagRanking(tagId, period, page, size) }
+    }
+
+    // 태그별 추천 트랙 조회
+    suspend fun getTagRecommendTrack(
+        tagId: Int,
+        size: Int
+    ): ApiResponse<List<TrackResponse.SearchTrack>> {
+        return tokenRefresh.execute { trackApi.getTagRecommendTrack(tagId, size) }
+    }
 }

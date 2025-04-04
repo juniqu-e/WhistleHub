@@ -20,6 +20,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
@@ -77,11 +78,13 @@ class WhistleHub : Application() {
 
         // 플레이어 포지션 업데이트 코루틴 시작
         CoroutineScope(Dispatchers.Main).launch {
-            while (true) {
-                playerPosition.value = exoPlayer.currentPosition
-                trackDuration.value =
-                    if (exoPlayer.duration != C.TIME_UNSET) exoPlayer.duration else 0L
-                delay(1000)
+            while (isActive) {
+                if (exoPlayer.isPlaying) {
+                    playerPosition.value = exoPlayer.currentPosition
+                    trackDuration.value =
+                        if (exoPlayer.duration != C.TIME_UNSET) exoPlayer.duration else 0L
+                }
+                delay(100)
             }
         }
     }

@@ -153,7 +153,7 @@ fun MiniPlayerBar(
                         .size(50.dp)
                         .clip(RoundedCornerShape(5.dp)),
                     placeholder = null,
-                    error = null,
+                    error = painterResource(R.drawable.default_track),
                     contentScale = ContentScale.Crop
                 )
             } else {

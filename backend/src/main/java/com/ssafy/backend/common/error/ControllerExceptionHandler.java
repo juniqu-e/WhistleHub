@@ -3,10 +3,15 @@ package com.ssafy.backend.common.error;
 import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.common.error.exception.*;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.BadRequestException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.oxm.ValidationFailureException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 /**
  * <pre>예외 전역처리</pre>
@@ -221,11 +226,24 @@ public class ControllerExceptionHandler {
                 .errorStatus(ResponseType.INVALID_FORMATTED_REQUEST)
                 .build();
     }
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ApiResponse<?> badRequestHandler(HandlerMethodValidationException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.INVALID_FORMATTED_REQUEST)
+                .build();
+    }
 
     @ExceptionHandler(S3FileException.class)
     public ApiResponse<?> s3FileExceptionHandler(S3FileException e) {
         return new ApiResponse.builder<Object>()
                 .errorStatus(ResponseType.S3_ERROR)
+                .build();
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ApiResponse<?> missingServletRequestParameterHandler(MissingServletRequestParameterException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.PARAMETER_REQUIRED)
                 .build();
     }
 

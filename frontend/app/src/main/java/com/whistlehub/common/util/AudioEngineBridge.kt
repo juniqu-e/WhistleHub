@@ -9,7 +9,8 @@ object AudioEngineBridge {
 
     external fun startAudioEngine(): Int
     external fun stopAudioEngine(): Int
-    external fun sendLayerInfoToNative(layerInfo: LayerAudioInfo)
 
-    external fun setLayers(layers : List<LayerAudioInfo>)
+    external fun setLayers(layers: List<LayerAudioInfo>)
+
+    external fun renderMixToWav(outputPath: String): Boolean
 }

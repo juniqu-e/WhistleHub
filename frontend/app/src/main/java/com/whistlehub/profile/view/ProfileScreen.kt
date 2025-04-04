@@ -31,7 +31,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.motionEventSpy
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -39,6 +38,7 @@ import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.common.view.component.CommonAppBar
 import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.common.view.theme.CustomColors
+import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import com.whistlehub.profile.view.components.ProfileFollowSheet
 import com.whistlehub.profile.view.components.ProfileHeader
 import com.whistlehub.profile.view.components.ProfileSearchBar
@@ -70,6 +70,7 @@ fun ProfileScreen(
     logoutManager: LogoutManager,
     navController: NavHostController,
     viewModel: ProfileViewModel = hiltViewModel(),
+    trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
 ) {
     val customColors = CustomColors()
     val coroutineScope = rememberCoroutineScope()
@@ -250,7 +251,9 @@ fun ProfileScreen(
                         .combinedClickable(
                             onClick = {
                                 // 트랙 클릭 시 수행할 작업 (예: 재생)
-                                // TODO: 트랙 플레이어로 이동하거나 미니 플레이어 표시
+                                coroutineScope.launch {
+                                    trackPlayViewModel.playTrack(track.trackId)
+                                }
                             },
                             onLongClick = {
                                 // 트랙 길게 클릭 시 수행할 작업 (예: 상세 정보 표시)
@@ -284,13 +287,14 @@ fun ProfileScreen(
 
         // 트랙 상세 정보 바텀 시트
         if (showTrackDetailSheet && trackDetail != null) {
+            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
             ProfileTrackDetailSheet(
                 track = trackDetail!!,
                 isOwnProfile = memberId == currentUserId,
                 onDismiss = {
                     showTrackDetailSheet = false
-                    selectedTrackId = null
                 },
+                sheetState = sheetState,
                 viewModel = trackDetailViewModel
             )
         }
