@@ -54,7 +54,7 @@ public class RelationshipService {
         relationshipRepository.createWriteRelationship(memberId, trackId);
     }
 
-    public List<TagNode> getPreferTagsByMemberId(Integer memberId) {
+    public List<Integer> getPreferTagsByMemberId(Integer memberId) {
         return relationshipRepository.findPreferTagsByMemberId(memberId);
     }
 
@@ -66,6 +66,11 @@ public class RelationshipService {
     @Transactional
     public void createFollowRelationship(Integer followerId, Integer followingId) {
         memberNodeRepository.createFollowRelationship(followerId, followingId);
+    }
+
+    @Transactional
+    public void deleteFollowRelationship(Integer followerId, Integer followingId) {
+        memberNodeRepository.deleteFollowRelationship(followerId, followingId);
     }
 
     @Transactional
