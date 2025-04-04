@@ -19,7 +19,7 @@ import java.util.List;
 
 /**
  * <pre>회원 컨트롤러</pre>
- *
+ * <p>
  * 회원 정보 조회, 수정, 탈퇴, 프로필 이미지 업로드, 비밀번호 변경, 회원 검색, 팔로워/팔로잉 목록 조회, 팔로우 신청 등의 기능을 제공한다.
  *
  * @author 허현준
@@ -32,8 +32,9 @@ import java.util.List;
 @Slf4j
 public class MemberController {
     private final MemberService memberService;
+
     /**
-     *  회원 정보 조회
+     * 회원 정보 조회
      *
      * @param memberId 회원 아이디 없는 경우, 자기 자신의 정보 조회
      * @return 회원의 정보
@@ -48,7 +49,7 @@ public class MemberController {
     }
 
     /**
-     *  회원 정보 수정
+     * 회원 정보 수정
      *
      * @param updateMemberRequestDto nickname, profileText 수정할 정보
      */
@@ -62,8 +63,7 @@ public class MemberController {
     }
 
     /**
-     *  회원 탈퇴
-     *
+     * 회원 탈퇴
      */
     @DeleteMapping()
     public ApiResponse<?> deleteMember() {
@@ -75,9 +75,10 @@ public class MemberController {
     }
 
     /**
-     *  프로필 이미지 업로드
-     * @see com.ssafy.backend.common.service.S3Service
+     * 프로필 이미지 업로드
+     *
      * @return 이미지 업로드된 링크
+     * @see com.ssafy.backend.common.service.S3Service
      */
     @PostMapping("/image")
     public ApiResponse<?> uploadImage(UploadProfileImageRequestDto uploadProfileImageRequestDto) {
@@ -124,15 +125,15 @@ public class MemberController {
     public ApiResponse<?> searchMember(@RequestParam(value = "query") String query,
                                        @RequestParam(value = "page", defaultValue = "0") Integer page,
                                        @RequestParam(value = "size", defaultValue = "10") Integer size) {
-        List<MemberInfo> result = memberService.searchMember(query, PageRequest.of(page,size, Sort.by(Sort.Order.asc("nickname"))));
-        
+        List<MemberInfo> result = memberService.searchMember(query, PageRequest.of(page, size, Sort.by(Sort.Order.asc("nickname"))));
+
         return new ApiResponse.builder<List<MemberInfo>>()
                 .payload(result)
                 .build();
     }
 
     /**
-     *  회원 팔로우
+     * 회원 팔로우
      *
      * @param requestFollowRequestDto memberId,follow 팔로우할 상대와, 팔로우할지 여부
      * @return
@@ -146,7 +147,7 @@ public class MemberController {
     }
 
     /**
-     *  회원의 팔로워 목록 가져오기
+     * 회원의 팔로워 목록 가져오기
      *
      * @param memberId 팔로워 목록을 가져올 회원 아이디 -> 없다면 자기 자신의 팔로워 목록 가져오기
      * @param page     페이지 번호
@@ -156,14 +157,14 @@ public class MemberController {
     public ApiResponse<?> getFollower(@RequestParam(value = "memberId") Integer memberId,
                                       @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
                                       @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
-        List<MemberInfo> result = memberService.getFollower(memberId, PageRequest.of(page, size));
+        List<MemberInfo> result = memberService.getFollower(memberId, PageRequest.of(page, size, Sort.by(Sort.Order.asc("nickname"))));
         return new ApiResponse.builder<List<MemberInfo>>()
                 .payload(result)
                 .build();
     }
 
     /**
-     *  회원의 팔로잉 목록 가져오기
+     * 회원의 팔로잉 목록 가져오기
      *
      * @param memberId 팔로잉 목록을 가져올 회원 아이디 -> 없다면 자기 자신의 팔로잉 목록 가져오기
      * @param page     페이지 번호
@@ -174,14 +175,14 @@ public class MemberController {
     public ApiResponse<?> getFollowing(@RequestParam(value = "memberId") Integer memberId,
                                        @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
                                        @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
-        List<MemberInfo> result = memberService.getFollowing(memberId, PageRequest.of(page, size));
+        List<MemberInfo> result = memberService.getFollowing(memberId, PageRequest.of(page, size, Sort.by(Sort.Order.asc("nickname"))));
         return new ApiResponse.builder<List<MemberInfo>>()
                 .payload(result)
                 .build();
     }
 
     /**
-     *  회원의 트랙 목록 가져오기
+     * 회원의 트랙 목록 가져오기
      *
      * @param memberId 트랙 목록을 가져올 회원 아이디 -> 없다면 자기 자신의 트랙 목록 가져오기
      * @param page     페이지 번호
@@ -190,16 +191,16 @@ public class MemberController {
      */
     @GetMapping("/track")
     public ApiResponse<?> getTrack(@RequestParam(value = "memberId") Integer memberId,
-                                       @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
-                                       @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
-        List<TrackInfo> result = memberService.getTrack(memberId, PageRequest.of(page, size));
+                                   @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
+                                   @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
+        List<TrackInfo> result = memberService.getTrack(memberId, PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt"))));
         return new ApiResponse.builder<List<TrackInfo>>()
                 .payload(result)
                 .build();
     }
 
     /**
-     *  회원의 좋아요 목록 가져오기
+     * 회원의 좋아요 목록 가져오기
      *
      * @param memberId 좋아요 목록을 가져올 회원 아이디 -> 없다면 자기 자신의 좋아요 목록 가져오기
      * @param page     페이지 번호
@@ -210,7 +211,7 @@ public class MemberController {
     public ApiResponse<?> getLike(@RequestParam(value = "memberId") Integer memberId,
                                   @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
                                   @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
-        List<TrackInfo> result = memberService.getLike(memberId, PageRequest.of(page, size));
+        List<TrackInfo> result = memberService.getLike(memberId, PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt"))));
         return new ApiResponse.builder<List<TrackInfo>>()
                 .payload(result)
                 .build();
