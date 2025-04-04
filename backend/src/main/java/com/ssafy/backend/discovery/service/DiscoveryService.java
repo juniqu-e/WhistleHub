@@ -4,19 +4,18 @@ import com.ssafy.backend.ai.service.Neo4jContentRetrieverService;
 import com.ssafy.backend.auth.model.common.TagDto;
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.error.exception.NotFoundException;
+import com.ssafy.backend.common.error.exception.NotFoundMemberException;
 import com.ssafy.backend.common.error.exception.NotFoundPageException;
 import com.ssafy.backend.common.error.exception.NotFoundTrackException;
 import com.ssafy.backend.graph.model.entity.TagNode;
 import com.ssafy.backend.graph.service.RecommendationService;
 import com.ssafy.backend.graph.service.RelationshipService;
+import com.ssafy.backend.member.model.common.MemberInfo;
 import com.ssafy.backend.mysql.entity.ListenRecord;
 import com.ssafy.backend.mysql.entity.Member;
 import com.ssafy.backend.mysql.entity.Tag;
 import com.ssafy.backend.mysql.entity.Track;
-import com.ssafy.backend.mysql.repository.LikeRepository;
-import com.ssafy.backend.mysql.repository.ListenRecoredRepository;
-import com.ssafy.backend.mysql.repository.TagRepository;
-import com.ssafy.backend.mysql.repository.TrackRepository;
+import com.ssafy.backend.mysql.repository.*;
 import com.ssafy.backend.playlist.dto.TrackInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,8 +31,9 @@ import java.util.Set;
 
 /**
  * <pre>Discovery 서비스</pre>
- *
+ * <p>
  * 곡 발견 관련 로직을 처리하는 클래스.
+ *
  * @author 허현준
  * @version 1.0
  * @since 2025-04-03
@@ -49,6 +49,8 @@ public class DiscoveryService {
     private final RecommendationService recommendationService;
     private final TrackRepository trackRepository;
     private final RankingService rankingService;
+    private final MemberRepository memberRepository;
+    private final FollowRepository followRepository;
     private final ListenRecoredRepository listenRecoredRepository;
 
     /**
@@ -105,9 +107,18 @@ public class DiscoveryService {
         return resultList;
     }
 
+    /**
+     * <pre>추천 트랙 조회</pre>
+     * Access Token의 멤버가 선호하는 태그에 따라 추천 트랙 리스트 반환.
+     *
+     * @param tagId 태그 ID
+     * @param size  추천 트랙 갯수
+     * @return 추천 트랙 리스트
+     */
     public List<TrackInfo> getTagRecommend(int tagId, int size) {
         Member member = authService.getMember();
 
+        // 추천 트랙을 가져온다.
         List<Integer> trackIds = recommendationService.getRecommendTrackIds(member.getId(), tagId, size);
 
         // 태그 노드가 존재하지 않는 경우
@@ -135,18 +146,31 @@ public class DiscoveryService {
         return getTrackInfoList(trackRepository.findAllById(trackIds));
     }
 
-    public List<TrackInfo> getRecentTrack(int size){
+    /**
+     * <pre>최근 청취 트랙 조회</pre>
+     *
+     * @param size 최근 청취 트랙 갯수
+     * @return 최근 청취 트랙 리스트
+     */
+    public List<TrackInfo> getRecentTrack(int size) {
         Member member = authService.getMember();
         List<ListenRecord> listenRecordList = listenRecoredRepository.findByMemberId(member.getId(), PageRequest.of(0, size, Sort.by(Sort.Direction.DESC, "createdAt")));
         List<Track> trackList = new ArrayList<>();
-        for(ListenRecord listenRecord : listenRecordList) {
+        for (ListenRecord listenRecord : listenRecordList) {
             trackList.add(listenRecord.getTrack());
         }
 
         return getTrackInfoList(trackList);
     }
 
-    public List<TrackInfo> getSimilarTracks(int trackId){
+    /**
+     * <pre>유사 트랙 조회</pre>
+     * 트랙 ID를 기반으로 유사한 트랙 리스트를 반환.
+     *
+     * @param trackId 트랙 ID
+     * @return 유사 트랙 리스트
+     */
+    public List<TrackInfo> getSimilarTracks(int trackId) {
         Track track = trackRepository.findById(trackId)
                 .orElseThrow(() -> {
                     log.warn("Track not found with id: {}", trackId);
@@ -155,10 +179,66 @@ public class DiscoveryService {
 
         List<Integer> similarTrackIds = recommendationService.getSimilarTrackIds(track.getId());
         List<Track> similarTracks = trackRepository.findAllById(similarTrackIds);
-        return getTrackInfoList(similarTracks);
 
+        return getTrackInfoList(similarTracks);
     }
 
+    /**
+     * <pre>한번도 들어보지 못한 음원</pre>
+     * Access Token의 멤버가 한번도 들어보지 못한 음원 리스트를 반환.
+     *
+     * @param size 한번도 들어보지 못한 음원 갯수
+     * @return 한번도 들어보지 못한 음원 리스트
+     */
+    public List<TrackInfo> getNeverListenTrack(int size) {
+        Member member = authService.getMember();
+        List<Track> trackList = trackRepository.findRandomTracksNotListenedByMember(member.getId(), size);
+        return getTrackInfoList(trackList);
+    }
+
+<<<<<<< HEAD
+    public MemberInfo getRandomFollowingMember(){
+        Member member = authService.getMember();
+        if(followRepository.countByFromMemberId(member.getId()) == 0){
+            log.warn("No following members found for member id: {}", member.getId());
+            return null;
+        }
+
+        Integer randomFollowing =  followRepository.findRandomFollowing(member.getId());
+        if(randomFollowing == null){
+            log.warn("No random following member found for member id: {}", member.getId());
+            return null;
+        }
+
+        Member randomFollowingMember = memberRepository.findById(randomFollowing)
+                .orElseThrow(()-> {
+                    log.warn("Member not found with id: {}", randomFollowing);
+                    return new NotFoundMemberException();
+                });
+
+        return MemberInfo.builder()
+                .memberId(randomFollowingMember.getId())
+                .nickname(randomFollowingMember.getNickname())
+                .profileImg(randomFollowingMember.getProfileImage())
+                .build();
+    }
+
+    public List<TrackInfo> getMemberFanMix(int memberId, int size) {
+        List<Integer> trackIds = recommendationService.getMemberFanMix(memberId, size);
+        List<Track> trackList = trackRepository.findAllById(trackIds);
+
+        return getTrackInfoList(trackList);
+    }
+
+=======
+>>>>>>> origin/feature/discovery
+    /**
+     * <pre>트랙 정보 리스트 변환</pre>
+     * 트랙 리스트를 TrackInfo 리스트로 변환.
+     *
+     * @param trackList TrackInfo로 만들 트랙 리스트
+     * @return 변환된 TrackInfo 리스트
+     */
     private List<TrackInfo> getTrackInfoList(List<Track> trackList) {
         List<TrackInfo> resultList = new ArrayList<>();
         for (Track track : trackList) {
@@ -172,6 +252,7 @@ public class DiscoveryService {
 
             resultList.add(trackInfo);
         }
+
         return resultList;
     }
 }

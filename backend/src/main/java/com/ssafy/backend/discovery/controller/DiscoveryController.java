@@ -3,6 +3,7 @@ package com.ssafy.backend.discovery.controller;
 import com.ssafy.backend.auth.model.common.TagDto;
 import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.common.error.exception.InvalidFormattedRequest;
+import com.ssafy.backend.member.model.common.MemberInfo;
 import com.ssafy.backend.playlist.dto.TrackInfo;
 
 import java.util.List;
@@ -79,8 +80,9 @@ public class DiscoveryController {
     /**
      * <pre>추천 트랙 조회</pre>
      * Access Token의 멤버가 선호하는 태그에 따라 추천 트랙 리스트 반환.
+     *
      * @param tagId 태그 ID
-     * @param size 페이지 크기
+     * @param size  페이지 크기
      * @return 추천 트랙 리스트
      */
     @GetMapping("/tag/recommend")
@@ -97,6 +99,10 @@ public class DiscoveryController {
 
     /**
      * <pre>최근 들은 음악 조회</pre>
+     * Access Token의 멤버가 최근에 들은 음악 리스트 반환.
+     *
+     * @param size 음악 리스트 크기
+     * @return 최근 들은 음악 리스트
      */
     @GetMapping("/recent")
     public ApiResponse<?> getRecentTrack(@RequestParam(value = "size", required = true)
@@ -110,11 +116,50 @@ public class DiscoveryController {
 
     @GetMapping("/similar")
     public ApiResponse<?> getSimilarTracks(@RequestParam(value = "trackId", required = true)
-                                          @Min(value = 0)
-                                          Integer trackId) {
+                                           @Min(value = 0)
+                                           Integer trackId) {
         List<TrackInfo> result = discoveryService.getSimilarTracks(trackId);
         return new ApiResponse.builder<List<TrackInfo>>()
                 .payload(result)
                 .build();
     }
+
+    @GetMapping("/never")
+    public ApiResponse<?> getNeverListenTrack(@RequestParam(value = "size", required = true)
+<<<<<<< HEAD
+                                              @Min(value = 0)
+                                              Integer size) {
+=======
+                                                  @Min(value = 0)
+                                                  Integer size) {
+>>>>>>> origin/feature/discovery
+        List<TrackInfo> result = discoveryService.getNeverListenTrack(size);
+        return new ApiResponse.builder<List<TrackInfo>>()
+                .payload(result)
+                .build();
+    }
+
+<<<<<<< HEAD
+    @GetMapping("/fanmix/following")
+    public ApiResponse<?> getRandomFollowingMember() {
+        MemberInfo result = discoveryService.getRandomFollowingMember();
+        return new ApiResponse.builder<MemberInfo>()
+                .payload(result)
+                .build();
+    }
+
+    @GetMapping("/fanmix")
+    public ApiResponse<?> getMemberFanMix(@RequestParam(value = "memberId", required = true)
+                                          @Min(value = 0)
+                                          Integer memberId,
+                                          @RequestParam(value = "size", required = true)
+                                          @Min(value = 0)
+                                          Integer size) {
+        List<TrackInfo> result = discoveryService.getMemberFanMix(memberId, size);
+        return new ApiResponse.builder<List<TrackInfo>>()
+                .payload(result)
+                .build();
+    }
+=======
+>>>>>>> origin/feature/discovery
 }

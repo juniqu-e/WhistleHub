@@ -28,5 +28,9 @@ public class RecommendationService {
     public List<Integer> getSimilarTrackIds(int trackId) {
         return trackNodeRepository.getSimilarTrackIds(trackId);
     }
+
+    public List<Integer> getMemberFanMix(int memberId, int trackCount) {
+        return trackNodeRepository.getMemberFanMix(memberId, trackCount);
+    }
 }
 
