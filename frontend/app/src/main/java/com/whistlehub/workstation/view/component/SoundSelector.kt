@@ -1,3 +1,5 @@
+package com.whistlehub.workstation.view.component
+
 import android.content.Context
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Button
@@ -37,7 +39,7 @@ fun SoundSelector(
                     text = { Text(name) },
                     onClick = {
                         val path = copyRawToInternal(context, resId, "layer_${layerId}_$name.wav")
-                        onPathSelected(layerId, path)
+                        onPathSelected(layerId, path.absolutePath)
                         expanded = false
                     }
                 )
@@ -46,12 +48,3 @@ fun SoundSelector(
     }
 }
 
-fun copyRawToInternal(context: Context, resId: Int, filename: String): String {
-    val file = File(context.filesDir, filename)
-    context.resources.openRawResource(resId).use { input ->
-        file.outputStream().use { output ->
-            input.copyTo(output)
-        }
-    }
-    return file.absolutePath
-}

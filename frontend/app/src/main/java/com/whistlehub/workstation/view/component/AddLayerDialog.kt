@@ -1,4 +1,4 @@
-package com.whistlehub.workstation.view
+package com.whistlehub.workstation.view.component
 
 import android.content.Context
 import android.media.MediaMetadataRetriever

@@ -60,6 +60,9 @@ import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.workstation.data.Layer
 import com.whistlehub.workstation.data.ToastData
 import com.whistlehub.workstation.data.rememberToastState
+import com.whistlehub.workstation.view.component.AddLayerDialog
+import com.whistlehub.workstation.view.component.BeatAdjustmentPanel
+import com.whistlehub.workstation.view.component.CustomToast
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -99,9 +102,6 @@ fun WorkStationScreen(
             }
         }
     )
-
-
-
 
     Column(
         modifier = Modifier

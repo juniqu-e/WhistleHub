@@ -99,6 +99,9 @@ fun BottomNavigationBar(
 fun isRouteMatching(currentRoute: String?, screen: Screen): Boolean {
     return when (screen) {
         Screen.Profile -> currentRoute?.startsWith("profile/") == true
+        Screen.Search -> currentRoute?.startsWith("search") == true
+                || currentRoute?.startsWith("tag_ranking/") == true
+
         else -> currentRoute == screen.route
     }
 }

@@ -20,6 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.whistlehub.workstation.data.BottomBarActions
 import com.whistlehub.workstation.di.WorkStationBottomBarProvider
+import com.whistlehub.workstation.view.component.GradientIconButton
+import com.whistlehub.workstation.view.component.UploadMixDialog
 import javax.inject.Inject
 
 class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {

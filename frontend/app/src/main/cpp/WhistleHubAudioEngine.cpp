@@ -14,10 +14,13 @@
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO,  LOG_TAG, __VA_ARGS__)
 
+extern jobject g_callback;   // 콜백 객체
+extern JavaVM *g_vm;         // JavaVM 포인터 (필요 시)
+
 WhistleHubAudioEngine::WhistleHubAudioEngine() = default; //생성자
 
 WhistleHubAudioEngine::~WhistleHubAudioEngine() {     //소멸자
-    stopAudioStream();
+//    stopAudioStream();
 }
 
 void WhistleHubAudioEngine::startAudioStream() {
@@ -25,7 +28,7 @@ void WhistleHubAudioEngine::startAudioStream() {
     mTotalFrameRendered = 0;
     mPreviousBar = -1;
 
-    for (auto& layer : mLayers) {
+    for (auto &layer: mLayers) {
         layer.isActive = false;
         layer.currentSampleIndex = 0;
     }
@@ -52,6 +55,8 @@ void WhistleHubAudioEngine::startAudioStream() {
         return;
     }
 
+    mShouldStopStream = false; // ✅ 스트림 시작 전 리셋
+
     LOGE("Audio stream started successfully!");
 }
 
@@ -68,11 +73,26 @@ void WhistleHubAudioEngine::stopAudioStream() {
 oboe::DataCallbackResult WhistleHubAudioEngine::onAudioReady(oboe::AudioStream *oboeStream,
                                                              void *audioData,
                                                              int32_t numFrames) {
-   if(stream == nullptr) return oboe::DataCallbackResult::Continue;
+    if (stream == nullptr) return oboe::DataCallbackResult::Continue;
 
 
-   auto* outputBuffer = static_cast<float *>(audioData);
+    auto *outputBuffer = static_cast<float *>(audioData);
     renderAudio(outputBuffer, numFrames);
+
+    if (mShouldStopStream) {
+        // Kotlin 콜백 호출
+        if (g_callback && g_vm) {
+            JNIEnv *env = nullptr;
+            if (g_vm->AttachCurrentThread(&env, nullptr) == JNI_OK) {
+                jclass cls = env->GetObjectClass(g_callback);
+                jmethodID onFinish = env->GetMethodID(cls, "onPlaybackFinished", "()V");
+                if (onFinish) {
+                    env->CallVoidMethod(g_callback, onFinish);
+                }
+            }
+        }
+        return oboe::DataCallbackResult::Stop;
+    }
 
     return oboe::DataCallbackResult::Continue;
 }
@@ -100,14 +120,16 @@ std::vector<LayerAudioInfo> WhistleHubAudioEngine::parseLayerList(JNIEnv *env, j
         jobject layerObj = env->CallObjectMethod(layerList, getMethod, i);
         jclass layerClass = env->GetObjectClass(layerObj);
 
-        jmethodID getPathMethod = env->GetMethodID(layerClass, "getWavPath", "()Ljava/lang/String;");
+        jmethodID getPathMethod = env->GetMethodID(layerClass, "getWavPath",
+                                                   "()Ljava/lang/String;");
         jstring jPath = (jstring) env->CallObjectMethod(layerObj, getPathMethod);
         const char *pathChars = env->GetStringUTFChars(jPath, nullptr);
         std::string path(pathChars);
         env->ReleaseStringUTFChars(jPath, pathChars);
 
         // Get patternBlocks
-        jmethodID getPatternBlocksMethod = env->GetMethodID(layerClass, "getPatternBlocks","()Ljava/util/List;");
+        jmethodID getPatternBlocksMethod = env->GetMethodID(layerClass, "getPatternBlocks",
+                                                            "()Ljava/util/List;");
         jobject patternList = env->CallObjectMethod(layerObj, getPatternBlocksMethod);
 
         std::vector<PatternBlock> patternBlocks;
@@ -139,9 +161,11 @@ std::vector<LayerAudioInfo> WhistleHubAudioEngine::parseLayerList(JNIEnv *env, j
     return layers;
 }
 
-void WhistleHubAudioEngine::setLayers(const std::vector<LayerAudioInfo> &layers) {
+void
+WhistleHubAudioEngine::setLayers(const std::vector<LayerAudioInfo> &layers, float maxUsedBars) {
     mLayers.clear();
     mTotalFrameRendered = 0;
+    mMaxUsedBars = maxUsedBars > 0 ? maxUsedBars : 64.0f; // fallback
 
     int layerId = 0;
     for (const auto &info: layers) {
@@ -154,7 +178,7 @@ void WhistleHubAudioEngine::setLayers(const std::vector<LayerAudioInfo> &layers)
         LOGI("📄 Path: %s", layer.samplePath.c_str());
         LOGI("📊 Pattern Count: %zu", layer.patternBlocks.size());
 
-        for (const auto &pb : layer.patternBlocks) {
+        for (const auto &pb: layer.patternBlocks) {
             LOGI("🎵 PatternBlock: start = %.2f, length = %.2f", pb.start, pb.length);
         }
 
@@ -166,6 +190,17 @@ void WhistleHubAudioEngine::setLayers(const std::vector<LayerAudioInfo> &layers)
         } else {
             LOGE("❌ Failed to load WAV: %s", info.path.c_str());
         }
+
+        if (maxUsedBars <= 0.0f) {
+            for (const auto &layer: mLayers) {
+                for (const auto &pb: layer.patternBlocks) {
+                    float end = pb.start + pb.length;
+                    if (end > mMaxUsedBars) mMaxUsedBars = end;
+                }
+            }
+        }
+
+        LOGI("🎯 최종 재생 마디 수: %.2f", mMaxUsedBars);
     }
 }
 
@@ -176,7 +211,11 @@ void WhistleHubAudioEngine::renderAudio(float *outputBuffer, int32_t numFrames) 
     float barsPerSecond = mBpm / 60.0f / 4.0f;
     float currentBar = seconds * barsPerSecond;
 
-    if (currentBar >= mLoopLengthInBeats) return;
+    if (currentBar >= mMaxUsedBars) {
+        std::fill(outputBuffer, outputBuffer + numFrames * 2, 0.0f);
+        mShouldStopStream = true;
+        return;
+    }
 
     int barIndex = static_cast<int>(std::floor(currentBar));
     if (barIndex != mPreviousBar && barIndex < mLoopLengthInBeats) {
@@ -185,7 +224,7 @@ void WhistleHubAudioEngine::renderAudio(float *outputBuffer, int32_t numFrames) 
     }
 
     for (auto &layer: mLayers) {
-        if (layer.sampleBuffer.empty()){
+        if (layer.sampleBuffer.empty()) {
             continue;
         }
         for (const auto &block: layer.patternBlocks) {
