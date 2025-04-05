@@ -38,7 +38,7 @@ fun DiscoveryView(
     modifier: Modifier,
     tags: List<AuthResponse.TagResponse>,
     navController: NavHostController,
-    searchViewModel: SearchViewModel = hiltViewModel()
+    searchViewModel: SearchViewModel,
 ) {
     val coroutineScope = rememberCoroutineScope()
 

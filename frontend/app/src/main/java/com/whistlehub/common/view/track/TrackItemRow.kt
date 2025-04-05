@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
@@ -69,7 +71,6 @@ fun TrackItemRow(
             error = painterResource(R.drawable.default_track),
             contentScale = ContentScale.Crop
         )
-
         // 랭킹인 경우
         if (style == TrackItemStyle.RANKING) {
             Text(
@@ -122,6 +123,8 @@ fun TrackItemRow(
                 )
             }
         }
+
+
     }
 }
 

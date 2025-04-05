@@ -16,6 +16,7 @@ import com.whistlehub.common.view.login.LoginScreen
 import com.whistlehub.common.view.signup.SelectTagsScreen
 import com.whistlehub.common.view.signup.SignUpScreen
 import com.whistlehub.common.viewmodel.SignUpViewModel
+import com.whistlehub.search.viewmodel.SearchViewModel
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 
 /**
@@ -132,6 +133,7 @@ fun MainScreenWithBottomNav(
 ) {
     val newNavController = rememberNavController()
     val workStationViewModel: WorkStationViewModel = hiltViewModel()
+    val searchViewModel: SearchViewModel = hiltViewModel()
     // 새로운 내부 네비게이션 컨트롤러 생성
     LaunchedEffect(key1 = logoutManager.logoutEventFlow) {
         logoutManager.logoutEventFlow.collect {
@@ -151,7 +153,8 @@ fun MainScreenWithBottomNav(
             navController = newNavController,
             logoutManager = logoutManager,
             paddingValues = paddingValues,
-            workStationViewModel = workStationViewModel
+            workStationViewModel = workStationViewModel,
+            searchViewModel = searchViewModel,
         )
     }
 }

@@ -1,7 +1,10 @@
 package com.whistlehub.search.view
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,12 +15,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -26,6 +32,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
@@ -40,27 +47,39 @@ import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.common.view.track.TrackItemRow
 import com.whistlehub.playlist.data.TrackEssential
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
+import com.whistlehub.search.view.component.SearchTrackDetailSheet
 import com.whistlehub.search.view.discovery.DiscoveryView
 import com.whistlehub.search.viewmodel.SearchViewModel
+import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
     paddingValues: PaddingValues,
     navController: NavHostController,
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
-    searchViewModel: SearchViewModel = hiltViewModel(),
+    searchViewModel: SearchViewModel,
+    workStationViewModel: WorkStationViewModel,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
-
     var searchText by remember { mutableStateOf("") }
     var searchMode by remember { mutableStateOf(SearchMode.DISCOVERY) }  // 기본 탐색 모드
     val searchResult by searchViewModel.searchResult.collectAsState()
     val tagList by searchViewModel.tagList.collectAsState()
+    val trackDetail by searchViewModel.trackDetail.collectAsState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var isSheetVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         searchViewModel.recommendTag()
+    }
+
+    LaunchedEffect(trackDetail) {
+        if (trackDetail != null) {
+            isSheetVisible = true
+        }
     }
 
     Column(Modifier.fillMaxSize()) {
@@ -128,7 +147,8 @@ fun SearchScreen(
                     DiscoveryView(
                         Modifier.weight(1f),
                         tagList,
-                        navController = navController
+                        navController = navController,
+                        searchViewModel = searchViewModel,
                     )
                     Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
                 }
@@ -157,7 +177,22 @@ fun SearchScreen(
                                 artist = searchResult[index].nickname,
                                 imageUrl = searchResult[index].imageUrl,
                             )
-                            TrackItemRow(track, trackPlayViewModel = trackPlayViewModel)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Box(modifier = Modifier.weight(1f)) {
+                                    TrackItemRow(track, trackPlayViewModel = trackPlayViewModel)
+                                }
+                                IconButton(onClick = { searchViewModel.getTrackDetails(track.trackId) }) {
+                                    Icon(
+                                        Icons.Filled.MoreVert,
+                                        contentDescription = "Options",
+                                        tint = CustomColors().Grey50
+                                    )
+                                }
+                            }
                         }
                         item {
                             Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
@@ -166,6 +201,19 @@ fun SearchScreen(
                 }
             }
         }
+    }
+
+    if (isSheetVisible && trackDetail != null) {
+        SearchTrackDetailSheet(
+            track = trackDetail!!,
+            sheetState = sheetState,
+            onDismiss = {
+                isSheetVisible = false
+                searchViewModel.clearTrackDetail()
+            },
+            workStationViewModel = workStationViewModel,
+            navController = navController
+        )
     }
 }
 

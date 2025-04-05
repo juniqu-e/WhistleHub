@@ -11,9 +11,9 @@ data class Layer(
     val wavPath: String = "",
 ) {
     val beatPattern: List<Boolean>
-        get() = MutableList(60) { false }.apply {
+        get() = MutableList(64) { false }.apply {
             patternBlocks.forEach { block ->
-                for (i in block.start until (block.start + block.length).coerceAtMost(60)) {
+                for (i in block.start until (block.start + block.length).coerceAtMost(64)) {
                     this[i] = true
                 }
             }

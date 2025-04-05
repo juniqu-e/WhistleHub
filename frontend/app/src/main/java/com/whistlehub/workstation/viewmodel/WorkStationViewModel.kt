@@ -1,6 +1,8 @@
 package com.whistlehub.workstation.viewmodel
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableIntStateOf
@@ -15,9 +17,11 @@ import com.whistlehub.common.data.remote.dto.response.WorkstationResponse
 import com.whistlehub.common.data.repository.TrackService
 import com.whistlehub.common.data.repository.WorkstationService
 import com.whistlehub.common.util.AudioEngineBridge.renderMixToWav
+import com.whistlehub.common.util.AudioEngineBridge.setCallback
 import com.whistlehub.common.util.AudioEngineBridge.setLayers
 import com.whistlehub.common.util.AudioEngineBridge.startAudioEngine
 import com.whistlehub.common.util.AudioEngineBridge.stopAudioEngine
+import com.whistlehub.common.util.PlaybackListener
 import com.whistlehub.common.util.createMultipart
 import com.whistlehub.common.util.createRequestBody
 import com.whistlehub.common.util.downloadWavFromS3Url
@@ -44,7 +48,7 @@ class WorkStationViewModel @Inject constructor(
     private val audioLayerPlayer: AudioLayerPlayer,
     private val trackService: TrackService,
     private val workstationService: WorkstationService,
-) : ViewModel() {
+) : ViewModel(), PlaybackListener {
     private val _tracks = MutableStateFlow<List<Layer>>(emptyList())
     val tracks: StateFlow<List<Layer>> = _tracks.asStateFlow()
     private val _nextId = mutableIntStateOf(1)
@@ -56,9 +60,12 @@ class WorkStationViewModel @Inject constructor(
     private val _layersOfSearchTrack =
         mutableStateOf<ApiResponse<WorkstationResponse.ImportTrackResponse>?>(null);
     val layersOfSearchTrack: State<ApiResponse<WorkstationResponse.ImportTrackResponse>?> get() = _layersOfSearchTrack;
-
     private val _isPlaying = mutableStateOf(false)
     val isPlaying: State<Boolean> get() = _isPlaying
+
+    init {
+        setCallback(this)
+    }
 
     fun addLayerByInstrument(type: InstrumentType) {
         val newId = (_tracks.value.maxOfOrNull { it.id } ?: 0) + 1
@@ -111,9 +118,8 @@ class WorkStationViewModel @Inject constructor(
                         blocks.add(newBlock)
                     }
                 }
-                Log.d("Layer", layer.patternBlocks.toString())
-                layer.copy(patternBlocks = blocks)
 
+                layer.copy(patternBlocks = blocks)
             } else layer
         }
     }
@@ -156,8 +162,8 @@ class WorkStationViewModel @Inject constructor(
             try {
                 val results = workstationService.importTrack(request);
 //                _layersOfSearchTrack.value = results;
-                val payload = results.payload ?: return@launch
-                val layers = payload.layers.map { layerRes ->
+                val track = results.payload ?: return@launch
+                val layers = track.layers.map { layerRes ->
                     val s3Url = layerRes.soundUrl
 
                     Log.d("Search", "S3 Url : $s3Url")
@@ -167,7 +173,7 @@ class WorkStationViewModel @Inject constructor(
                     Log.d("Search", "불러온 레이어 수: $localFile")
                     Layer(
                         name = layerRes.name,
-                        description = "Imported from ${payload.title}",
+                        description = track.title,
                         category = layerRes.instrumentType.toString(),
                         colorHex = "#BDBDBD",
                         length = 4,
@@ -188,11 +194,12 @@ class WorkStationViewModel @Inject constructor(
 
     fun onPlayClicked() {
         val infos = getAudioLayerInfos();
+        val maxUsedBars = getMaxUsedBars(tracks.value)
         if (_isPlaying.value) {
             stopAudioEngine()
         } else {
             stopAudioEngine()
-            setLayers(infos)
+            setLayers(infos, maxUsedBars)
             startAudioEngine()
         }
         _isPlaying.value = !_isPlaying.value
@@ -204,7 +211,7 @@ class WorkStationViewModel @Inject constructor(
 
         viewModelScope.launch {
             val infos = getAudioLayerInfos();
-            setLayers(infos);
+//            setLayers(infos, maxUsedBars)
             val success = renderMixToWav(mix.absolutePath)
 
             if (!success) {
@@ -212,11 +219,11 @@ class WorkStationViewModel @Inject constructor(
             } else {
                 //MultiPart
                 val requestBodyMap = hashMapOf(
-                    "title" to createRequestBody(fileName),
+                    "title" to createRequestBody(fileName), //
                     "description" to createRequestBody("Description Hard Coding (。・ω・。)"),
                     "duration" to createRequestBody("120"),
-                    "visibility" to createRequestBody("1"),
-                    "tags" to createRequestBody("1,2,3,4"),
+                    "visibility" to createRequestBody("1"), //
+                    "tags" to createRequestBody("1,2,3,4"), //
                     "sourceTracks" to createRequestBody("1,2"),
                     "layerName" to createRequestBody("layer1, layer2"),
                     "instrumentType" to createRequestBody("1,2")
@@ -265,11 +272,25 @@ class WorkStationViewModel @Inject constructor(
         return tracks.value.map { it.toAudioInfo() }
     }
 
+    fun getMaxUsedBars(layers: List<Layer>): Int {
+        return layers.flatMap { layer ->
+            layer.patternBlocks.map { it.start + it.length }
+        }.maxOrNull() ?: 0
+    }
+
     val bottomBarActions = BottomBarActions(
         onPlayedClicked = {},
         onTrackUploadClicked = { },
         onAddInstrument = {},
     )
+
+    //재생 끝나고 Oboe에서 상태 콜백 받는 함수
+    override fun onPlaybackFinished() {
+        Log.d("Playback", "🎉 재생이 완료되었습니다!")
+        Handler(Looper.getMainLooper()).post {
+            stopAudioEngine()
+        }
+    }
 //    fun toggleBeat(layerId: Int, index: Int) {
 //        _tracks.value = _tracks.value.map { layer ->
 //            if (layer.id == layerId) {
