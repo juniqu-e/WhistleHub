@@ -181,12 +181,27 @@ public class DiscoveryController {
                 .build();
     }
     private final DataGenerator dataGenerator;
+
     @GetMapping("/generate")
     public ApiResponse<?> generate(@RequestParam(value="memberCount") Integer memberCount,
                                    @RequestParam(value="trackCount") Integer trackCount) {
         dataGenerator.generate(memberCount, trackCount);
         return new ApiResponse.builder<Object>()
                 .payload("데이터 생성 완료")
+                .build();
+    }
+
+    @GetMapping("/sudo/tag/recommend")
+    public ApiResponse<?> getTagRecommendSudo(@RequestParam(value="memberId", required = true)
+                                              @Min(value = 0)
+                                              Integer memberId,
+                                              @RequestParam(value = "tagId", required = true) Integer tagId,
+                                              @RequestParam(value = "size", required = true)
+                                              @Min(value = 0)
+                                              Integer size) {
+        List<Integer> result = discoveryService.sudoGetTagRecommend(memberId, tagId, size);
+        return new ApiResponse.builder<List<Integer>>()
+                .payload(result)
                 .build();
     }
 }

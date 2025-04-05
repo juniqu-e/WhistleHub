@@ -146,6 +146,10 @@ public class DiscoveryService {
         return getTrackInfoList(findTrackByIds(trackIds));
     }
 
+    public List<Integer> sudoGetTagRecommend(int memberId, int tagId, int size) {
+        return recommendationService.getRecommendTrackIds(memberId, tagId, size);
+    }
+
     /**
      * <pre>최근 청취 트랙 조회</pre>
      *
