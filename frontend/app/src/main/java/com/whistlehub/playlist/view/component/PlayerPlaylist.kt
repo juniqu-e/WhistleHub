@@ -3,6 +3,7 @@ package com.whistlehub.playlist.view.component
 import androidx.compose.foundation.background
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.whistlehub.common.view.theme.CustomColors
@@ -14,7 +15,7 @@ fun PlayerPlaylist(
     modifier: Modifier = Modifier,
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
 ) {
-    val trackList = trackPlayViewModel.playerTrackList.collectAsState()
+    val trackList by trackPlayViewModel.playerTrackList.collectAsState()
 
     TrackListColumn(modifier.background(CustomColors().Grey950.copy(alpha = 0.7f)), trackList)
 }

@@ -54,7 +54,7 @@ class CustomColors {
     val CommonTitleColor = Color(0xFFF7F7F7)
     val CommonSubTtitleColor = Color(0xFFECECEC)
     val CommonTextColor = Color(0xFFFBFBFB)
-    val CommonSubTextolor = Color(0xFFC1C1C1)
+    val CommonSubTextColor = Color(0xFFC1C1C1)
     val CommonBackgroundColor = Color(0xFF141218)
     val CommonSubBackgroundColor = Color(0xFF191D24)
     val CommonLabelColor = Color(0xFFE0E4EA)
