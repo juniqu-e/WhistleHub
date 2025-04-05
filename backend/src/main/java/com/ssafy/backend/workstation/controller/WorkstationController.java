@@ -2,6 +2,7 @@ package com.ssafy.backend.workstation.controller;
 
 import com.ssafy.backend.ai.service.Neo4jContentRetrieverService;
 import com.ssafy.backend.common.ApiResponse;
+import com.ssafy.backend.openl3.service.Openl3Service;
 import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
 import com.ssafy.backend.track.service.TrackService;
 import com.ssafy.backend.workstation.service.WorkstationService;
@@ -32,6 +33,7 @@ public class WorkstationController {
     private final TrackService trackService;
     private final WorkstationService workstationService;
     private final Neo4jContentRetrieverService neo4jContentRetrieverService;
+    private final Openl3Service openl3Service;
 
     @PostMapping()
     public ApiResponse<?> createTrack(TrackUploadRequestDto trackUploadRequestDto) {
@@ -45,6 +47,13 @@ public class WorkstationController {
     public ApiResponse<?> importTrack(int trackId) {
         return new ApiResponse.builder<Object>()
                 .payload(workstationService.importTrack(trackId))
+                .build();
+    }
+
+    @PostMapping("/ai/recommend")
+    public ApiResponse<?> recommendImportTrack(Integer[] layerIds) {
+        return new ApiResponse.builder<Object>()
+                .payload(openl3Service.recommendImportTrack(layerIds))
                 .build();
     }
 

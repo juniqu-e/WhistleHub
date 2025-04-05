@@ -378,6 +378,23 @@ class OpenL3Service:
             print("유사한 임베딩을 찾지 못했습니다.")
         
         return similar_embeddings
+    
+    def find_similar_by_instrument_type(self, needInstrumentTypes, trackIds):
+        """
+        악기 종류에 따라 유사한 트랙 검색
+        
+        Args:
+            needInstrumentTypes: 필요한 악기 종류 리스트
+            trackIds: 기존 트랙 ID 리스트
+            
+        Returns:
+            list: 추천 트랙 ID (없으면 None)
+        """
+        # 유사한 트랙 검색
+        # TODO: 검색 로직 구현 필요
+        
+        
+
 
 # 사용 예시
 if __name__ == "__main__":
