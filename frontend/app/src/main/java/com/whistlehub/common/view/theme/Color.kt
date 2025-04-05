@@ -22,6 +22,7 @@ class CustomColors {
     val Mint800 = Color(0xFF127D6E)
     val Mint900 = Color(0xFF0B5047)
     val Mint950 = Color(0xFF052420)
+
     // Grey
     val Grey50 = Color(0xFFFCFCFD)
     val Grey100 = Color(0xFFF1F3F6)
@@ -34,6 +35,7 @@ class CustomColors {
     val Grey800 = Color(0xFF242B35)
     val Grey900 = Color(0xFF191D24)
     val Grey950 = Color(0xFF15181E)
+
     // Rose
     val Error50 = Color(0xFFFFFBFD)
     val Error100 = Color(0xFFFFEEF5)
@@ -46,4 +48,17 @@ class CustomColors {
     val Error800 = Color(0xFF890037)
     val Error900 = Color(0xFF49001D)
     val Error950 = Color(0xFF330014)
+
+    //Common Colorh
+    val CommonButtonColor = Color(0xFF3D3D3D)
+    val CommonTitleColor = Color(0xFFF7F7F7)
+    val CommonSubTtitleColor = Color(0xFFECECEC)
+    val CommonTextColor = Color(0xFFFBFBFB)
+    val CommonSubTextolor = Color(0xFFC1C1C1)
+    val CommonBackgroundColor = Color(0xFF141218)
+    val CommonSubBackgroundColor = Color(0xFF191D24)
+    val CommonLabelColor = Color(0xFFE0E4EA)
+    val CommonIconColor = Color(0xFFFBFBFB)
+    val CommonOutLineColor = Color(0xFFC8CED9)
+    val CommonPlaceholderColor = Color(0xFFC8CED9)
 }

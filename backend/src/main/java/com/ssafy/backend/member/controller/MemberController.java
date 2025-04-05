@@ -157,7 +157,7 @@ public class MemberController {
     public ApiResponse<?> getFollower(@RequestParam(value = "memberId") Integer memberId,
                                       @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
                                       @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
-        List<MemberInfo> result = memberService.getFollower(memberId, PageRequest.of(page, size, Sort.by(Sort.Order.asc("nickname"))));
+        List<MemberInfo> result = memberService.getFollower(memberId, PageRequest.of(page, size));
         return new ApiResponse.builder<List<MemberInfo>>()
                 .payload(result)
                 .build();
@@ -175,7 +175,7 @@ public class MemberController {
     public ApiResponse<?> getFollowing(@RequestParam(value = "memberId") Integer memberId,
                                        @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
                                        @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
-        List<MemberInfo> result = memberService.getFollowing(memberId, PageRequest.of(page, size, Sort.by(Sort.Order.asc("nickname"))));
+        List<MemberInfo> result = memberService.getFollowing(memberId, PageRequest.of(page, size));
         return new ApiResponse.builder<List<MemberInfo>>()
                 .payload(result)
                 .build();

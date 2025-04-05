@@ -205,9 +205,9 @@ public class TrackService {
         String existingFileUrl = track.getImageUrl();
         String updatedFileUrl;
         if (existingFileUrl == null) {
-            updatedFileUrl = s3Service.uploadFile(trackImageUploadRequestDto.getTrackImg(), S3Service.MUSIC);
+            updatedFileUrl = s3Service.uploadFile(trackImageUploadRequestDto.getTrackImg(), S3Service.IMAGE);
         } else {
-            updatedFileUrl = s3Service.updateFile(existingFileUrl, trackImageUploadRequestDto.getTrackImg(), S3Service.MUSIC);
+            updatedFileUrl = s3Service.updateFile(existingFileUrl, trackImageUploadRequestDto.getTrackImg(), S3Service.IMAGE);
         }
         // 변경된 이미지 반영
         track.setImageUrl(updatedFileUrl);
