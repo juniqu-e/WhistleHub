@@ -3,6 +3,7 @@ package com.ssafy.backend.discovery.controller;
 import com.ssafy.backend.auth.model.common.TagDto;
 import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.common.error.exception.InvalidFormattedRequest;
+import com.ssafy.backend.graph.util.DataGenerator;
 import com.ssafy.backend.member.model.common.MemberInfo;
 import com.ssafy.backend.playlist.dto.TrackInfo;
 
@@ -177,6 +178,15 @@ public class DiscoveryController {
         List<TrackInfo> result = discoveryService.getMemberFanMix(memberId, size);
         return new ApiResponse.builder<List<TrackInfo>>()
                 .payload(result)
+                .build();
+    }
+    private final DataGenerator dataGenerator;
+    @GetMapping("/generate")
+    public ApiResponse<?> generate(@RequestParam(value="memberCount") Integer memberCount,
+                                   @RequestParam(value="trackCount") Integer trackCount) {
+        dataGenerator.generate(memberCount, trackCount);
+        return new ApiResponse.builder<Object>()
+                .payload("데이터 생성 완료")
                 .build();
     }
 }
