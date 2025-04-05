@@ -35,6 +35,16 @@ class OpenL3Service:
             FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),
             FieldSchema(name="track_id", dtype=DataType.INT64),  # 외부에서 받은 트랙 ID를 저장할 필드
             FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=self.embedding_dim),
+            # 악기 타입 필드 추가
+            FieldSchema(name="has_record", dtype=DataType.BOOL),      # 0: Record
+            FieldSchema(name="has_whistle", dtype=DataType.BOOL),     # 1: Whistle
+            FieldSchema(name="has_acoustic_guitar", dtype=DataType.BOOL),  # 2: Acoustic Guitar
+            FieldSchema(name="has_voice", dtype=DataType.BOOL),       # 3: Voice
+            FieldSchema(name="has_drums", dtype=DataType.BOOL),       # 4: Drums
+            FieldSchema(name="has_bass", dtype=DataType.BOOL),        # 5: Bass
+            FieldSchema(name="has_electric_guitar", dtype=DataType.BOOL),  # 6: Electric Guitar
+            FieldSchema(name="has_piano", dtype=DataType.BOOL),       # 7: Piano
+            FieldSchema(name="has_synth", dtype=DataType.BOOL),       # 8: Synth
         ]
         schema = CollectionSchema(fields, description="음악 임베딩")
         
@@ -136,13 +146,14 @@ class OpenL3Service:
             utils.log(traceback.format_exc(), level=logging.ERROR)
             return None
     
-    def store_embedding(self, embedding, track_id=None):
+    def store_embedding(self, embedding, track_id=None, instrumentTypes=None):
         """
         임베딩을 Milvus에 저장
         
         Args:
             embedding: 저장할 임베딩 벡터
             track_id: 외부에서 받은 트랙 ID (선택적)
+            instrumentTypes: 악기 종류 리스트 (선택적)
             
         Returns:
             id: 저장된 임베딩의 Milvus ID (실패 시 None)
@@ -156,10 +167,42 @@ class OpenL3Service:
             if track_id is None:
                 track_id = -1
             
+            # instrumentTypes가 없으면 기본값 설정 (모두 False)
+            has_record = False
+            has_whistle = False
+            has_acoustic_guitar = False
+            has_voice = False
+            has_drums = False
+            has_bass = False
+            has_electric_guitar = False
+            has_piano = False
+            has_synth = False
+            
+            # instrumentTypes가 리스트로 제공된 경우, 해당 악기들을 True로 설정
+            if instrumentTypes and isinstance(instrumentTypes, list):
+                if 0 in instrumentTypes: has_record = True
+                if 1 in instrumentTypes: has_whistle = True
+                if 2 in instrumentTypes: has_acoustic_guitar = True
+                if 3 in instrumentTypes: has_voice = True
+                if 4 in instrumentTypes: has_drums = True
+                if 5 in instrumentTypes: has_bass = True
+                if 6 in instrumentTypes: has_electric_guitar = True
+                if 7 in instrumentTypes: has_piano = True
+                if 8 in instrumentTypes: has_synth = True
+            
             # Milvus에 삽입할 데이터 준비
             data = [
                 [track_id],      # track_id 필드
-                [embedding]      # embedding 필드
+                [embedding],      # embedding 필드
+                [has_record],     # has_record 필드
+                [has_whistle],    # has_whistle 필드
+                [has_acoustic_guitar],  # has_acoustic_guitar 필드
+                [has_voice],      # has_voice 필드
+                [has_drums],      # has_drums 필드
+                [has_bass],       # has_bass 필드
+                [has_electric_guitar],  # has_electric_guitar 필드
+                [has_piano],      # has_piano 필드
+                [has_synth]       # has_synth 필드
             ]
             
             # Milvus에 데이터 삽입
@@ -178,13 +221,14 @@ class OpenL3Service:
             print(f"임베딩 저장 오류: {e}")
             return None
     
-    def process_audio_file(self, file_path, track_id=None):
+    def process_audio_file(self, file_path, track_id=None, instrumentTypes=None):
         """
         오디오 파일 처리 및 Milvus 저장
         
         Args:
             file_path: 처리할 오디오 파일 경로
             track_id: 외부에서 받은 트랙 ID (선택적)
+            instrumentTypes: 악기 종류 리스트 (선택적)
             
         Returns:
             id: 저장된 임베딩의 Milvus ID (실패 시 None)
@@ -194,8 +238,8 @@ class OpenL3Service:
         if embedding is None:
             return None
             
-        # 임베딩 저장 (track_id 전달)
-        return self.store_embedding(embedding, track_id)
+        # 임베딩 저장 (track_id와 instrumentTypes 전달)
+        return self.store_embedding(embedding, track_id, instrumentTypes)
     
     def find_similar_by_track_id(self, track_id, limit=5):
         """

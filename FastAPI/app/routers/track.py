@@ -34,8 +34,10 @@ os.makedirs(SHARED_AUDIO_DIR, exist_ok=True)
 )
 @utils.logger()
 async def async_process_audio_celery(
+
     audio: UploadFile = File(..., description="처리할 오디오 파일"),
     trackId: Optional[int] = Form(None, description="RDB 트랙 ID"),
+    instrumentTypes: Optional[List[int]] = Form(None, description="악기 종류"),
     limit: int = Form(5, description="반환할 결과 수", gt=0, le=100),
     callbackUrl: str = Form(..., description="결과를 받을 Callback URL")
 ):
@@ -79,7 +81,7 @@ async def async_process_audio_celery(
         # task_send_callback에는 trackId를 명시적으로 전달해야 합니다.
         processing_chain = chain(
             # temp_file_path와 track_id 전달
-            task_process_audio.s(temp_file_path=file_path, track_id=trackId) |
+            task_process_audio.s(temp_file_path=file_path, track_id=trackId, instrumentTypes=instrumentTypes) |
             # limit 전달 (이전 결과인 track_id가 첫 인자로 자동 전달됨)
             task_find_similar.s(limit=limit) |
             # callback_url과 trackId 명시적 전달

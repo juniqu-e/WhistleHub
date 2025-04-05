@@ -85,7 +85,7 @@ public class WorkstationService {
         // 1-4-1. Track 노드 생성 및 태그 연결
         dataCollectingService.createTrack(t.getId(), Arrays.stream(trackUploadRequestDto.getTags()).toList());
         // 1-4-2. FastAPI로 음원 보내기
-        openl3Service.uploadAndFindSimilar(trackUploadRequestDto.getTrackSoundFile().getResource(), t.getId(), 10);
+        openl3Service.uploadAndFindSimilar(trackUploadRequestDto.getTrackSoundFile().getResource(), t.getId(), trackUploadRequestDto.getInstrumentType(), 10);
 
         // 2. 레이어 목록 저장
         int layerSize = trackUploadRequestDto.getLayerName().length;

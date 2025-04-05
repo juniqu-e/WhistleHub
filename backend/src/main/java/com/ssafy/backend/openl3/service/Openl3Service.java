@@ -33,7 +33,7 @@ public class Openl3Service {
     @Value("${FASTAPI_HOST}")
     private String FASTAPI_HOST;
 
-    public void uploadAndFindSimilar(Resource audioFile, Integer trackId, int limit) {
+    public void uploadAndFindSimilar(Resource audioFile, Integer trackId, int[]instrumentTypes, int limit) {
         try {
             // 1. 파일을 즉시 byte 배열로 읽어들입니다.
             byte[] audioBytes = audioFile.getInputStream().readAllBytes();
@@ -49,6 +49,14 @@ public class Openl3Service {
             if(trackId != null) {
                 builder.part("trackId", trackId);
             }
+
+            // 배열의 각 요소를 별도의 파트로 추가
+            if (instrumentTypes != null) {
+                for (int type : instrumentTypes) {
+                    builder.part("instrumentTypes", type); // 같은 이름("instrumentTypes")으로 각 int 값을 추가
+                }
+            } 
+
             builder.part("limit", limit);
             builder.part("callbackUrl", BACKEND_HOST + "/api/openl3/similar/callback");
 
