@@ -69,7 +69,7 @@ fun ProfileMenuScreen(
             MenuItem(
                 label = "내 작업중인 트랙",
                 onClick = {
-                    // TODO: 내 작업중인 트랙 화면으로 이동
+                    navController.navigate(Screen.DAW.route)
                 },
                 customColors = customColors
             )

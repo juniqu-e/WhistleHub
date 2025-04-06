@@ -8,6 +8,8 @@ import com.whistlehub.common.data.remote.dto.request.ProfileRequest
 import com.whistlehub.common.data.remote.dto.response.ProfileResponse
 import com.whistlehub.common.data.repository.ProfileService
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -65,6 +67,10 @@ class ProfileViewModel @Inject constructor(
     // 검색 결과 상태 추가
     private val _searchResults = MutableStateFlow<List<ProfileResponse.SearchProfileResponse>>(emptyList())
     val searchResults: StateFlow<List<ProfileResponse.SearchProfileResponse>> get() = _searchResults
+
+    private val _searchQueryDebounce = MutableStateFlow("")
+    private var searchJob: Job? = null
+
 
     private val _myFollowings = MutableStateFlow<List<ProfileResponse.GetFollowingsResponse>>(emptyList())
     val myFollowings: StateFlow<List<ProfileResponse.GetFollowingsResponse>> get() = _myFollowings
@@ -264,34 +270,29 @@ class ProfileViewModel @Inject constructor(
     }
 
     // 검색 프로필 목록을 불러오는 함수
-    // ProfileViewModel.kt의 searchProfiles 함수 수정
     fun searchProfiles(query: String, page: Int = 0, size: Int = 10) {
-        viewModelScope.launch {
-            try {
-                Log.d("ProfileViewModel", "Searching profiles with query: $query")
+        // 기존 검색 작업 취소
+        searchJob?.cancel()
 
-                // 중요: 검색 시작 시 로딩 상태 명시적으로 설정
-                // 상태를 내보내는 함수가 있다면 사용
+        searchJob = viewModelScope.launch {
+            try {
+                delay(300) // 디바운스
 
                 val searchResponse = profileService.searchProfile(query, page, size)
-
                 if (searchResponse.code == "SU") {
-                    // 중요: 상태 값을 즉시 업데이트하고 UI에 반영되도록 함
-                    // value를 직접 수정하는 것이 emit보다 즉각적일 수 있음
                     _searchResults.value = searchResponse.payload ?: emptyList()
-                    Log.d("ProfileViewModel", "Search returned ${searchResponse.payload?.size ?: 0} results")
                 } else {
-                    _errorMessage.value = searchResponse.message
-                    Log.e("ProfileViewModel", "Failed to search profiles: ${searchResponse.message}")
+                    // 에러가 발생해도 결과만 비움 (에러 메시지 설정 없음)
+                    _searchResults.value = emptyList()
                 }
             } catch (e: Exception) {
-                _errorMessage.value = "검색 중 오류가 발생했습니다."
-                Log.e("ProfileViewModel", "Exception while searching profiles", e)
+                // 예외 발생 시에도 결과만 비움 (에러 메시지 설정 없음)
+                _searchResults.value = emptyList()
             }
         }
     }
 
-    // 검색 결과 초기화
+    // 명시적으로 검색 결과와 에러 메시지 초기화
     fun clearSearchResults() {
         _searchResults.value = emptyList()
     }

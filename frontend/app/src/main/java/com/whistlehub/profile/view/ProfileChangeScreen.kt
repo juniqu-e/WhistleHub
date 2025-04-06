@@ -2,25 +2,32 @@ package com.whistlehub.profile.view
 
 import android.net.Uri
 import android.util.Log
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -32,24 +39,26 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import coil3.compose.AsyncImage
 import com.whistlehub.common.util.LogoutManager
+import com.whistlehub.common.util.uriToMultipartBodyPart
 import com.whistlehub.common.view.component.CustomAlertDialog
+import com.whistlehub.common.view.signup.LabeledInputField
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
-import com.whistlehub.profile.view.components.ProfileImageUpload
 import com.whistlehub.profile.viewmodel.ProfileChangeViewModel
 import kotlinx.coroutines.launch
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.toRequestBody
-import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,6 +69,8 @@ fun ProfileChangeScreen(
 ) {
     val customColors = CustomColors()
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val scrollState = rememberScrollState()
 
     // ViewModel의 상태 수집
     val nickname by viewModel.nickname.collectAsState()
@@ -69,12 +80,35 @@ fun ProfileChangeScreen(
     val isLoading by viewModel.isLoading.collectAsState()
 
     // 로컬 UI 상태
-    var nicknameError by remember { mutableStateOf("") }
+    var nicknameError by remember { mutableStateOf<String?>(null) }
+    var isNicknameFocused by remember { mutableStateOf(false) }
+
+    var profileTextError by remember { mutableStateOf<String?>(null) }
+    var isProfileTextFocused by remember { mutableStateOf(false) }
+
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var showDeleteImageConfirm by remember { mutableStateOf(false) }
 
     // 다이얼로그 관련 상태
     var showSuccessDialog by remember { mutableStateOf(false) }
     var dialogMessage by remember { mutableStateOf("") }
+
+    // 갤러리 접근 런처
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            selectedImageUri = it
+            scope.launch {
+                try {
+                    val imagePart = uriToMultipartBodyPart(context, it)
+                    viewModel.updateProfileImage(imagePart)
+                } catch (e: Exception) {
+                    Log.e("ProfileChangeScreen", "Error processing image: ${e.message}")
+                }
+            }
+        }
+    }
 
     // 컴포넌트가 처음 로드될 때 프로필 정보 가져오기
     LaunchedEffect(Unit) {
@@ -83,6 +117,7 @@ fun ProfileChangeScreen(
         )
     }
 
+    // 성공 다이얼로그
     CustomAlertDialog(
         showDialog = showSuccessDialog,
         title = "프로필 변경 완료",
@@ -94,7 +129,21 @@ fun ProfileChangeScreen(
         }
     )
 
-    val context = LocalContext.current
+    // 이미지 삭제 확인 다이얼로그
+    CustomAlertDialog(
+        showDialog = showDeleteImageConfirm,
+        title = "프로필 이미지 삭제",
+        message = "프로필 이미지를 삭제하시겠습니까?",
+        onDismiss = { showDeleteImageConfirm = false },
+        onConfirm = {
+            viewModel.deleteProfileImage()
+            showDeleteImageConfirm = false
+        }
+    )
+
+    val textFieldStyle = Typography.bodyMedium.copy(color = customColors.Grey50)
+    val placeholderStyle = Typography.bodyMedium.copy(color = customColors.Grey300)
+    val labelStyle = Typography.bodyLarge.copy(color = customColors.Grey50)
 
     Scaffold(
         topBar = {
@@ -116,147 +165,167 @@ fun ProfileChangeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp),
+                .padding(horizontal = 24.dp)
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            ProfileImageUpload(
-                profileImageUrl = profileImageUrl,
-                onImageSelected = { uri ->
-                    selectedImageUri = uri
-                    // 이미지가 선택되면 바로 업로드 처리 (메모리 방식)
-                    uri?.let { imageUri ->
-                        scope.launch {
-                            try {
-                                // ContentResolver를 사용하여 InputStream 열기
-                                context.contentResolver.openInputStream(imageUri)?.use { inputStream ->
-                                    // InputStream에서 ByteArray로 읽기
-                                    val imageBytes = inputStream.readBytes()
-
-
-
-                                    // MIME 타입 가져오기 (ContentResolver 사용)
-                                    val mimeType = context.contentResolver.getType(imageUri) ?: "image/*" // 기본값 설정
-                                    val mediaType = mimeType.toMediaTypeOrNull() // MediaType 객체 미리 생성
-
-                                    // 파일 이름 생성 (Uri에서 가져오거나 UUID 사용)
-                                    val filename = viewModel.getFileName(context, imageUri) ?: "${UUID.randomUUID()}.${mimeType.substringAfterLast('/')}"
-
-                                    // ByteArray로부터 RequestBody 생성
-                                    val requestBody = imageBytes.toRequestBody(mimeType.toMediaTypeOrNull())
-
-                                    // MultipartBody.Part 생성 ("image" 이름 사용 확인됨)
-                                    val imagePart = MultipartBody.Part.createFormData(
-                                        "image",
-                                        filename,
-                                        requestBody
-                                    )
-
-                                    // ViewModel 호출
-                                    viewModel.updateProfileImage(imagePart)
-
-                                } ?: Log.e("ImageUpload", "Failed to open InputStream for URI: $imageUri")
-
-                            } catch (e: Exception) {
-                                Log.e("ImageUpload", "Error processing image URI: $imageUri", e)
-                                // 사용자에게 오류 메시지 표시 등 예외 처리
-                                // viewModel.showError("이미지 처리 중 오류가 발생했습니다.")
-                            }
-                        }
-                    } ?: Log.w("ImageUpload", "Selected URI is null") // uri가 null인 경우 로그
-                },
-                onDeleteImage = {
-                    viewModel.deleteProfileImage()
-                }
-            )
-
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 2) 닉네임 입력
-            Text(text = "Nickname", style = Typography.titleMedium, color = customColors.Grey50)
-            OutlinedTextField(
-                value = nickname,
-                onValueChange = { newValue ->
-                    viewModel._nickname.value = newValue
-                    // 닉네임 유효성 검사 로직
-                    nicknameError = if (newValue.contains(" ")) {
-                        "공백 문자는 사용할 수 없습니다."
-                    } else ""
-                },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            )
+            // 프로필 이미지 업로드 UI (개선된 버전)
+            Box(
+                modifier = Modifier,
+                contentAlignment = Alignment.Center
+            ) {
+                // 프로필 이미지
+                Box(
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape)
+                        .background(customColors.Grey800)
+                        .border(2.dp, customColors.Grey500, CircleShape)
+                        .clickable { launcher.launch("image/*") },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (selectedImageUri != null) {
+                        AsyncImage(
+                            model = selectedImageUri,
+                            contentDescription = "프로필 이미지",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else if (profileImageUrl.isNotEmpty()) {
+                        AsyncImage(
+                            model = profileImageUrl,
+                            contentDescription = "프로필 이미지",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "기본 프로필",
+                            tint = customColors.Grey300,
+                            modifier = Modifier.size(60.dp)
+                        )
+                    }
+                }
 
-            // 닉네임 오류 메시지
-            if (nicknameError.isNotEmpty()) {
-                Text(
-                    text = nicknameError,
-                    color = Color.Red,
-                    style = Typography.bodySmall
-                )
+                // 카메라 아이콘 - 프로필 이미지 밖에 배치
+                Box(
+                    modifier = Modifier
+                        .padding(start = 90.dp, top = 90.dp)
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(customColors.Grey800)
+                        .border(1.dp, customColors.Grey500, CircleShape)
+                        .clickable { launcher.launch("image/*") },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = "사진 선택",
+                        tint = customColors.Grey50,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // 이미지 관련 액션 버튼
+            if (profileImageUrl.isNotEmpty() || selectedImageUri != null) {
+                Button(
+                    onClick = { showDeleteImageConfirm = true },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = customColors.Error700
+                    ),
+                    modifier = Modifier.padding(top = 12.dp)
+                ) {
+                    Text("이미지 삭제")
+                }
+            }
 
-            // 3) 자기소개 입력 (멀티라인)
-            Text(text = "Introduce", style = Typography.titleMedium, color = customColors.Grey50)
-            OutlinedTextField(
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // 닉네임 입력 필드 (LabeledInputField 사용)
+            LabeledInputField(
+                label = "Nickname",
+                value = nickname,
+                onValueChange = {
+                    viewModel._nickname.value = it
+                    nicknameError = if (it.contains(" ")) "공백 문자는 사용할 수 없습니다." else null
+                },
+                placeholder = "닉네임을 입력하세요",
+                labelStyle = labelStyle,
+                textStyle = textFieldStyle,
+                placeholderStyle = placeholderStyle,
+                isFocused = isNicknameFocused,
+                onFocusChange = { isNicknameFocused = it },
+                errorMessage = nicknameError,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 자기소개 입력 필드 (LabeledInputField 사용)
+            LabeledInputField(
+                label = "Description",
                 value = profileText,
-                onValueChange = { viewModel._profileText.value = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp), // 높이를 고정해서 여러 줄 표시
-                maxLines = 5,
+                onValueChange = {
+                    if (it.length <= 48) {
+                        viewModel._profileText.value = it
+                    }
+                },
+                placeholder = "자기소개를 입력하세요",
+                labelStyle = labelStyle,
+                textStyle = textFieldStyle,
+                placeholderStyle = placeholderStyle,
+                isFocused = isProfileTextFocused,
+                onFocusChange = { isProfileTextFocused = it },
+                errorMessage = profileTextError,
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Default // ✨ 줄바꿈 허용
+                ),
+                maxLines = 2
             )
 
             // 에러 메시지 표시
             if (errorMessage.isNotEmpty()) {
                 Text(
                     text = errorMessage,
-                    color = Color.Red,
+                    color = customColors.Error700,
                     style = Typography.bodySmall,
                     modifier = Modifier.padding(top = 8.dp)
                 )
             }
 
-            // 4) 하단 버튼 (취소, 수정)
-//            Spacer(modifier = Modifier.weight(1f))
-            Row(
+            // 저장 버튼
+            Button(
+                onClick = {
+                    if (nicknameError == null) {
+                        viewModel.updateProfile(nickname, profileText)
+                        dialogMessage = "프로필이 성공적으로 변경되었습니다."
+                        showSuccessDialog = true
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                enabled = !isLoading && nicknameError == null,
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = customColors.CommonButtonColor
+                )
             ) {
-                // 취소 버튼
-                OutlinedButton(
-                    onClick = {
-                        navController.popBackStack() // 이전 화면으로 돌아가기
-                    }
-                ) {
-                    Text("취소")
-                }
-
-//                Spacer(modifier = Modifier.width(16.dp))
-
-                // 수정 버튼
-                Button(
-                    onClick = {
-                        // 닉네임 유효성 검사 후 업데이트 진행
-                        if (nicknameError.isEmpty()) {
-                            viewModel.updateProfile(nickname, profileText)
-                            // 프로필 업데이트 성공 시 다이얼로그 표시
-                            dialogMessage = "프로필이 성공적으로 변경되었습니다."
-                            showSuccessDialog = true
-//                            navController.popBackStack()
-                        }
-                    },
-                    enabled = !isLoading && nicknameError.isEmpty()
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = Color.White
-                        )
-                    } else {
-                        Text("수정")
-                    }
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = customColors.Grey950,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        "변경사항 저장",
+                        style = Typography.titleMedium,
+                        color = customColors.CommonTextColor,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
                 }
             }
         }
