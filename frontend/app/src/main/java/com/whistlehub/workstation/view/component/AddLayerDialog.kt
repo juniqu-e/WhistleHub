@@ -26,7 +26,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,13 +37,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
-import com.whistlehub.common.data.remote.dto.request.TrackRequest
-import com.whistlehub.common.data.remote.dto.request.WorkstationRequest
 import com.whistlehub.common.util.rawWavList
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.workstation.data.InstrumentType
 import com.whistlehub.workstation.data.Layer
 import com.whistlehub.workstation.data.LayerButtonType
+import com.whistlehub.workstation.view.component.record.RecordingPanel
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 import java.io.File
 import java.io.FileOutputStream
@@ -165,29 +163,9 @@ fun AddLayerDialog(
                         }
 
                         LayerButtonType.RECORD -> {
-                            val searchResults by viewModel.searchTrackResults.collectAsState();
-                            val layersOfTrack by viewModel.layersOfSearchTrack;
-
-                            SearchLayerSection(searchResults = searchResults?.payload
-                                ?: emptyList(),
-                                onSearchClicked = { keyword ->
-                                    viewModel.searchTrack(
-                                        TrackRequest.SearchTrackRequest(
-                                            keyword = keyword, 0, 10, "asc"
-                                        )
-                                    )
-                                },
-                                onTrackSelected = { trackId ->
-                                    viewModel.addLayerFromSearchTrack(
-                                        WorkstationRequest.ImportTrackRequest(
-                                            trackId = trackId
-                                        ),
-                                        context = context,
-                                    )
-                                },
-                                onBack = {
-                                    selectedType = null
-                                })
+                            RecordingPanel(
+                                viewModel = viewModel,
+                            )
                         }
                     }
                 }
