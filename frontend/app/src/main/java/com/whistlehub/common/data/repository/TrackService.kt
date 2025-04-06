@@ -184,4 +184,39 @@ class TrackService @Inject constructor(
     ): ApiResponse<List<TrackResponse.SearchTrack>> {
         return tokenRefresh.execute { trackApi.getTagRecommendTrack(tagId, size) }
     }
+
+    // 최근 들은 트랙 조회
+    suspend fun getRecentTracks(
+        size: Int
+    ): ApiResponse<List<TrackResponse.SearchTrack>> {
+        return tokenRefresh.execute { trackApi.getRecentTracks(size) }
+    }
+
+    // 특정 트랙과 비슷한 트랙 리스트 조회
+    suspend fun getSimilarTracks(
+        trackId: Int
+    ): ApiResponse<List<TrackResponse.SearchTrack>> {
+        return tokenRefresh.execute { trackApi.getSimilarTracks(trackId) }
+    }
+
+    // 한 번도 듣지 않은 트랙 조회
+    suspend fun getNeverTracks(
+        size: Int
+    ): ApiResponse<List<TrackResponse.SearchTrack>> {
+        return tokenRefresh.execute { trackApi.getNeverTracks(size) }
+    }
+
+    // 팔로우한 사람 중 한 명 조회
+    suspend fun getFollowingMember(
+    ): ApiResponse<TrackResponse.MemberInfo> {
+        return tokenRefresh.execute { trackApi.getFollowingMember() }
+    }
+
+    // 특정 회원을 팔로우한 사람들이 좋아하는 트랙 리스트 조회
+    suspend fun getFanMixTracks(
+        memberId: Int,
+        size: Int
+    ): ApiResponse<List<TrackResponse.SearchTrack>> {
+        return tokenRefresh.execute { trackApi.getFanMixTracks(memberId, size) }
+    }
 }
