@@ -1,12 +1,21 @@
 package com.whistlehub.workstation.viewmodel
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import android.media.AudioFormat
+import android.media.AudioRecord
+import android.media.MediaPlayer
+import android.media.MediaRecorder
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.whistlehub.common.data.remote.dto.request.TrackRequest
@@ -34,13 +43,20 @@ import com.whistlehub.workstation.data.toAudioInfo
 import com.whistlehub.workstation.di.AudioLayerPlayer
 import com.whistlehub.workstation.di.WorkStationBottomBarProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileOutputStream
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.UUID
 import javax.inject.Inject
+
 
 @HiltViewModel
 class WorkStationViewModel @Inject constructor(
@@ -62,6 +78,15 @@ class WorkStationViewModel @Inject constructor(
     val layersOfSearchTrack: State<ApiResponse<WorkstationResponse.ImportTrackResponse>?> get() = _layersOfSearchTrack;
     private val _isPlaying = mutableStateOf(false)
     val isPlaying: State<Boolean> get() = _isPlaying
+
+    // ------------ Record ------------------
+    var recordedFile by mutableStateOf<File?>(null)
+    var isRecording by mutableStateOf(false)
+    var isRecordingPending by mutableStateOf(false)
+    var countdown by mutableStateOf(3)
+    private var mediaPlayer: MediaPlayer? = null
+    private var recorder: AudioRecord? = null
+
 
     init {
         setCallback(this)
@@ -289,57 +314,155 @@ class WorkStationViewModel @Inject constructor(
         Log.d("Playback", "🎉 재생이 완료되었습니다!")
         Handler(Looper.getMainLooper()).post {
             stopAudioEngine()
+            _isPlaying.value = false
         }
     }
-//    fun toggleBeat(layerId: Int, index: Int) {
-//        _tracks.value = _tracks.value.map { layer ->
-//            if (layer.id == layerId) {
-//                Log.d("Toggle", "Layer ${layer.id} toggle at $index")
-//                val pattern = layer.beatPattern.toMutableList()
-//                val length = layer.length
-//                val isActive = pattern[index]
-//
-//                if (!isActive) {
-//                    //중복 점유 체크
-//                    val overlap = (index until (index + length)).any {
-//                        it >= 60 || pattern[it]
-//                    }
-//                    if (overlap) {
-//                        Log.d("Toggle", "Overlap - blocked")
-//                        return@map layer
-//                    }
-//
-//                    for (i in index until (index + length).coerceAtMost(60)) {
-//                        pattern[i] = true
-//                    }
-//                } else {
-//                    // 시작 지점 누르면 전체 해제
-//                    for (i in index until (index + length).coerceAtMost(60)) {
-//                        pattern[i] = false
-//                    }
-//                }
-//
-//                layer.copy(beatPattern = pattern)
-//            } else layer
-//        }
-//    }
-//    fun applyPatternAutoRepeat(layerId: Int, startBeat: Int, interval: Int) {
-//        _tracks.value = _tracks.value.map { layer ->
-//            if (layer.id == layerId) {
-//                val pattern = layer.beatPattern.toMutableList()
-//                val length = layer.length
-//                var i = startBeat
-//                while (i < 60) {
-//                    for (j in 0 until length) {
-//                        if (i + j < 60) {
-//                            pattern[i + j] = true
-//                        }
-//                    }
-//                    i += interval
-//                }
-//
-//                layer.copy(beatPattern = pattern)
-//            } else layer
-//        }
-//    }
+
+
+    fun startCountdownAndRecord(context: Context, file: File, onComplete: (File) -> Unit) {
+        isRecordingPending = true
+        viewModelScope.launch {
+            for (i in 3 downTo 1) {
+                countdown = i
+                delay(1000)
+            }
+            countdown = 0
+            startRecording(context, file, onComplete)
+        }
+    }
+
+    private fun startRecording(context: Context, file: File, onComplete: (File) -> Unit) {
+        val hasPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (!hasPermission) {
+            Log.d("Record", hasPermission.toString())
+            return
+        }
+
+        isRecording = true
+        isRecordingPending = false
+        val sampleRate = 44100
+        val bufferSize = AudioRecord.getMinBufferSize(
+            sampleRate,
+            AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.ENCODING_PCM_16BIT
+        )
+        recorder = AudioRecord(
+            MediaRecorder.AudioSource.MIC,
+            sampleRate,
+            AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.ENCODING_PCM_16BIT,
+            bufferSize
+        )
+
+        if (recorder!!.state != AudioRecord.STATE_INITIALIZED) {
+            Log.e("Record", "AudioRecord 초기화 실패")
+            isRecording = false
+            return
+        }
+        val pcmStream = ByteArrayOutputStream()
+        val buffer = ByteArray(bufferSize)
+
+        viewModelScope.launch(Dispatchers.IO) {
+            recorder?.startRecording()
+            while (isRecording && recorder?.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
+                val read = recorder?.read(buffer, 0, buffer.size) ?: break
+                if (read > 0) {
+                    Log.d("Record", "read: $read / buffer.first: ${buffer[0]}")
+                    pcmStream.write(buffer, 0, read)
+                }
+            }
+
+            recorder?.stop()
+            recorder?.release()
+            recorder = null
+            isRecording = false
+
+            val channels = 1
+            val bitsPerSample = 16
+            val byteRate = sampleRate * channels * (bitsPerSample / 8)
+
+            val wavStream = FileOutputStream(file)
+            val pcmData = pcmStream.toByteArray()
+
+            writeWavHeader(wavStream, pcmData.size.toLong(), sampleRate, 1, byteRate)
+            wavStream.write(pcmData)
+            wavStream.close()
+
+            recordedFile = file
+            onComplete(file)
+        }
+    }
+
+    fun stopRecording() {
+        isRecording = false
+    }
+
+    fun playRecording(file: File) {
+        mediaPlayer?.release()
+        mediaPlayer = MediaPlayer().apply {
+            setDataSource(file.absolutePath)
+            prepare()
+            start()
+        }
+    }
+
+    fun stopPlayback() {
+        mediaPlayer?.stop()
+        mediaPlayer?.release()
+        mediaPlayer = null
+    }
+
+    private fun writeWavHeader(
+        out: FileOutputStream,
+        audioLen: Long,
+        sampleRate: Int,
+        channels: Int,
+        byteRate: Int
+    ) {
+        val totalLen = audioLen + 36
+        val header = ByteArray(44)
+
+        fun writeInt(offset: Int, value: Int) {
+            ByteBuffer.wrap(header, offset, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(value)
+        }
+
+        fun writeShort(offset: Int, value: Short) {
+            ByteBuffer.wrap(header, offset, 2).order(ByteOrder.LITTLE_ENDIAN).putShort(value)
+        }
+
+        "RIFF".toByteArray().copyInto(header, 0)
+        writeInt(4, totalLen.toInt())
+        "WAVE".toByteArray().copyInto(header, 8)
+        "fmt ".toByteArray().copyInto(header, 12)
+        writeInt(16, 16)
+        writeShort(20, 1)
+        writeShort(22, channels.toShort())
+        writeInt(24, sampleRate)
+        writeInt(28, byteRate)
+        writeShort(32, (channels * 2).toShort())
+        writeShort(34, 16)
+        "data".toByteArray().copyInto(header, 36)
+        writeInt(40, audioLen.toInt())
+
+        out.write(header)
+    }
+
+    fun addRecordedLayer(name: String) {
+        recordedFile?.let { file ->
+            val layer = Layer(
+                id = 0,
+                name = name,
+                description = "사용자 녹음",
+                category = "RECORDED",
+                length = 4,
+                patternBlocks = emptyList(),
+                wavPath = file.absolutePath
+            )
+            addLayer(layer)
+        }
+    }
 }
