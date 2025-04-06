@@ -1,5 +1,6 @@
 package com.whistlehub.playlist.view
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +24,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,12 +37,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import com.whistlehub.R
 import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Pretendard
@@ -81,7 +86,7 @@ fun PlayListScreen(
                     modifier = Modifier.fillMaxSize(),
                     style = Typography.displaySmall,
                     fontFamily = Pretendard,
-                    color = CustomColors().Grey50,
+                    color = CustomColors().CommonTitleColor,
                 )
             }
             // 좋아하는 트랙 목록
@@ -99,7 +104,7 @@ fun PlayListScreen(
                     Icon(
                         Icons.Rounded.Favorite,
                         contentDescription = "좋아하는 트랙",
-                        tint = CustomColors().Mint500,
+                        tint = CustomColors().CommonIconColor,
                         modifier = Modifier.size(40.dp)
                     )
                     Text(
@@ -107,7 +112,7 @@ fun PlayListScreen(
                         modifier = Modifier.weight(1f),
                         fontSize = Typography.titleLarge.fontSize,
                         fontFamily = Pretendard,
-                        color = CustomColors().Grey50
+                        color = CustomColors().CommonTextColor
                     )
                 }
             }
@@ -130,6 +135,7 @@ fun PlayListScreen(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(RoundedCornerShape(10.dp)),
+                        error = painterResource(R.drawable.default_track),
                         contentScale = ContentScale.Crop
                     )
                     Text(
@@ -137,14 +143,14 @@ fun PlayListScreen(
                         modifier = Modifier.weight(1f),
                         fontSize = Typography.titleLarge.fontSize,
                         fontFamily = Pretendard,
-                        color = CustomColors().Grey50,
+                        color = CustomColors().CommonTextColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Icon(
                         Icons.Rounded.Edit,
                         contentDescription = "플레이리스트 수정",
-                        tint = CustomColors().Grey50,
+                        tint = CustomColors().CommonIconColor,
                         modifier = Modifier
                             .size(24.dp)
                             .clickable {
@@ -156,7 +162,7 @@ fun PlayListScreen(
                     Icon(
                         Icons.Rounded.Delete,
                         contentDescription = "플레이리스트 삭제",
-                        tint = CustomColors().Grey50,
+                        tint = CustomColors().CommonIconColor,
                         modifier = Modifier
                             .size(24.dp)
                             .clickable {
@@ -185,7 +191,7 @@ fun PlayListScreen(
                     Icon(
                         Icons.Rounded.AddCircleOutline,
                         contentDescription = "플레이리스트 추가",
-                        tint = CustomColors().Grey50,
+                        tint = CustomColors().CommonIconColor,
                         modifier = Modifier.size(24.dp)
                     )
                     Text(
@@ -193,7 +199,7 @@ fun PlayListScreen(
                         modifier = Modifier.padding(10.dp),
                         fontSize = Typography.titleLarge.fontSize,
                         fontFamily = Pretendard,
-                        color = CustomColors().Grey50
+                        color = CustomColors().CommonTextColor
                     )
                 }
             }
@@ -215,7 +221,7 @@ fun PlayListScreen(
                 Text(
                     text = "플레이리스트 생성",
                     style = Typography.titleLarge,
-                    color = CustomColors().Grey50,
+                    color = CustomColors().CommonTextColor,
                 )
             },
             text = {
@@ -229,7 +235,7 @@ fun PlayListScreen(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .background(CustomColors().Grey950),
+                .background(CustomColors().CommonSubBackgroundColor),
             confirmButton = {
                 Button(
                     onClick = {
@@ -243,20 +249,21 @@ fun PlayListScreen(
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = CustomColors().Mint500,
-                        contentColor = CustomColors().Grey950,
+                        containerColor = CustomColors().CommonButtonColor,
+                        contentColor = CustomColors().CommonTextColor,
                     )
                 ) {
                     Text("생성", style = Typography.bodyLarge)
                 }
             },
             dismissButton = {
-                Button(
+                OutlinedButton(
                     onClick = { showCreatePlaylistDialog = false },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = CustomColors().Grey400,
-                        contentColor = CustomColors().Grey50,
-                    )
+                        containerColor = Color.Transparent,
+                        contentColor = CustomColors().CommonTextColor,
+                    ),
+                    border = BorderStroke(1.dp, CustomColors().CommonOutLineColor),
                 ) {
                     Text("취소", style = Typography.bodyLarge)
                 }
@@ -278,19 +285,20 @@ fun PlayListScreen(
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = CustomColors().Error700,
-                        contentColor = CustomColors().Grey950
+                        contentColor = CustomColors().CommonTextColor
                     )
                 ) {
                     Text("삭제")
                 }
             },
             dismissButton = {
-                Button(
+                OutlinedButton(
                     onClick = { showDeletePlaylistDialog = false },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = CustomColors().Grey400,
-                        contentColor = CustomColors().Grey950
-                    )
+                        containerColor = Color.Transparent,
+                        contentColor = CustomColors().CommonTextColor
+                    ),
+                    border = BorderStroke(1.dp, CustomColors().CommonOutLineColor),
                 ) {
                     Text("취소")
                 }

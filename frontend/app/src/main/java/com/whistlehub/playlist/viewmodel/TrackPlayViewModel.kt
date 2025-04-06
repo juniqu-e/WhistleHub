@@ -52,6 +52,12 @@ class TrackPlayViewModel @Inject constructor(
     // 플레이어 내부 트랙 리스트
     val playerTrackList: MutableStateFlow<List<TrackEssential>> get() = app.playerTrackList
 
+    // 반복 재생 여부
+    val isLooping: StateFlow<Boolean> get() = app.isLooping
+
+    // 셔플 재생 여부
+    val isShuffle: StateFlow<Boolean> get() = app.isShuffle
+
 
     // 내부 고유 상태
     // 현재 유저 정보
@@ -295,6 +301,41 @@ class TrackPlayViewModel @Inject constructor(
         app.nextTrack()
     }
 
+    fun toggleLooping() {
+        app.toggleLooping()
+    }
+
+    fun toggleShuffle() {
+        app.toggleShuffle()
+    }
+
+    // 재생목록 비우기 (로그아웃 시 호출)
+    fun clearTrackList() {
+        app.clearTrackList()
+    }
+
+    // 트랙 신고
+    suspend fun reportTrack(trackId: Int, type: Int = 1, detail: String?): Boolean {
+        return try {
+            val response = trackService.reportTrack(
+                TrackRequest.ReportTrackRequest(
+                    trackId = trackId,
+                    type = type,  // 1: 저작권, 2: 불량 트랙,
+                    detail = detail
+                )
+            )
+            if (response.code == "SU") {
+                true
+            } else {
+                Log.d("TrackPlayViewModel", "Failed to report track: ${response.message}")
+                false
+            }
+        } catch (e: Exception) {
+            Log.d("TrackPlayViewModel", "Error reporting track: ${e.message}")
+            false
+        }
+    }
+
     suspend fun playPlaylist(tracks: List<TrackEssential>) {
         // 플레이리스트 재생
         app.setTrackList(tracks)
@@ -454,8 +495,6 @@ class TrackPlayViewModel @Inject constructor(
         _timerTask?.cancel()
         _playTime.value = 0L
     }
-
-
 }
 
 enum class PlayerViewState {
