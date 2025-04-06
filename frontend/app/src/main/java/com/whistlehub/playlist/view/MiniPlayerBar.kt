@@ -18,10 +18,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.FastRewind
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -36,7 +36,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -94,7 +93,8 @@ fun MiniPlayerBar(
             .padding(start = 10.dp, end = 10.dp, bottom = 5.dp)
             .fillMaxWidth()
             .background(
-                CustomColors().Grey700.copy(alpha = 0.95f), shape = RoundedCornerShape(15.dp)
+                CustomColors().CommonSubBackgroundColor.copy(alpha = 0.95f),
+                shape = RoundedCornerShape(15.dp)
             )
             .pointerInput(Unit) {
                 // 상향 드래그 제스처 감지
@@ -169,17 +169,18 @@ fun MiniPlayerBar(
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                 Text(
                     text = currentTrack?.title ?: "No Track Playing",
-                    style = Typography.titleLarge,
+                    style = Typography.titleMedium,
+                    color = CustomColors().CommonTextColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = currentTrack?.artist?.nickname ?: "Unknown Artist",
-                    style = Typography.bodyLarge,
-                    color = CustomColors().Grey400,
+                    style = Typography.bodyMedium,
+                    color = CustomColors().CommonSubTextColor,
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 IconButton(onClick = {
                     coroutineScope.launch {
                         trackPlayViewModel.previousTrack()
@@ -188,7 +189,7 @@ fun MiniPlayerBar(
                     Icon(
                         imageVector = Icons.Rounded.FastRewind,
                         contentDescription = "PlayBack",
-                        tint = Color.White
+                        tint = CustomColors().CommonIconColor
                     )
                 }
                 IconButton(
@@ -207,9 +208,9 @@ fun MiniPlayerBar(
                         }
                     }) {
                     Icon(
-                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                         contentDescription = "Play/Pause",
-                        tint = Color.White
+                        tint = CustomColors().CommonIconColor
                     )
                 }
                 IconButton(onClick = {
@@ -220,7 +221,7 @@ fun MiniPlayerBar(
                     Icon(
                         imageVector = Icons.Rounded.FastForward,
                         contentDescription = "PlayForward",
-                        tint = Color.White
+                        tint = CustomColors().CommonIconColor
                     )
                 }
             }

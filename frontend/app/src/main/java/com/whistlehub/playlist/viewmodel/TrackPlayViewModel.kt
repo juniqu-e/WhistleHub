@@ -52,6 +52,12 @@ class TrackPlayViewModel @Inject constructor(
     // 플레이어 내부 트랙 리스트
     val playerTrackList: MutableStateFlow<List<TrackEssential>> get() = app.playerTrackList
 
+    // 반복 재생 여부
+    val isLooping: StateFlow<Boolean> get() = app.isLooping
+
+    // 셔플 재생 여부
+    val isShuffle: StateFlow<Boolean> get() = app.isShuffle
+
 
     // 내부 고유 상태
     // 현재 유저 정보
@@ -295,6 +301,14 @@ class TrackPlayViewModel @Inject constructor(
         app.nextTrack()
     }
 
+    fun toggleLooping() {
+        app.toggleLooping()
+    }
+
+    fun toggleShuffle() {
+        app.toggleShuffle()
+    }
+
     suspend fun playPlaylist(tracks: List<TrackEssential>) {
         // 플레이리스트 재생
         app.setTrackList(tracks)
@@ -454,8 +468,6 @@ class TrackPlayViewModel @Inject constructor(
         _timerTask?.cancel()
         _playTime.value = 0L
     }
-
-
 }
 
 enum class PlayerViewState {

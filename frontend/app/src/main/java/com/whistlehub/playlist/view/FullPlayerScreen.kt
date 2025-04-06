@@ -16,34 +16,32 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.List
+import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.FastRewind
-import androidx.compose.material.icons.rounded.Menu
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.rounded.Forum
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Repeat
+import androidx.compose.material.icons.rounded.RepeatOne
+import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material.icons.rounded.ShuffleOn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -58,6 +56,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -68,41 +67,32 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.whistlehub.R
+import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Pretendard
 import com.whistlehub.common.view.theme.Typography
-import com.whistlehub.common.view.track.AddToPlaylistDialog
-import com.whistlehub.common.view.track.ReportDialog
-import com.whistlehub.common.view.track.TrackMenu
-import com.whistlehub.playlist.view.component.CreatePlaylist
 import com.whistlehub.playlist.view.component.PlayerComment
 import com.whistlehub.playlist.view.component.PlayerPlaylist
 import com.whistlehub.playlist.viewmodel.PlayerViewState
-import com.whistlehub.playlist.viewmodel.PlaylistViewModel
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
+import com.whistlehub.profile.view.components.ProfileTrackDetailSheet
 import kotlinx.coroutines.launch
-import okhttp3.MultipartBody
 import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FullPlayerScreen(
-    navController: NavController,
+    navController: NavHostController,
     paddingValues: PaddingValues,
-    trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
-    playlistViewModel: PlaylistViewModel = hiltViewModel(),
+    trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
 ) {
     val coroutineScope = rememberCoroutineScope()
+    val user by trackPlayViewModel.user.collectAsState()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showPlayerMenu by remember { mutableStateOf(false) }
-    var showAddToPlaylistDialog by remember { mutableStateOf(false) }
-    var showReportDialog by remember { mutableStateOf(false) }
-    var showCreatePlaylistDialog by remember { mutableStateOf(false) }
-    var playlistTitle by remember { mutableStateOf("") }
-    var playlistDescription by remember { mutableStateOf("") }
-    var playlistImage by remember { mutableStateOf<MultipartBody.Part?>(null) }
 
     // 아래로 드래그를 감지하는 offset 변수
     var dragOffsetY by remember { mutableStateOf(0f) }
@@ -150,7 +140,7 @@ fun FullPlayerScreen(
                     }
                 )
             },
-        topBar = { PlayerHeader(navController, onMoreClick = { showPlayerMenu = true }) },
+        topBar = { PlayerHeader(navController) },
         bottomBar = {
             Column(Modifier.padding(bottom = paddingValues.calculateBottomPadding())) {
                 PlayerController(trackPlayViewModel)
@@ -164,7 +154,7 @@ fun FullPlayerScreen(
         PlayerBackground(
             Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .blur(10.dp)
                 .clickable {
                     // 배경 클릭 시 트랙 재생/일시정지
                     if (currentTrack != null && playerViewState == PlayerViewState.PLAYING) {
@@ -178,13 +168,12 @@ fun FullPlayerScreen(
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .background(CustomColors().Grey700.copy(alpha = 0.3f)),
+                .padding(innerPadding),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             when (playerViewState) {
                 PlayerViewState.PLAYING -> {
-                    TrackInfomation(Modifier.weight(1f))
+                    TrackInfomation(Modifier.weight(1f), navController)
                 }
 
                 PlayerViewState.PLAYLIST -> {
@@ -194,160 +183,15 @@ fun FullPlayerScreen(
                 PlayerViewState.COMMENT -> {
                     PlayerComment(Modifier.weight(1f))
                 }
-
-                else -> Spacer(Modifier)
             }
-            TrackInteraction(trackPlayViewModel)
+            TrackInteraction(trackPlayViewModel, onClickMore = { showPlayerMenu = true })
         }
         if (showPlayerMenu) {
-            ModalBottomSheet(
-                onDismissRequest = { showPlayerMenu = false },
+            ProfileTrackDetailSheet(
+                track = currentTrack!!,
+                isOwnProfile = user?.memberId == currentTrack?.artist?.memberId,
                 sheetState = sheetState,
-                modifier = Modifier
-                    .wrapContentHeight()
-                    .background(CustomColors().Grey950.copy(alpha = 0.7f)),
-            ) {
-                TrackMenu(onReportClick = {
-                    showReportDialog = true
-                    showPlayerMenu = false
-                }, onAddToPlaylistClick = {
-                    showAddToPlaylistDialog = true
-                    showPlayerMenu = false
-                })
-            }
-        }
-        if (showReportDialog) {
-            AlertDialog(
-                onDismissRequest = { showReportDialog = false },
-                title = {
-                    Text(
-                        "신고하기",
-                        style = Typography.titleLarge,
-                        color = CustomColors().Grey50
-                    )
-                },
-                text = { ReportDialog() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(CustomColors().Grey950),
-                confirmButton = {
-                    Button(
-                        onClick = { showReportDialog = false },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = CustomColors().Error700,
-                            contentColor = CustomColors().Grey50,
-                        )
-                    ) {
-                        Text("신고", style = Typography.bodyLarge)
-                    }
-                },
-                dismissButton = {
-                    Button(
-                        onClick = { showReportDialog = false },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = CustomColors().Grey400,
-                            contentColor = CustomColors().Grey50,
-                        )
-                    ) {
-                        Text("취소", style = Typography.bodyLarge)
-                    }
-                }
-            )
-        }
-        if (showAddToPlaylistDialog) {
-            AlertDialog(
-                onDismissRequest = { showAddToPlaylistDialog = false },
-                title = {
-                    Text(
-                        "플레이리스트에 추가",
-                        style = Typography.titleLarge,
-                        color = CustomColors().Grey50
-                    )
-                },
-                text = {
-                    AddToPlaylistDialog(
-                        onPlaylistSelect = { playlistId ->
-                            coroutineScope.launch {
-                                playlistViewModel.addTrackToPlaylist(
-                                    playlistId,
-                                    currentTrack?.trackId ?: 0
-                                )
-                                showAddToPlaylistDialog = false
-                            }
-                        },
-                        onCreatePlaylist = {
-                            showAddToPlaylistDialog = false
-                            showCreatePlaylistDialog = true
-                        }
-                    )
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(CustomColors().Grey950),
-                confirmButton = {},
-                dismissButton = {}
-            )
-        }
-        if (showCreatePlaylistDialog) {
-            AlertDialog(
-                onDismissRequest = {
-                    showCreatePlaylistDialog = false
-                    showAddToPlaylistDialog = true
-                },
-                title = {
-                    Text(
-                        text = "플레이리스트 생성",
-                        style = Typography.titleLarge,
-                        color = CustomColors().Grey50,
-                    )
-                },
-                text = {
-                    CreatePlaylist(
-                        onInputTitle = { playlistTitle = it },
-                        onInputDescription = { playlistDescription = it },
-                        onInputImage = {
-                            playlistImage = it
-                        }
-                    )
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(CustomColors().Grey950),
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            coroutineScope.launch {
-                                playlistViewModel.createPlaylist(
-                                    name = playlistTitle,
-                                    description = playlistDescription,
-                                    image = playlistImage
-                                )
-                                showCreatePlaylistDialog = false
-                                showAddToPlaylistDialog = true
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = CustomColors().Mint500,
-                            contentColor = CustomColors().Grey950,
-                        )
-                    ) {
-                        Text("생성", style = Typography.bodyLarge)
-                    }
-                },
-                dismissButton = {
-                    Button(
-                        onClick = {
-                            showCreatePlaylistDialog = false
-                            showAddToPlaylistDialog = true
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = CustomColors().Grey400,
-                            contentColor = CustomColors().Grey50,
-                        )
-                    ) {
-                        Text("취소", style = Typography.bodyLarge)
-                    }
-                }
+                onDismiss = { showPlayerMenu = false },
             )
         }
     }
@@ -357,10 +201,9 @@ fun FullPlayerScreen(
 @Composable
 fun PlayerHeader(
     navController: NavController,
-    trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
-    onMoreClick: () -> Unit
+    trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
 ) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+    Row(Modifier.fillMaxWidth()) {
         IconButton(
             {
                 trackPlayViewModel.setPlayerViewState(PlayerViewState.PLAYING)
@@ -373,11 +216,6 @@ fun PlayerHeader(
                 tint = CustomColors().Grey200
             )
         }
-        IconButton({
-            onMoreClick()
-        }) {
-            Icon(Icons.Rounded.Menu, contentDescription = "더보기", tint = CustomColors().Grey200)
-        }
     }
 }
 
@@ -385,28 +223,29 @@ fun PlayerHeader(
 @Composable
 fun TrackInfomation(
     modifier: Modifier = Modifier,
+    navController: NavHostController,
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
 ) {
     // 트랙 정보를 표시하는 UI
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
     Column(
-        modifier.background(CustomColors().Grey950.copy(alpha = 0.7f)),
+        modifier.fillMaxHeight(),
         verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Bottom)
     ) {
         Text(
             modifier = Modifier.fillMaxWidth(),
             text = currentTrack?.title ?: "Track Title",
-            style = Typography.displaySmall,
+            style = Typography.headlineMedium,
             fontFamily = Pretendard,
             fontWeight = FontWeight.Bold,
-            color = CustomColors().Grey50,
+            color = CustomColors().CommonTitleColor,
             textAlign = TextAlign.Center
         )
         Text(
             modifier = Modifier.fillMaxWidth(),
             text = currentTrack?.artist?.nickname ?: "Artist Name",
             style = Typography.bodyLarge,
-            color = CustomColors().Grey200,
+            color = CustomColors().CommonSubTextColor,
             textAlign = TextAlign.Center
         )
         Text(
@@ -422,14 +261,15 @@ fun TrackInfomation(
                 horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)
             ) {
                 currentTrack?.tags?.forEach { tag ->
-                    Button({}) {
-                        Text(
-                            text = tag.name,
-                            style = Typography.bodyLarge,
-                            color = CustomColors().Grey950,
-                            textAlign = TextAlign.Center
-                        )
-                    }
+                    Text(
+                        text = "#${tag.name}",
+                        style = Typography.bodyMedium,
+                        color = CustomColors().CommonSubTextColor,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.clickable {
+                            navController.navigate(Screen.TagRanking.route + "/${tag.tagId}/${tag.name}")
+                        }
+                    )
                 }
             }
         } else {
@@ -445,48 +285,52 @@ fun TrackInfomation(
 }
 
 @Composable
-fun TrackInteraction(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
+fun TrackInteraction(
+    trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
+    onClickMore: () -> Unit = {},
+) {
     val coroutineScope = rememberCoroutineScope()
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
     val playerViewState by trackPlayViewModel.playerViewState.collectAsState(initial = PlayerViewState.PLAYING)
 
     Row(
         Modifier
-            .fillMaxWidth()
-            .background(CustomColors().Grey950.copy(alpha = 0.7f)),
+            .padding(10.dp)
+            .fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
+        // 좋아요 버튼
         Row(
             horizontalArrangement = Arrangement.spacedBy(5.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton({
                 coroutineScope.launch {
-                    trackPlayViewModel.likeTrack(currentTrack?.trackId?.toInt() ?: 0)
+                    trackPlayViewModel.likeTrack(currentTrack?.trackId ?: 0)
                 }
             }) {
                 if (currentTrack?.isLiked == true) {
                     Icon(
                         Icons.Filled.Favorite,
                         contentDescription = "좋아요 취소",
-                        tint = CustomColors().Mint500
+                        tint = CustomColors().CommonIconColor
                     )
                 } else {
                     Icon(
                         Icons.Filled.FavoriteBorder,
                         contentDescription = "좋아요",
-                        tint = CustomColors().Grey200
+                        tint = CustomColors().CommonIconColor
                     )
                 }
             }
             Text(
                 text = currentTrack?.likeCount.toString(),
                 style = Typography.bodyLarge,
-                color = CustomColors().Grey200,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 5.dp)
+                color = CustomColors().CommonSubTextColor,
+                textAlign = TextAlign.Center
             )
         }
+        // 댓글 버튼
         IconButton({
             if (playerViewState != PlayerViewState.COMMENT) {
                 trackPlayViewModel.setPlayerViewState(PlayerViewState.COMMENT)
@@ -494,13 +338,13 @@ fun TrackInteraction(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
                 trackPlayViewModel.setPlayerViewState(PlayerViewState.PLAYING)
             }
         }) {
-            // 화면에 따라 색상 전환
             Icon(
-                Icons.Rounded.ChatBubbleOutline,
+                Icons.Rounded.Forum,
                 contentDescription = "댓글",
-                tint = if (playerViewState == PlayerViewState.COMMENT) CustomColors().Mint500 else CustomColors().Grey200
+                tint = CustomColors().CommonIconColor
             )
         }
+        // Now Playing 버튼
         IconButton({
             if (playerViewState != PlayerViewState.PLAYLIST) {
                 trackPlayViewModel.setPlayerViewState(PlayerViewState.PLAYLIST)
@@ -509,9 +353,19 @@ fun TrackInteraction(trackPlayViewModel: TrackPlayViewModel = hiltViewModel()) {
             }
         }) {
             Icon(
-                Icons.AutoMirrored.Rounded.List,
+                Icons.AutoMirrored.Rounded.QueueMusic,
                 contentDescription = "플레이리스트",
-                tint = if (playerViewState == PlayerViewState.PLAYLIST) CustomColors().Mint500 else CustomColors().Grey200
+                tint = CustomColors().CommonIconColor
+            )
+        }
+        // 더보기 버튼
+        IconButton({
+            onClickMore()
+        }) {
+            Icon(
+                Icons.Rounded.MoreVert,
+                contentDescription = "더보기",
+                tint = CustomColors().CommonIconColor
             )
         }
     }
@@ -540,6 +394,12 @@ fun PlayerBackground(
             contentScale = ContentScale.Crop
         )
     }
+    // 어두운 오버레이 박스
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(CustomColors().CommonBackgroundColor.copy(alpha = 0.5f))
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -554,6 +414,8 @@ fun PlayerController(
     val isPlaying by trackPlayViewModel.isPlaying.collectAsState(initial = false)
     val playerPosition by trackPlayViewModel.playerPosition.collectAsState()
     val trackDuration by trackPlayViewModel.trackDuration.collectAsState()
+    val isLooping by trackPlayViewModel.isLooping.collectAsState()
+    val isShuffle by trackPlayViewModel.isShuffle.collectAsState()
 
     // 부드러운 슬라이더 애니메이션을 위해 animateFloatAsState 사용
     val animatedPlayerPosition by animateFloatAsState(
@@ -565,7 +427,7 @@ fun PlayerController(
     Column(
         Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(horizontal = 16.dp)
     ) {
         Slider(
             value = animatedPlayerPosition,
@@ -574,24 +436,18 @@ fun PlayerController(
                     trackPlayViewModel.seekTo(newPosition.toLong())
                 }
             },
-            valueRange = 0f..trackDuration.toFloat(), modifier = Modifier.fillMaxWidth(), thumb = {
-                Box(
-                    Modifier
-                        .size(24.dp)
-                        .background(CustomColors().Mint500, CircleShape)
-                )
-            }, track = {
+            valueRange = 0f..trackDuration.toFloat(), modifier = Modifier.fillMaxWidth(), track = {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(8.dp) // 트랙 두께 변경
-                        .background(CustomColors().Grey400, RoundedCornerShape(4.dp))
+                        .background(CustomColors().CommonButtonColor, RoundedCornerShape(4.dp))
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth(animatedPlayerPosition / trackDuration.toFloat())
                             .height(8.dp)
-                            .background(CustomColors().Mint500, RoundedCornerShape(4.dp))
+                            .background(CustomColors().CommonOutLineColor, RoundedCornerShape(4.dp))
                     )
                 }
             }, colors = SliderDefaults.colors(
@@ -616,6 +472,16 @@ fun PlayerController(
             horizontalArrangement = Arrangement.SpaceBetween
         )
         {
+            IconButton({
+                trackPlayViewModel.toggleLooping()
+            }) {
+                Icon(
+                    imageVector = if (isLooping) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
+                    contentDescription = "Loop",
+                    tint = CustomColors().CommonIconColor,
+                    modifier = Modifier.size(30.dp)
+                )
+            }
             IconButton(onClick = {
                 coroutineScope.launch {
                     trackPlayViewModel.previousTrack()
@@ -624,8 +490,8 @@ fun PlayerController(
                 Icon(
                     imageVector = Icons.Rounded.FastRewind,
                     contentDescription = "PlayBack",
-                    tint = Color.White,
-                    modifier = Modifier.size(50.dp)
+                    tint = CustomColors().CommonIconColor,
+                    modifier = Modifier.size(30.dp)
                 )
             }
             IconButton(
@@ -644,10 +510,10 @@ fun PlayerController(
                     }
                 }) {
                 Icon(
-                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                     contentDescription = "Play/Pause",
-                    tint = CustomColors().Mint500,
-                    modifier = Modifier.size(50.dp)
+                    tint = CustomColors().CommonIconColor,
+                    modifier = Modifier.size(30.dp)
                 )
             }
             IconButton(onClick = {
@@ -658,8 +524,18 @@ fun PlayerController(
                 Icon(
                     imageVector = Icons.Rounded.FastForward,
                     contentDescription = "PlayForward",
-                    tint = Color.White,
-                    modifier = Modifier.size(50.dp)
+                    tint = CustomColors().CommonIconColor,
+                    modifier = Modifier.size(30.dp)
+                )
+            }
+            IconButton({
+                trackPlayViewModel.toggleShuffle()
+            }) {
+                Icon(
+                    imageVector = if (isShuffle) Icons.Rounded.ShuffleOn else Icons.Rounded.Shuffle,
+                    contentDescription = "Shuffle",
+                    tint = CustomColors().CommonIconColor,
+                    modifier = Modifier.size(30.dp)
                 )
             }
         }
