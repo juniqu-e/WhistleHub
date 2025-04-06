@@ -11,7 +11,10 @@ sealed class ProfileResponse {
     data class GetProfileResponse(
         val nickname: String,
         val profileImage: String,
-        val profileText: String
+        val profileText: String,
+        val followerCount: Int,
+        val followingCount: Int,
+        val trackCount: Int,
     )
     // 멤버 검색
     data class SearchProfileResponse(

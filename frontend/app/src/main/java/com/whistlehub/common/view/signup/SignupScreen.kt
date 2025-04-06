@@ -84,6 +84,8 @@ fun SignUpScreen(
     var isPasswordConfirmFocused by remember { mutableStateOf(false) }
     var isEmailFocused by remember { mutableStateOf(false) }
     var isNicknameFocused by remember { mutableStateOf(false) }
+    var isVerificationCodeFocused by remember { mutableStateOf(false) }
+
 
     val colors = CustomColors()
     val textFieldStyle = Typography.bodyMedium.copy(color = colors.Grey50)
@@ -287,7 +289,7 @@ fun SignUpScreen(
                                     }
                                 },
                                 enabled = emailVerificationState !is EmailVerificationState.Sending,
-                                colors = ButtonDefaults.buttonColors(containerColor = colors.Mint500),
+                                colors = ButtonDefaults.buttonColors(containerColor = colors.CommonButtonColor),
                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                                 shape = RoundedCornerShape(5.dp),
                                 modifier = Modifier.wrapContentWidth().height(32.dp)
@@ -296,7 +298,7 @@ fun SignUpScreen(
                                     Text(
                                         text = "로딩중...",
                                         style = Typography.labelLarge.copy(
-                                            color = colors.Grey950,
+                                            color = colors.CommonTextColor,
                                             fontWeight = FontWeight.Bold
                                         )
                                     )
@@ -304,7 +306,7 @@ fun SignUpScreen(
                                     Text(
                                         text = "이메일 인증",
                                         style = Typography.labelLarge.copy(
-                                            color = colors.Grey950,
+                                            color = colors.CommonTextColor,
                                             fontWeight = FontWeight.Bold
                                         )
                                     )
@@ -327,8 +329,8 @@ fun SignUpScreen(
                                     labelStyle = labelStyle,
                                     textStyle = textFieldStyle,
                                     placeholderStyle = placeholderStyle,
-                                    isFocused = false,
-                                    onFocusChange = {},
+                                    isFocused = isVerificationCodeFocused,
+                                    onFocusChange = { isVerificationCodeFocused = it },
                                     errorMessage = verificationCodeError,
                                     modifier = Modifier.weight(1f)
                                 )
@@ -337,7 +339,7 @@ fun SignUpScreen(
                                     onClick = {
                                         viewModel.validateEmailCode(email, verificationCode)
                                     },
-                                    colors = ButtonDefaults.buttonColors(containerColor = colors.Mint500),
+                                    colors = ButtonDefaults.buttonColors(containerColor = colors.CommonButtonColor),
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                                     shape = RoundedCornerShape(5.dp),
                                     modifier = Modifier.wrapContentWidth().height(32.dp)
@@ -345,7 +347,7 @@ fun SignUpScreen(
                                     Text(
                                         text = "코드 확인",
                                         style = Typography.labelLarge.copy(
-                                            color = colors.Grey950,
+                                            color = colors.CommonTextColor,
                                             fontWeight = FontWeight.Bold
                                         )
                                     )
@@ -434,12 +436,13 @@ fun SignUpScreen(
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = colors.Mint500),
+                            colors = ButtonDefaults.buttonColors(containerColor = colors.CommonButtonColor),
                             shape = MaterialTheme.shapes.medium
                         ) {
                             Text(
                                 text = "다음",
                                 style = buttonTextStyle,
+                                color = colors.CommonTextColor,
                                 modifier = Modifier.padding(vertical = 4.dp)
                             )
                         }
