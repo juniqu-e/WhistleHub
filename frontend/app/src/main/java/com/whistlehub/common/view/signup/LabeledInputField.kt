@@ -39,6 +39,7 @@ fun LabeledInputField(
     errorMessage: String? = null,
     modifier: Modifier = Modifier,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    maxLines: Int = 1,
     visualTransformation: VisualTransformation = VisualTransformation.None
 ) {
     val colors = CustomColors()
