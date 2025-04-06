@@ -23,6 +23,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.whistlehub.common.view.theme.CustomColors
+import com.whistlehub.common.view.theme.Typography
 
 @Composable
 fun LabeledInputField(
@@ -53,7 +54,7 @@ fun LabeledInputField(
                     val offset = 4.dp.toPx() // 1픽셀 만큼 아래로 이동
                     val y = size.height - strokeWidth + offset
                     drawLine(
-                        color = if (isFocused) colors.Mint500 else Color.White.copy(alpha = 0.7f),
+                        color = if (isFocused) colors.CommonFocusColor else Color.White.copy(alpha = 0.7f),
                         start = Offset(0f, y),
                         end = Offset(size.width, y),
                         strokeWidth = strokeWidth
@@ -68,7 +69,7 @@ fun LabeledInputField(
                 // 라벨
                 Text(
                     text = label,
-                    style = labelStyle.copy(color = if (isFocused) colors.Mint500 else labelStyle.color)
+                    style = labelStyle.copy(color = if (isFocused) colors.CommonFocusColor else labelStyle.color)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 // 입력 필드
@@ -111,7 +112,7 @@ fun LabeledInputField(
                 Text(
                     text = errorMessage,
                     color = displayColor,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = Typography.labelSmall,
                     modifier = Modifier.align(Alignment.CenterStart)
                 )
             }

@@ -53,6 +53,9 @@ class ProfileViewModel @Inject constructor(
     private val _followingCount = MutableStateFlow(0)
     val followingCount: StateFlow<Int> get() = _followingCount
 
+    private val _trackCount = MutableStateFlow(0)
+    val trackCount: StateFlow<Int> get() = _trackCount
+
     private val _isFollowing = MutableStateFlow(false)
     val isFollowing: StateFlow<Boolean> get() = _isFollowing
 
@@ -97,65 +100,27 @@ class ProfileViewModel @Inject constructor(
             try {
                 val profileResponse = profileService.getProfile(targetMemberId)
                 if (profileResponse.code == "SU") {
-                    _profile.emit(profileResponse.payload)
+                    profileResponse.payload?.let { profileData ->
+                        _profile.emit(profileData)
 
-                    // 기본 정보 로드 후 뒤이어 팔로워/팔로잉 카운트 로드
-                    loadFollowerCount(targetMemberId)
-                    loadFollowingCount(targetMemberId)
+                        // Update counts directly from the profile response
+                        _followerCount.emit(profileData.followerCount)
+                        _followingCount.emit(profileData.followingCount)
+                        _trackCount.emit(profileData.trackCount)
+
+                        // No need to call loadFollowerCount and loadFollowingCount
+                        // Still need to load the follower/following lists for the detailed view
+                        loadFollowers(targetMemberId, page = 0, size = 15)
+                        loadFollowings(targetMemberId, page = 0, size = 15)
+                    }
 
                     // 프로필 로드 완료 후에만 팔로우 상태 체크
                     if (targetMemberId != _memberId.value) {
                         checkFollowStatus(targetMemberId)
                     }
                 }
-            } catch (
-                e: Exception
-            ) {
+            } catch (e: Exception) {
                 Log.e("ProfileViewModel", "Exception while loading profile", e)
-            }
-        }
-    }
-
-    private fun loadFollowerCount(memberId: Int) {
-        viewModelScope.launch {
-            try {
-                Log.d("ProfileViewModel", "Loading follower count for memberId: $memberId")
-                val followersResponse = profileService.getFollowers(memberId, 0, 999)
-                if (followersResponse.code == "SU") {
-                    val count = followersResponse.payload?.size ?: 0
-                    _followerCount.emit(count)
-                    _followers.emit(followersResponse.payload ?: emptyList())
-                    Log.d("ProfileViewModel", "Follower count loaded: $count")
-                } else {
-                    Log.e(
-                        "ProfileViewModel",
-                        "Failed to load follower count: ${followersResponse.message}"
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e("ProfileViewModel", "Exception while loading follower count", e)
-            }
-        }
-    }
-
-    private fun loadFollowingCount(memberId: Int) {
-        viewModelScope.launch {
-            try {
-                Log.d("ProfileViewModel", "Loading following count for memberId: $memberId")
-                val followingsResponse = profileService.getFollowings(memberId, 0, 999)
-                if (followingsResponse.code == "SU") {
-                    val count = followingsResponse.payload?.size ?: 0
-                    _followingCount.emit(count)
-                    _followings.emit(followingsResponse.payload ?: emptyList())
-                    Log.d("ProfileViewModel", "Following count loaded: $count")
-                } else {
-                    Log.e(
-                        "ProfileViewModel",
-                        "Failed to load following count: ${followingsResponse.message}"
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e("ProfileViewModel", "Exception while loading following count", e)
             }
         }
     }
@@ -271,34 +236,29 @@ class ProfileViewModel @Inject constructor(
     fun checkFollowStatus(targetMemberId: Int) {
         viewModelScope.launch {
             try {
-                if (!ensureValidUserId()) return@launch
-                Log.d(
-                    "ProfileViewModel",
-                    "Checking follow status: current user=${_memberId.value}, target user=$targetMemberId"
-                )
+                Log.d("ProfileViewModel", "팔로우 상태 확인 시작: targetId=$targetMemberId")
 
-                // Early return if we're trying to check our own profile
-                if (targetMemberId == _memberId.value) {
-                    Log.d("ProfileViewModel", "Cannot follow your own profile")
-                    _isFollowing.emit(false)
-                    return@launch
-                }
-
-                // Get current user's following list to check if target user is in it
+                // 팔로잉 목록을 새로 로드하여 최신 상태 확인
                 val followingsResponse = profileService.getFollowings(_memberId.value, 0, 999)
+
                 if (followingsResponse.code == "SU") {
-                    val isFollowed =
-                        followingsResponse.payload?.any { it.memberId == targetMemberId } ?: false
-                    _isFollowing.emit(isFollowed)
-                    Log.d("ProfileViewModel", "Follow status check - isFollowing: $isFollowed")
+                    val followingsList = followingsResponse.payload ?: emptyList()
+
+                    // 캐시 업데이트
+                    _myFollowings.value = followingsList
+
+                    // 팔로우 상태 확인
+                    val isFollowed = followingsList.any { it.memberId == targetMemberId }
+
+                    Log.d("ProfileViewModel", "팔로우 상태 확인 결과: isFollowed=$isFollowed")
+
+                    // 상태 업데이트
+                    _isFollowing.value = isFollowed
                 } else {
-                    Log.e(
-                        "ProfileViewModel",
-                        "Failed to check follow status: ${followingsResponse.message}"
-                    )
+                    Log.e("ProfileViewModel", "팔로우 상태 확인 실패: ${followingsResponse.message}")
                 }
             } catch (e: Exception) {
-                Log.e("ProfileViewModel", "Exception while checking follow status", e)
+                Log.e("ProfileViewModel", "팔로우 상태 확인 중 예외 발생", e)
             }
         }
     }
@@ -341,37 +301,59 @@ class ProfileViewModel @Inject constructor(
         return myFollowings.value.any { it.memberId == userId }
     }
 
-    // ProfileViewModel.kt 내의 toggleFollow 메서드 수정
     fun toggleFollow(targetMemberId: Int) {
         viewModelScope.launch {
             try {
                 if (!ensureValidUserId()) return@launch
 
-                val currentlyFollowing = isUserFollowed(targetMemberId)
+                // 변경하기 전 현재 상태 저장
+                val currentFollowState = _isFollowing.value
+
+                // UI를 즉시 업데이트하여 반응성 높이기
+                _isFollowing.value = !currentFollowState
+
+                // 팔로워 카운트도 선제적으로 업데이트
+                if (!currentFollowState) { // 팔로우 -> 팔로워 수 증가
+                    _followerCount.value = _followerCount.value + 1
+                } else { // 언팔로우 -> 팔로워 수 감소
+                    _followerCount.value = Math.max(0, _followerCount.value - 1)
+                }
+
+                // 현재 상태의 반대로 팔로우 요청 생성
                 val followRequest = ProfileRequest.FollowRequest(
                     memberId = targetMemberId,
-                    follow = !currentlyFollowing
+                    follow = !currentFollowState
                 )
 
-                Log.d("ProfileService", "팔로우 API 호출: targetId=${targetMemberId}, action=${!currentlyFollowing}")
+                Log.d("ProfileViewModel", "팔로우 상태 변경 중: targetId=$targetMemberId, 현재상태=$currentFollowState, 요청=${!currentFollowState}")
+
+                // API 호출
                 val response = profileService.follow(followRequest)
 
-                // 에러 처리 개선
                 if (response.code == "SU") {
-                    loadMyFollowings()
-                    _isFollowing.emit(!currentlyFollowing)
+                    Log.d("ProfileViewModel", "팔로우 상태 변경 성공: ${!currentFollowState}")
 
-                    // 팔로워 카운트 업데이트
-                    if (!currentlyFollowing) { // 팔로우 -> 팔로워 수 증가
-                        _followerCount.emit(_followerCount.value + 1)
-                    } else { // 언팔로우 -> 팔로워 수 감소
-                        _followerCount.emit(Math.max(0, _followerCount.value - 1))
-                    }
+                    // 서버와 동기화하기 위해 팔로우 리스트 새로고침
+                    loadMyFollowings()
                 } else {
+                    // API 호출이 실패하면 UI 변경 되돌리기
+                    _isFollowing.value = currentFollowState
+
+                    // 팔로워 카운트도 되돌리기
+                    if (!currentFollowState) { // 팔로우 시도 실패
+                        _followerCount.value = _followerCount.value - 1
+                    } else { // 언팔로우 시도 실패
+                        _followerCount.value = _followerCount.value + 1
+                    }
+
                     _errorMessage.value = "팔로우 변경 실패: ${response.message}"
+                    Log.e("ProfileViewModel", "팔로우 상태 변경 실패: ${response.message}")
                 }
             } catch (e: Exception) {
+                // 예외 처리 및 UI 상태 되돌리기
+                _isFollowing.value = !_isFollowing.value
                 _errorMessage.value = "네트워크 오류: ${e.message}"
+                Log.e("ProfileViewModel", "toggleFollow에서 예외 발생", e)
             }
         }
     }

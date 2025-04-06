@@ -87,6 +87,7 @@ fun ProfileScreen(
     val followingList by viewModel.followings.collectAsState()
     val followerCount by viewModel.followerCount.collectAsState()
     val followingCount by viewModel.followingCount.collectAsState()
+    val trackCount by viewModel.trackCount.collectAsState()
     val isFollowing by viewModel.isFollowing.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
 
@@ -213,7 +214,7 @@ fun ProfileScreen(
                     profileText = profile?.profileText ?: "",
                     followerCount = followerCount,
                     followingCount = followingCount,
-                    trackCount = tracks.size,
+                    trackCount = trackCount,
                     showFollowButton = memberId != currentUserId,
                     isFollowing = isFollowing,
                     onFollowClick = {
@@ -261,7 +262,8 @@ fun ProfileScreen(
                                 trackDetailViewModel.loadTrackDetails(track.trackId)
                                 showTrackDetailSheet = true
                             }
-                        )
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
                     // 기존 TrackGridItem 컴포넌트 사용 (수정 없이)
                     TrackGridItem(
