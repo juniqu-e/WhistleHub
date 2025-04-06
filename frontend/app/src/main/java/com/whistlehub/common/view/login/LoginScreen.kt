@@ -294,8 +294,10 @@ fun LoginScreen(
                                 Spacer(modifier = Modifier.width(20.dp))
                                 Text(text = "|", color = colors.Grey50)
                                 Spacer(modifier = Modifier.width(20.dp))
-                                TextButton(onClick = onForgotPasswordClick) {
-                                    Text(text = "비밀번호 찾기", color = colors.Grey50)
+                                TextButton(onClick = {
+                                    onForgotPasswordClick()
+                                }) {
+                                    Text(text = "비밀번호 초기화", color = colors.Grey50)
                                 }
                             }
                         }
