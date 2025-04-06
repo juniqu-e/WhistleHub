@@ -31,9 +31,9 @@ import okhttp3.MultipartBody
 @Preview
 @Composable
 fun CreatePlaylist(
-    onInputTitle : (String) -> Unit = {},
-    onInputDescription : (String) -> Unit = {},
-    onInputImage : (MultipartBody.Part) -> Unit = {},
+    onInputTitle: (String) -> Unit = {},
+    onInputDescription: (String) -> Unit = {},
+    onInputImage: (MultipartBody.Part) -> Unit = {},
 ) {
     var playlistTitle by remember { mutableStateOf("") }
     var playlistDescription by remember { mutableStateOf("") }
@@ -43,7 +43,7 @@ fun CreatePlaylist(
     val handleImageSelected = { uri: Uri ->
         selectedImageUri = uri
         val multipartImage = uriToMultipartBodyPart(context, uri)
-        onInputImage(multipartImage!!)
+        onInputImage(multipartImage)
     }
 
     Column(
@@ -61,7 +61,7 @@ fun CreatePlaylist(
             modifier = Modifier
                 .padding(5.dp)
                 .fillMaxWidth()
-                .border(1.dp, CustomColors().Grey50, RoundedCornerShape(5.dp)),
+                .border(1.dp, CustomColors().CommonOutLineColor, RoundedCornerShape(5.dp)),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -69,12 +69,13 @@ fun CreatePlaylist(
                 value = playlistTitle,
                 onValueChange = {
                     playlistTitle = it
-                    onInputTitle(it) },
+                    onInputTitle(it)
+                },
                 modifier = Modifier.weight(1f),
                 placeholder = {
                     Text(
                         text = "Playlist Title",
-                        color = CustomColors().Grey300,
+                        color = CustomColors().CommonPlaceholderColor,
                         style = Typography.bodyMedium,
                     )
                 },
@@ -85,7 +86,7 @@ fun CreatePlaylist(
                     unfocusedContainerColor = Color.Transparent,
                 ),
                 shape = RoundedCornerShape(10.dp),
-                textStyle = Typography.bodyMedium.copy(color = CustomColors().Grey50),
+                textStyle = Typography.bodyMedium.copy(color = CustomColors().CommonTextColor),
                 singleLine = true,
             )
         }
@@ -95,19 +96,21 @@ fun CreatePlaylist(
             modifier = Modifier
                 .padding(5.dp)
                 .fillMaxWidth()
-                .border(1.dp, CustomColors().Grey50, RoundedCornerShape(5.dp)),
+                .border(1.dp, CustomColors().CommonOutLineColor, RoundedCornerShape(5.dp)),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             TextField(
                 value = playlistDescription,
-                onValueChange = { playlistDescription = it
-                                onInputDescription(it) },
+                onValueChange = {
+                    playlistDescription = it
+                    onInputDescription(it)
+                },
                 modifier = Modifier.weight(1f),
                 placeholder = {
                     Text(
                         text = "Playlist description",
-                        color = CustomColors().Grey300,
+                        color = CustomColors().CommonPlaceholderColor,
                         style = Typography.bodyMedium,
                     )
                 },
@@ -118,7 +121,7 @@ fun CreatePlaylist(
                     unfocusedContainerColor = Color.Transparent,
                 ),
                 shape = RoundedCornerShape(10.dp),
-                textStyle = Typography.bodyMedium.copy(color = CustomColors().Grey50),
+                textStyle = Typography.bodyMedium.copy(color = CustomColors().CommonTextColor),
                 maxLines = 5,
                 minLines = 5
             )

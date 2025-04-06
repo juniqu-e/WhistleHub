@@ -213,7 +213,7 @@ fun PlayerHeader(
             Icon(
                 Icons.AutoMirrored.Rounded.ArrowBack,
                 contentDescription = "뒤로가기",
-                tint = CustomColors().Grey200
+                tint = CustomColors().CommonIconColor
             )
         }
     }
@@ -252,7 +252,7 @@ fun TrackInfomation(
             modifier = Modifier.fillMaxWidth(),
             text = "Tags",
             style = Typography.titleMedium,
-            color = CustomColors().Grey200,
+            color = CustomColors().CommonSubTextColor,
             textAlign = TextAlign.Center
         )
         if (currentTrack?.tags?.isNotEmpty() == true) {
@@ -277,7 +277,7 @@ fun TrackInfomation(
                 modifier = Modifier.fillMaxWidth(),
                 text = "태그가 없습니다.",
                 style = Typography.bodyLarge,
-                color = CustomColors().Grey200,
+                color = CustomColors().CommonSubTextColor,
                 textAlign = TextAlign.Center
             )
         }
@@ -436,7 +436,8 @@ fun PlayerController(
                     trackPlayViewModel.seekTo(newPosition.toLong())
                 }
             },
-            valueRange = 0f..trackDuration.toFloat(), modifier = Modifier.fillMaxWidth(), track = {
+            valueRange = 0f..trackDuration.toFloat(), modifier = Modifier.fillMaxWidth(),
+            track = {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -452,8 +453,8 @@ fun PlayerController(
                 }
             }, colors = SliderDefaults.colors(
                 thumbColor = Color.Transparent,
-                activeTrackColor = CustomColors().Mint500,
-                inactiveTrackColor = CustomColors().Grey400
+                activeTrackColor = CustomColors().CommonTextColor,
+                inactiveTrackColor = CustomColors().CommonSubTextColor
             )
         )
         Row(
