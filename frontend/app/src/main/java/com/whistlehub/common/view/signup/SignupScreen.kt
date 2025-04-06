@@ -43,6 +43,7 @@ import kotlinx.coroutines.launch
 fun SignUpScreen(
     onNext: (String, String, String, String, Char, String) -> Unit = { _, _, _, _, _, _ -> },
     onLoginClick: () -> Unit = {},
+    onForgotPasswordClick: () -> Unit = {},
     viewModel: SignUpViewModel = hiltViewModel()
 ) {
     // 입력 상태 변수들: rememberSaveable 사용하여 저장
@@ -181,13 +182,14 @@ fun SignUpScreen(
                     verticalArrangement = Arrangement.SpaceBetween,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // 로고 영역
-                    Text(
-                        text = "Whistle Hub Logo",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = Color.White,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                    // 최상단: 로고
+                    Image(
+                        painter = painterResource(id = R.drawable.whistlehub_mainlogo),
+                        contentDescription = "Logo",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(150.dp)
+                            .padding(bottom = 20.dp),
                     )
                     Spacer(modifier = Modifier.height(40.dp))
                     // 입력 폼 영역
@@ -458,8 +460,8 @@ fun SignUpScreen(
                             Spacer(modifier = Modifier.width(20.dp))
                             Text(text = "|", color = colors.Grey50)
                             Spacer(modifier = Modifier.width(20.dp))
-                            TextButton(onClick = { /* 추가 옵션 처리 */ }) {
-                                Text(text = "비밀번호 찾기", color = colors.Grey50)
+                            TextButton(onClick =  onForgotPasswordClick ) {
+                                Text(text = "비밀번호 초기화", color = colors.Grey50)
                             }
                         }
                     }

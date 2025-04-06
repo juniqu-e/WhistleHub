@@ -25,7 +25,7 @@ sealed class AuthRequest {
     // 비밀번호 초기화
     data class ResetPasswordRequest(
         val email: String,
-        val newPassword: String
+        val loginId: String
     )
     // 로그인
     data class LoginRequest(

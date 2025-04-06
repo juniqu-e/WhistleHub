@@ -18,6 +18,7 @@ import com.whistlehub.common.view.signup.SignUpScreen
 import com.whistlehub.common.viewmodel.SignUpViewModel
 import com.whistlehub.search.viewmodel.SearchViewModel
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
+import com.whistlehub.common.view.passwordreset.PasswordResetScreen
 
 /**
  * 앱의 전체 네비게이션 구조를 처리하는 메인 네비게이션 그래프
@@ -54,6 +55,12 @@ fun MainNavGraph(
                         popUpTo("login") { inclusive = true }
                     }
                 },
+                onForgotPasswordClick = {
+                    // 비밀번호 초기화 화면으로 이동
+                    navController.navigate("passwordreset") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                },
                 navController = navController
             )
         }
@@ -70,7 +77,31 @@ fun MainNavGraph(
                     navController.navigate("login") {
                         popUpTo("signup") { inclusive = true }
                     }
-                }
+                },
+                onForgotPasswordClick = {
+                    // 비밀번호 초기화 화면으로 이동
+                    navController.navigate("passwordreset") {
+                        popUpTo("signup") { inclusive = true }
+                    }
+                },
+            )
+        }
+        // 비밀번호 초기화 화면
+        composable("passwordreset") {
+            PasswordResetScreen(
+                onLoginClick = {
+                    // 로그인 화면으로 이동
+                    navController.navigate("login") {
+                        popUpTo("passwordreset") { inclusive = true }
+                    }
+                },
+                onSignUpClick = {
+                    // 회원가입 화면으로 이동
+                    navController.navigate("signup") {
+                        popUpTo("passwordreset") { inclusive = true }
+                    }
+                },
+                navController = navController
             )
         }
 
