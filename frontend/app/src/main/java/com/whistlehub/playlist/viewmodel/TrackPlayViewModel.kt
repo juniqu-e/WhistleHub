@@ -309,6 +309,33 @@ class TrackPlayViewModel @Inject constructor(
         app.toggleShuffle()
     }
 
+    // 재생목록 비우기 (로그아웃 시 호출)
+    fun clearTrackList() {
+        app.clearTrackList()
+    }
+
+    // 트랙 신고
+    suspend fun reportTrack(trackId: Int, type: Int = 1, detail: String?): Boolean {
+        return try {
+            val response = trackService.reportTrack(
+                TrackRequest.ReportTrackRequest(
+                    trackId = trackId,
+                    type = type,  // 1: 저작권, 2: 불량 트랙,
+                    detail = detail
+                )
+            )
+            if (response.code == "SU") {
+                true
+            } else {
+                Log.d("TrackPlayViewModel", "Failed to report track: ${response.message}")
+                false
+            }
+        } catch (e: Exception) {
+            Log.d("TrackPlayViewModel", "Error reporting track: ${e.message}")
+            false
+        }
+    }
+
     suspend fun playPlaylist(tracks: List<TrackEssential>) {
         // 플레이리스트 재생
         app.setTrackList(tracks)

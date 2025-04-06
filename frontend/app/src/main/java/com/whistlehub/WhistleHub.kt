@@ -241,6 +241,11 @@ class WhistleHub : Application() {
         currentTrack.value = track
     }
 
+    fun clearTrackList() {
+        // 로그아웃 시 호출 필요
+        playerTrackList.value = emptyList()
+    }
+
     fun byteArrayToUri(context: Context, byteArray: ByteArray): Uri? {
         // 임시 파일을 만들기 위한 파일 이름 지정
         val file = File(context.cacheDir, "temp_file")
