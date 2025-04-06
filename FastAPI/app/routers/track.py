@@ -7,6 +7,7 @@ import uuid
 from fastapi import APIRouter, UploadFile, File, Form, Query, Path, HTTPException, status, BackgroundTasks
 from celery import chain
 from typing import List, Optional
+from pydantic import BaseModel
 
 from common import ApiResponse, ResponseType
 from common.exceptions import CustomException
@@ -15,6 +16,7 @@ from utils.file_util import *
 
 from app.services.UseOpenl3 import *
 from app.services.openl3Tasks import *
+from app.models.request.RecommendTrackRequestDto import *
 
 
 router = APIRouter(prefix=f"{config.API_BASE_URL}/track", tags=["audio"])
@@ -119,105 +121,26 @@ async def async_process_audio_celery(
         utils.log(f"Celery 작업 제출 중 오류 발생: {str(e)}", level=logging.ERROR)
         raise CustomException(ResponseType.SERVER_ERROR, f"Celery 작업 제출 중 오류 발생: {str(e)}")
     
-#     # spring backend의 fastapi 서버에 요청을 보내는 부분
-#     public TrackImportResponseDto recommendImportTrack(Integer[] layerIds) {
-
-#         List<Layer> layers = layerRepository.findAllById(List.of(layerIds));
-
-#         Set<Integer> instrumentTypeSet = new HashSet<>();
-#         Set<Integer> trackIdSet = new HashSet<>();
-
-#         for (Layer layer : layers) {
-#             instrumentTypeSet.add(layer.getInstrumentType());
-#             trackIdSet.add(layer.getTrack().getId());
-#         }
-
-#         //- 0 Record
-#         //- 1 Whistle
-#         //- 2 Acoustic Guitar
-#         //- 3 Voice
-#         //- 4 Drums
-#         //- 5 Bass
-#         //- 6 Electric Guitar
-#         //- 7 Piano
-#         //- 8 Synth
-
-#         // 드럼이 없으면 드럼, 그다음 bass, 그다음은 아무거나
-
-#         List<Integer> needInstrumentTypes = new ArrayList<>();
-#         if (!instrumentTypeSet.contains(4)) {
-#             needInstrumentTypes.add(4);
-#         } else if (instrumentTypeSet.contains(5)) {
-#             needInstrumentTypes.add(5);
-#         } else {
-#             // 4,5빼고 전부
-#             for (int i = 0; i < 9; i++) {
-#                 if (i != 4 && i != 5) {
-#                     needInstrumentTypes.add(i);
-#                 }
-#             }
-#         }
-
-#         WebClient fastAPIClient = WebClient.builder().baseUrl(FASTAPI_HOST).build();
-#         Integer recommendedTrackId = fastAPIClient.post()
-#                 .uri("/api/FastAPI/track/recommend")
-#                 .contentType(MediaType.APPLICATION_JSON)
-#                 .body(BodyInserters.fromValue(Map.of("needInstrumentTypes", needInstrumentTypes, "trackIds", trackIdSet)))
-#                 .retrieve()
-#                 .onStatus(HttpStatusCode::is4xxClientError, clientResponse -> {
-#                     log.error("FastAPI 4xx 에러: {}", clientResponse.statusCode());
-#                     return Mono.error(new RuntimeException("FastAPI 4xx 에러"));
-#                 })
-#                 .onStatus(HttpStatusCode::is5xxServerError, clientResponse -> {
-#                     log.error("FastAPI 5xx 에러: {}", clientResponse.statusCode());
-#                     return Mono.error(new RuntimeException("FastAPI 5xx 에러"));
-#                 })
-#                 .bodyToMono(Integer.class)
-#                 .block();
-
-#         if (recommendedTrackId == null) {
-#             log.error("추천된 트랙 ID가 null입니다.");
-#             throw new RuntimeException("추천된 트랙 ID가 null입니다.");
-#         }
-
-#         log.info("추천된 트랙 ID: {}", recommendedTrackId);
-
-#         TrackImportResponseDto track = workstationService.importTrack(recommendedTrackId);
-
-#         // 레이어 정보를 요구했던 instrumentType으로 필터링
-#         List<LayerImportResponseDto> filteredLayers = new ArrayList<>();
-#         for(LayerImportResponseDto layer : track.getLayers()) {
-#             if (needInstrumentTypes.contains(layer.getInstrumentType())) {
-#                 filteredLayers.add(layer);
-#             }
-#         }
-        
-#         track.setLayers(filteredLayers);
-
-#         return track;
-#     }
-# }
 
 @router.post(
-    "/track/recommend",
+    "/ai/recommend",
     summary="추천 트랙 API",
     description="악기 종류에 따라 추천 트랙을 반환합니다.",
     response_model=int | None,
 )
 @utils.logger()
-async def recommend_track(
-    needInstrumentTypes: List[int] = Form(..., description="필요한 악기 종류"),
-    trackIds: List[int] = Form(..., description="기존 트랙 ID")
-):
+async def recommend_track(request: RecommendTrackRequest):
     """
     추천 트랙을 반환하는 API입니다.
     필요 악기 종류와 기존 트랙 ID를 기반으로 추천 트랙을 찾습니다.
     """
     try:
+        utils.log(f"추천 트랙 요청: {request}", level=logging.DEBUG)
+
         # OpenL3Service의 find_similar_by_track_id 메서드를 사용하여 추천 트랙 검색
         recommended_track_id = openl3_service.find_similar_by_instrument_type(
-            needInstrumentTypes=needInstrumentTypes,
-            trackIds=trackIds
+            needInstrumentTypes=request.needInstrumentTypes,
+            trackIds=request.trackIds
         )
         return recommended_track_id
 

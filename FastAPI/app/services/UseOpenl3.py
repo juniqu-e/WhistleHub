@@ -381,19 +381,160 @@ class OpenL3Service:
     
     def find_similar_by_instrument_type(self, needInstrumentTypes, trackIds):
         """
-        악기 종류에 따라 유사한 트랙 검색
+        악기 종류에 따라 유사한 트랙 검색 - 모든 트랙에서 한 번에 가장 유사한 트랙 찾기
         
         Args:
-            needInstrumentTypes: 필요한 악기 종류 리스트
+            needInstrumentTypes: 필요한 악기 종류 리스트 (True인 악기 타입을 검색에 사용)
             trackIds: 기존 트랙 ID 리스트
             
         Returns:
-            list: 추천 트랙 ID (없으면 None)
+            int: 추천 트랙 ID (없으면 None)
         """
-        # 유사한 트랙 검색
-        # TODO: 검색 로직 구현 필요
-        
-        
+        try:
+            # 입력값 검증
+            utils.log(f"요청 악기 타입: {needInstrumentTypes}, 요청 트랙: {trackIds}", level=logging.INFO)
+
+            # 컬렉션 항목 수 확인
+            count = self.collection.num_entities
+            utils.log(f"컬렉션 항목 수: {count}", level=logging.INFO)
+            
+            if count <= 1:
+                utils.log("컬렉션에 충분한 데이터가 없습니다.", level=logging.WARNING)
+                return None
+            
+            # 1. 입력된 모든 트랙의 임베딩을 한 번에 가져오기
+            trackIds_str = ", ".join(map(str, trackIds))
+            source_embeds = self.collection.query(
+                expr=f"track_id in [{trackIds_str}]",
+                output_fields=["track_id", "embedding"],
+                limit=len(trackIds)
+            )
+            
+            if not source_embeds:
+                utils.log(f"입력된 트랙 ID들에 대한 임베딩을 찾을 수 없습니다.", level=logging.WARNING)
+                return None
+            
+            utils.log(f"{len(source_embeds)}개의 소스 트랙 임베딩을 찾았습니다.", level=logging.INFO)
+            
+            # 2. 필요한 악기 타입에 대한 조건 구성
+            instrument_mapping = [
+                ("has_record", "레코드"),
+                ("has_whistle", "휘슬"),
+                ("has_acoustic_guitar", "어쿠스틱 기타"),
+                ("has_voice", "보이스"),
+                ("has_drums", "드럼"),
+                ("has_bass", "베이스"),
+                ("has_electric_guitar", "일렉기타"),
+                ("has_piano", "피아노"),
+                ("has_synth", "신디")
+            ]
+            
+            # 필요한 악기 종류 파악
+            needed_instruments = []
+            for instrument_idx in needInstrumentTypes:
+                if 0 <= instrument_idx < len(instrument_mapping):
+                    needed_instruments.append(instrument_mapping[instrument_idx])
+                    utils.log(f"악기 요청 추가: {instrument_mapping[instrument_idx][1]}({instrument_mapping[instrument_idx][0]})", level=logging.INFO)
+            
+            # 로그에 요청받은 악기 출력
+            if needed_instruments:
+                instruments_str = ", ".join([name for _, name in needed_instruments])
+                utils.log(f"요청된 악기 종류: {instruments_str}", level=logging.INFO)
+            else:
+                utils.log("요청된 악기 종류 없음, 모든 트랙 대상으로 검색합니다.", level=logging.INFO)
+            
+            # 악기 조건 구성 (OR 조건으로 - 주어진 악기 중 하나라도 있으면 매칭)
+            instrument_condition = ""
+            for field_name, _ in needed_instruments:
+                if instrument_condition:
+                    instrument_condition += " || "
+                instrument_condition += f"{field_name} == true"
+            
+            # 3. 기존 트랙에서 제외 조건 추가
+            exclude_condition = f"track_id not in [{trackIds_str}]"
+            
+            # 4. 최종 쿼리 조건 구성 (악기 조건이 있으면 AND로 추가)
+            final_condition = exclude_condition
+            if instrument_condition:
+                final_condition = f"{exclude_condition} && ({instrument_condition})"
+            
+            utils.log(f"검색 조건: {final_condition}", level=logging.DEBUG)
+            
+            # 5. 각 소스 트랙 임베딩을 사용하여 유사한 트랙 찾기
+            all_similar_tracks = []
+            
+            for source in source_embeds:
+                source_embedding = source["embedding"]
+                source_track_id = source["track_id"]
+                
+                # 임베딩 기반 유사도 검색
+                search_params = {
+                    "metric_type": "L2",
+                    "params": {"nprobe": 16}
+                }
+                
+                search_results = self.collection.search(
+                    data=[source_embedding],
+                    anns_field="embedding",
+                    param=search_params,
+                    limit=10,  # 각 트랙당 상위 10개 후보를 검색
+                    output_fields=["track_id"],
+                    expr=final_condition
+                )
+                
+                # 검색 결과 처리
+                if search_results and len(search_results[0]) > 0:
+                    for hit in search_results[0]:
+                        try:
+                            track_id = hit.entity.get("track_id")
+                            if not track_id or track_id in trackIds:
+                                continue
+                                
+                            similarity_score = 1.0 / (1.0 + hit.distance)
+                            
+                            all_similar_tracks.append({
+                                "track_id": track_id,
+                                "similarity": similarity_score,
+                                "source_track_id": source_track_id,
+                                "distance": hit.distance
+                            })
+                        except Exception as e:
+                            utils.log(f"결과 처리 중 오류: {e}", level=logging.ERROR)
+            
+            # 6. 중복 제거 및 유사도 기준으로 정렬
+            if not all_similar_tracks:
+                utils.log("조건에 맞는 유사한 트랙을 찾을 수 없습니다.", level=logging.WARNING)
+                return None
+            
+            # 트랙 ID별로 가장 높은 유사도 점수 유지 (여러 소스에서 같은 트랙이 나올 경우)
+            track_id_to_best_score = {}
+            for track in all_similar_tracks:
+                track_id = track["track_id"]
+                similarity = track["similarity"]
+                
+                if track_id not in track_id_to_best_score or similarity > track_id_to_best_score[track_id]["similarity"]:
+                    track_id_to_best_score[track_id] = track
+            
+            # 유사도 기준 내림차순 정렬하여 최적의 트랙 찾기
+            best_tracks = sorted(
+                track_id_to_best_score.values(), 
+                key=lambda x: x["similarity"], 
+                reverse=True
+            )
+            
+            if best_tracks:
+                best_track = best_tracks[0]
+                utils.log(f"가장 적합한 트랙 ID: {best_track['track_id']}, 유사도: {best_track['similarity']:.4f}, 소스 트랙: {best_track['source_track_id']}", 
+                        level=logging.INFO)
+                return best_track['track_id']
+                
+            return None
+                
+        except Exception as e:
+            utils.log(f"유사 트랙 검색 중 오류 발생: {e}", level=logging.ERROR)
+            import traceback
+            utils.log(traceback.format_exc(), level=logging.ERROR)
+            return None
 
 
 # 사용 예시
