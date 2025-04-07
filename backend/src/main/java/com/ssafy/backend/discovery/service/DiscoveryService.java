@@ -14,6 +14,7 @@ import com.ssafy.backend.member.model.common.MemberInfo;
 import com.ssafy.backend.mysql.entity.*;
 import com.ssafy.backend.mysql.repository.*;
 import com.ssafy.backend.playlist.dto.TrackInfo;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -43,6 +44,7 @@ public class DiscoveryService {
     private final RelationshipService relationshipService;
     private final AuthService authService;
     private final TagRepository tagRepository;
+    private final TrackTagRepository trackTagRepository;
     private final RecommendationService recommendationService;
     private final TrackRepository trackRepository;
     private final RankingService rankingService;
@@ -271,5 +273,14 @@ public class DiscoveryService {
         }
 
         return resultList;
+    }
+
+    public List<TrackInfo> getRecentTrackByTag(int tagId, int size) {
+        List<TrackTag> trackTagList = trackTagRepository.findByTagId(tagId, PageRequest.of(0, size, Sort.by(Sort.Order.desc("createdAt"))));
+        List<Integer> trackIds = new ArrayList<>();
+        for (TrackTag trackTag : trackTagList) {
+            trackIds.add(trackTag.getTrack().getId());
+        }
+        return getTrackInfoList(findTrackByIds(trackIds));
     }
 }

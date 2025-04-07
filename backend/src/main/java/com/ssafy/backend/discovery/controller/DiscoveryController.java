@@ -114,11 +114,37 @@ public class DiscoveryController {
                 .build();
     }
 
-    @GetMapping("/recent/released")
+    /**
+     * <pre>팔로잉 최근 발매된 음악 조회</pre>
+     * Access Token의 멤버의 팔로잉들 중 최근에 발매된 음악 리스트 반환.
+     *
+     * @param size 음악 리스트 크기
+     * @return 최근 발매된 음악 리스트
+     */
+    @GetMapping("/recent/following")
     public ApiResponse<?> getRecentReleasedTrack(@RequestParam(value = "size", required = true)
                                                  @Min(value = 0)
                                                  Integer size) {
         List<TrackInfo> result = discoveryService.getRecentReleasedTrack(size);
+        return new ApiResponse.builder<List<TrackInfo>>()
+                .payload(result)
+                .build();
+    }
+
+    /**
+     * <pre>최근 발매된 태그 음악 조회</pre>
+     * @param tagId 태그 ID
+     * @param size 음악 리스트 크기
+     * @return 최근 발매된 태그 음악 리스트
+     */
+    @GetMapping("/recent/tag")
+    public ApiResponse<?> getRecentTrackByTag(@RequestParam(value = "tagId", required = true)
+                                              @Min(value = 0)
+                                              Integer tagId,
+                                              @RequestParam(value = "size", required = true)
+                                              @Min(value = 0)
+                                              Integer size) {
+        List<TrackInfo> result = discoveryService.getRecentTrackByTag(tagId, size);
         return new ApiResponse.builder<List<TrackInfo>>()
                 .payload(result)
                 .build();
