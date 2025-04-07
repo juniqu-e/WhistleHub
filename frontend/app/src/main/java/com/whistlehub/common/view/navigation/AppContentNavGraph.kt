@@ -24,7 +24,6 @@ import com.whistlehub.search.view.TagRankingScreen
 import com.whistlehub.search.viewmodel.SearchViewModel
 import com.whistlehub.workstation.view.WorkStationScreen
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
-import kotlin.math.log
 
 /**
  * 메인 앱 화면 간의 네비게이션을 처리하는 콘텐츠 네비게이션 그래프
@@ -48,6 +47,7 @@ fun AppContentNavGraph(
             HomeScreen(
                 paddingValues,
                 trackPlayViewModel = trackPlayViewModel,
+                workStationViewModel = workStationViewModel,
                 navController = navController,
                 logoutManager = logoutManager
             )
@@ -97,6 +97,7 @@ fun AppContentNavGraph(
                 paddingValues = paddingValues,
                 navController = navController,
                 logoutManager = logoutManager,
+                workStationViewModel = workStationViewModel
             )
         }
         // 프로필 메뉴 화면으로 이동
@@ -119,7 +120,8 @@ fun AppContentNavGraph(
             FullPlayerScreen(
                 navController = navController,
                 paddingValues = paddingValues,
-                trackPlayViewModel = trackPlayViewModel
+                trackPlayViewModel = trackPlayViewModel,
+                workStationViewModel = workStationViewModel
             )
         }
         // 플레이리스트 트랙리스트 화면
@@ -130,7 +132,8 @@ fun AppContentNavGraph(
                     paddingValues,
                     playlistId,
                     navController,
-                    trackPlayViewModel
+                    trackPlayViewModel,
+                    workStationViewModel = workStationViewModel
                 )
             }
         }

@@ -59,6 +59,7 @@ import com.whistlehub.common.view.track.TrackItemRow
 import com.whistlehub.common.view.track.TrackListRow
 import com.whistlehub.playlist.data.TrackEssential
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
+import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,6 +68,7 @@ import kotlinx.coroutines.launch
 fun HomeScreen(
     paddingValues: PaddingValues,
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
+    workStationViewModel: WorkStationViewModel,
     navController: NavHostController,
     logoutManager: LogoutManager
 ) {
@@ -149,7 +151,8 @@ fun HomeScreen(
                             NewTrackCard(
                                 track = track,
                                 trackPlayViewModel = trackPlayViewModel,
-                                navController = navController
+                                navController = navController,
+                                workStationViewModel = workStationViewModel
                             )
                         }
                     }
@@ -312,7 +315,10 @@ fun HomeScreen(
                         }
                         return@item
                     }
-                    TrackListRow(trackList = notListenedList)
+                    TrackListRow(trackList = notListenedList,
+                        workStationViewModel = workStationViewModel,
+                        navController = navController
+                    )
                 }
             }
 
@@ -377,7 +383,10 @@ fun HomeScreen(
                         }
                         return@item
                     }
-                    TrackListRow(trackList = fanmix)
+                    TrackListRow(trackList = fanmix,
+                        workStationViewModel = workStationViewModel,
+                        navController = navController
+                    )
                 }
             }
 
@@ -399,7 +408,11 @@ fun HomeScreen(
                     LazyColumn {
                         items(similarList.size) { index ->
                             val track = similarList[index]
-                            TrackItemRow(track)
+                            TrackItemRow(
+                                track,
+                                workStationViewModel = workStationViewModel,
+                                navController = navController
+                            )
                         }
                     }
                 }
@@ -416,7 +429,11 @@ fun HomeScreen(
                     LazyColumn {
                         items(fanmix.size) { index ->
                             val track = fanmix[index]
-                            TrackItemRow(track)
+                            TrackItemRow(
+                                track,
+                                workStationViewModel = workStationViewModel,
+                                navController = navController
+                            )
                         }
                     }
                 }

@@ -2,6 +2,8 @@ package com.whistlehub.profile.view
 
 import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,8 +16,6 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -50,7 +50,7 @@ import com.whistlehub.profile.view.components.ProfileTrackDetailSheet
 import com.whistlehub.profile.view.components.TrackGridItem
 import com.whistlehub.profile.viewmodel.ProfileTrackDetailViewModel
 import com.whistlehub.profile.viewmodel.ProfileViewModel
-import com.whistlehub.workstation.view.component.track
+import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -75,6 +75,7 @@ fun ProfileScreen(
     logoutManager: LogoutManager,
     navController: NavHostController,
     viewModel: ProfileViewModel = hiltViewModel(),
+    workStationViewModel: WorkStationViewModel,
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
 ) {
     val customColors = CustomColors()
@@ -316,7 +317,9 @@ fun ProfileScreen(
                     showTrackDetailSheet = false
                 },
                 sheetState = sheetState,
-                viewModel = trackDetailViewModel
+                viewModel = trackDetailViewModel,
+                workStationViewModel = workStationViewModel,
+                navController = navController,
             )
         }
     }
