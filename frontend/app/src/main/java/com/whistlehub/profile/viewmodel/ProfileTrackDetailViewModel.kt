@@ -59,22 +59,20 @@ class ProfileTrackDetailViewModel @Inject constructor(
         _likeCount.value = likeCount
     }
 
-    fun loadTrackDetails(trackId: Int) {
-        viewModelScope.launch {
-            try {
-                val response = trackService.getTrackDetail(trackId.toString())
-                if (response.code == "SU" && response.payload != null) {
-                    _trackDetail.value = response.payload
-                    _isLiked.value = response.payload.isLiked
-                    _likeCount.value = response.payload.likeCount
-                } else {
-                    _errorMessage.value = response.message ?: "Failed to load track details"
-                    Log.e("ProfileTrackDetailViewModel", "Error loading track details: ${response.message}")
-                }
-            } catch (e: Exception) {
-                _errorMessage.value = e.message ?: "An error occurred"
-                Log.e("ProfileTrackDetailViewModel", "Exception in loadTrackDetails", e)
+    suspend fun loadTrackDetails(trackId: Int) {
+        try {
+            val response = trackService.getTrackDetail(trackId.toString())
+            if (response.code == "SU" && response.payload != null) {
+                _trackDetail.value = response.payload
+                _isLiked.value = response.payload.isLiked
+                _likeCount.value = response.payload.likeCount
+            } else {
+                _errorMessage.value = response.message ?: "Failed to load track details"
+                Log.e("ProfileTrackDetailViewModel", "Error loading track details: ${response.message}")
             }
+        } catch (e: Exception) {
+            _errorMessage.value = e.message ?: "An error occurred"
+            Log.e("ProfileTrackDetailViewModel", "Exception in loadTrackDetails", e)
         }
     }
 

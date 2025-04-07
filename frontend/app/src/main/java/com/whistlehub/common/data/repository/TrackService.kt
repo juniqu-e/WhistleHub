@@ -219,4 +219,19 @@ class TrackService @Inject constructor(
     ): ApiResponse<List<TrackResponse.SearchTrack>> {
         return tokenRefresh.execute { trackApi.getFanMixTracks(memberId, size) }
     }
+
+    // 팔로우한 사람의 최신 트랙 조회
+    suspend fun getFollowingRecentTracks(
+        size: Int
+    ): ApiResponse<List<TrackResponse.SearchTrack>> {
+        return tokenRefresh.execute { trackApi.getFollowingRecentTracks(size) }
+    }
+
+    // 태그별 최신 트랙 조회
+    suspend fun getTagRecentTracks(
+        tagId: Int,
+        size: Int
+    ): ApiResponse<List<TrackResponse.SearchTrack>> {
+        return tokenRefresh.execute { trackApi.getTagRecentTracks(tagId, size) }
+    }
 }

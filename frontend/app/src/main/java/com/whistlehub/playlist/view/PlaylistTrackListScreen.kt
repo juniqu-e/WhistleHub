@@ -19,13 +19,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Favorite
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -193,13 +191,6 @@ fun PlaylistTrackListScreen(
                             track,
                             workStationViewModel = workStationViewModel,
                             navController = navController,
-                        )
-                    }
-                    IconButton({}) {
-                        Icon(
-                            Icons.Rounded.MoreVert,
-                            contentDescription = "More Options",
-                            tint = CustomColors().CommonIconColor
                         )
                     }
                 }

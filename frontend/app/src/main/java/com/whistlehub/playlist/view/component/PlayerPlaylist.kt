@@ -22,6 +22,7 @@ fun PlayerPlaylist(
     TrackListColumn(modifier,
         trackList,
         workStationViewModel = workStationViewModel,
-        navController = navController
-        )
+        navController = navController,
+        needViewMore = true
+    )
 }

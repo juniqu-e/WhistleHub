@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -52,14 +53,15 @@ fun TrackItemRow(
     rank: Int = 0,
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
     workStationViewModel: WorkStationViewModel,
-    navController: NavHostController
+    navController: NavHostController,
+    needMoreView: Boolean = false,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
     val isPlaying by trackPlayViewModel.isPlaying.collectAsState(initial = false)
     val user by trackPlayViewModel.user.collectAsState()
     var showBottomSheet by remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var trackInfo by remember { mutableStateOf<TrackResponse.GetTrackDetailResponse?>(null) }
 
     Row(
@@ -98,7 +100,7 @@ fun TrackItemRow(
             Text(
                 text = "$rank",
                 style = Typography.titleSmall,
-                color = CustomColors().Grey50,
+                color = CustomColors().CommonTextColor,
                 modifier = Modifier
                     .padding(bottom = 20.dp)
             )
@@ -114,22 +116,21 @@ fun TrackItemRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = Typography.titleLarge,
-                color = CustomColors().Grey50
+                color = CustomColors().CommonTextColor
             )
             Text(
                 track.artist,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = Typography.bodyMedium,
-                color = CustomColors().Grey200
+                color = CustomColors().CommonSubTextColor
             )
         }
-
         if (currentTrack?.trackId == track.trackId && isPlaying) {
             // Add current track specific UI here
             IconButton({ trackPlayViewModel.pauseTrack() }) {
                 Icon(
-                    Icons.Filled.Pause, contentDescription = "Pause", tint = CustomColors().Mint500
+                    Icons.Filled.Pause, contentDescription = "Pause", tint = CustomColors().CommonIconColor
                 )
             }
         } else {
@@ -141,7 +142,23 @@ fun TrackItemRow(
                 Icon(
                     Icons.Filled.PlayArrow,
                     contentDescription = "Play",
-                    tint = CustomColors().Grey50
+                    tint = CustomColors().CommonIconColor
+                )
+            }
+        }
+        if (needMoreView) {
+            IconButton(
+                onClick = {
+                    coroutineScope.launch {
+                        trackInfo = trackPlayViewModel.getTrackbyTrackId(track.trackId)
+                        showBottomSheet = true
+                    }
+                }
+            ) {
+                Icon(
+                    Icons.Rounded.MoreVert,
+                    contentDescription = "More",
+                    tint = CustomColors().CommonIconColor
                 )
             }
         }
