@@ -114,6 +114,16 @@ public class DiscoveryController {
                 .build();
     }
 
+    @GetMapping("/recent/released")
+    public ApiResponse<?> getRecentReleasedTrack(@RequestParam(value = "size", required = true)
+                                                 @Min(value = 0)
+                                                 Integer size) {
+        List<TrackInfo> result = discoveryService.getRecentReleasedTrack(size);
+        return new ApiResponse.builder<List<TrackInfo>>()
+                .payload(result)
+                .build();
+    }
+
     /**
      * <pre>비슷한 트랙 조회</pre>
      *

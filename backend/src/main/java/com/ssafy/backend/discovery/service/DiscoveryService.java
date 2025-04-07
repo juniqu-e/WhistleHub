@@ -11,10 +11,7 @@ import com.ssafy.backend.graph.model.entity.TagNode;
 import com.ssafy.backend.graph.service.RecommendationService;
 import com.ssafy.backend.graph.service.RelationshipService;
 import com.ssafy.backend.member.model.common.MemberInfo;
-import com.ssafy.backend.mysql.entity.ListenRecord;
-import com.ssafy.backend.mysql.entity.Member;
-import com.ssafy.backend.mysql.entity.Tag;
-import com.ssafy.backend.mysql.entity.Track;
+import com.ssafy.backend.mysql.entity.*;
 import com.ssafy.backend.mysql.repository.*;
 import com.ssafy.backend.playlist.dto.TrackInfo;
 import lombok.RequiredArgsConstructor;
@@ -161,6 +158,18 @@ public class DiscoveryService {
         }
 
         return getTrackInfoList(trackList);
+    }
+
+    /**
+     * <pre>팔로잉 멤버들 중 최근 발매된 트랙 조회</pre>
+     * @param size 최근 발매된 트랙 갯수
+     * @return 팔로잉 멤버들 중 최근 발매된 트랙 리스트
+     */
+    public List<TrackInfo> getRecentReleasedTrack(int size){
+        Member member = authService.getMember();
+        List<Integer> trackIds = followRepository.findRecentTrackIdsByFromMemberId(member.getId(), size);
+
+        return getTrackInfoList(findTrackByIds(trackIds));
     }
 
     /**
