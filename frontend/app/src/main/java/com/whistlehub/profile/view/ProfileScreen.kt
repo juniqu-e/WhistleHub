@@ -278,9 +278,11 @@ fun ProfileScreen(
                             },
                             onLongClick = {
                                 // 트랙 길게 클릭 시 수행할 작업 (예: 상세 정보 표시)
-                                selectedTrackId = track.trackId
-                                trackDetailViewModel.loadTrackDetails(track.trackId)
-                                showTrackDetailSheet = true
+                                coroutineScope.launch {
+                                    selectedTrackId = track.trackId
+                                    trackDetailViewModel.loadTrackDetails(track.trackId)
+                                    showTrackDetailSheet = true
+                                }
                             }
                         ),
                     contentAlignment = Alignment.Center
