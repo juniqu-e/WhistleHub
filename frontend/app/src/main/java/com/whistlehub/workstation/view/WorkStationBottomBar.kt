@@ -30,11 +30,11 @@ class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
     override fun WorkStationBottomBar(
         actions: BottomBarActions,
         context: Context,
-        isPlaying: Boolean
+        isPlaying: Boolean,
+        showBottomSheet: Boolean
     ) {
         var menuExpanded by remember { mutableStateOf(false) }
         var showUploadDialog by remember { mutableStateOf(false) }
-        var showUploadSheet by remember { mutableStateOf(false) }
 
         Row(
             modifier = Modifier
@@ -61,7 +61,7 @@ class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
             )
             GradientIconButton(
                 icon = Icons.Default.CloudUpload,
-                onClick = { showUploadSheet = true },
+                onClick = actions.onUploadButtonClick,
                 gradientColors = listOf(Color(0xFFFF758C), Color(0xFFFF7EB3)) // 핑크 계열
             )
 //            IconButton(
@@ -126,27 +126,7 @@ class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
 //            }
         }
 
-        if(showUploadSheet) {
-            UploadSheet(
-                onDismiss = {showUploadSheet = false},
-                onUploadClicked = { metadata ->
-                    viewModel
-                }
-                ) { }
-        }
 
-        if (showUploadDialog) {
-            UploadMixDialog(
-                onConfirm = { name ->
-                    showUploadDialog = false
-                    actions.onUploadConfirm(name)
-                },
-                onDismiss = {
-                    showUploadDialog = false
-                },
-                title = "너의 이름은"
-            )
-        }
     }
 }
 

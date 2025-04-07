@@ -1,6 +1,3 @@
-//
-// Created by SSAFY on 2025-04-03.
-//
 
 #include "dr_wav.h"
 #include "WhistleHubAudioEngine.h"

@@ -39,6 +39,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -56,6 +57,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.whistlehub.common.view.component.UploadProgressOverlay
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.workstation.data.Layer
 import com.whistlehub.workstation.data.ToastData
@@ -63,6 +65,7 @@ import com.whistlehub.workstation.data.rememberToastState
 import com.whistlehub.workstation.view.component.AddLayerDialog
 import com.whistlehub.workstation.view.component.BeatAdjustmentPanel
 import com.whistlehub.workstation.view.component.CustomToast
+import com.whistlehub.workstation.view.component.UploadSheet
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -80,6 +83,9 @@ fun WorkStationScreen(
     var showDialog by remember { mutableStateOf(false) }
     val toastState = rememberToastState()
     val isPlaying by viewModel.isPlaying
+    val showUploadSheet by viewModel.showUploadSheet
+    val isUploading by viewModel.isUploading
+    val tagPairs by viewModel.tagPairs.collectAsState()
     val bottomBarActions = viewModel.bottomBarActions.copy(
         onPlayedClicked = {
             viewModel.onPlayClicked()
@@ -87,23 +93,20 @@ fun WorkStationScreen(
         onAddInstrument = {
             showDialog = true
         },
-        onUploadConfirm = { name ->
-            viewModel.onUpload(context, name) { success ->
+        onUploadTrackConfirm = { metadata ->
+            viewModel.onUpload(context, metadata) { success ->
                 toastState.value = if (success) {
                     ToastData("믹스 저장 성공", Icons.Default.CheckCircle, Color(0xFF4CAF50))
                 } else {
                     ToastData("믹스 저장 실패", Icons.Default.Error, Color(0xFFF44336))
                 }
             }
-//            viewModel.onUpload(context, name) { success ->
-//                toastState.value = if (success) {
-//                    ToastData("믹스 저장 성공", Icons.Default.CheckCircle, Color(0xFF4CAF50))
-//                } else {
-//                    ToastData("믹스 저장 실패", Icons.Default.Error, Color(0xFFF44336))
-//                }
-//            }
         }
     )
+
+    LaunchedEffect(Unit) {
+        viewModel.getTagList()
+    }
 
     Column(
         modifier = Modifier
@@ -151,10 +154,12 @@ fun WorkStationScreen(
             viewModel.bottomBarProvider.WorkStationBottomBar(
                 actions = bottomBarActions,
                 context = context,
-                isPlaying = isPlaying
+                isPlaying = isPlaying,
+                showBottomSheet = showUploadSheet,
             )
         }
     }
+
     val selectedLayer = tracks.firstOrNull { it.id == selectedLayerId.value }
     selectedLayer?.let { layer ->
         ModalBottomSheet(
@@ -178,6 +183,24 @@ fun WorkStationScreen(
             )
         }
     }
+
+    if (showUploadSheet) {
+        UploadSheet(
+            onDismiss = { viewModel.toggleUploadSheet(false) },
+            onUploadClicked = { metadata ->
+                viewModel.toggleUploadSheet(false)
+                viewModel.onUpload(context, metadata) { success ->
+                    toastState.value = if (success) {
+                        ToastData("믹스 저장 성공", Icons.Default.CheckCircle, Color(0xFF4CAF50))
+                    } else {
+                        ToastData("믹스 저장 실패", Icons.Default.Error, Color(0xFFF44336))
+                    }
+                }
+            },
+            tagList = tagPairs
+        )
+    }
+    UploadProgressOverlay(isLoading = isUploading)
 }
 
 @Composable
@@ -222,6 +245,8 @@ fun LayerPanel(
             )
             Spacer(modifier = Modifier.heightIn(8.dp))
         }
+
+
         // + 버튼
 //        Box(
 //            modifier = Modifier

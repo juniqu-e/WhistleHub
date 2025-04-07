@@ -158,20 +158,7 @@ fun getRawWavResMapForInstrument(context: Context, type: InstrumentType): Map<St
         .associateWith { res.getIdentifier(it, "raw", pkg) }.filterValues { it != 0 }
 }
 
-fun getWavDurationMs(context: Context, resId: Int): Long {
-    val afd = context.resources.openRawResourceFd(resId)
-    val retriever = MediaMetadataRetriever()
-    retriever.setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
-    val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-    retriever.release()
-    return durationStr?.toLongOrNull() ?: 0L
-}
 
-fun getBarsFromDuration(durationMs: Long, bpm: Int): Float {
-    val beatDurationMs = 60000f / bpm
-    val barDurationMs = beatDurationMs * 4
-    return durationMs / barDurationMs
-}
 
 fun copyRawToInternal(context: Context, resId: Int, outFileName: String): File {
     val outFile = File(context.filesDir, outFileName)

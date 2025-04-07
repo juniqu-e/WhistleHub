@@ -5,6 +5,7 @@ data class Layer(
     val name: String,
     val description: String = "",
     val category: String = "",  // 예: "DRUM", "BASS", "OTHERS"
+    val instrumentType: Int,
     val colorHex: String? = null,
     val length: Int,
     val patternBlocks: List<PatternBlock> = emptyList(),

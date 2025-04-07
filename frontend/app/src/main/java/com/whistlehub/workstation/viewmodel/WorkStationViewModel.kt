@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioRecord
+import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.os.Handler
@@ -21,10 +22,12 @@ import androidx.lifecycle.viewModelScope
 import com.whistlehub.common.data.remote.dto.request.TrackRequest
 import com.whistlehub.common.data.remote.dto.request.WorkstationRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
+import com.whistlehub.common.data.remote.dto.response.AuthResponse
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.data.remote.dto.response.WorkstationResponse
 import com.whistlehub.common.data.repository.TrackService
 import com.whistlehub.common.data.repository.WorkstationService
+import com.whistlehub.common.util.AudioEngineBridge.getWavDurationSeconds
 import com.whistlehub.common.util.AudioEngineBridge.renderMixToWav
 import com.whistlehub.common.util.AudioEngineBridge.setCallback
 import com.whistlehub.common.util.AudioEngineBridge.setLayers
@@ -35,7 +38,6 @@ import com.whistlehub.common.util.createMultipart
 import com.whistlehub.common.util.createRequestBody
 import com.whistlehub.common.util.downloadWavFromS3Url
 import com.whistlehub.workstation.data.BottomBarActions
-import com.whistlehub.workstation.data.InstrumentType
 import com.whistlehub.workstation.data.Layer
 import com.whistlehub.workstation.data.LayerAudioInfo
 import com.whistlehub.workstation.data.PatternBlock
@@ -50,6 +52,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import okhttp3.RequestBody
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -79,6 +82,16 @@ class WorkStationViewModel @Inject constructor(
     val layersOfSearchTrack: State<ApiResponse<WorkstationResponse.ImportTrackResponse>?> get() = _layersOfSearchTrack;
     private val _isPlaying = mutableStateOf(false)
     val isPlaying: State<Boolean> get() = _isPlaying
+    private val _showUploadSheet = mutableStateOf(false)
+    val showUploadSheet: State<Boolean> get() = _showUploadSheet
+    private val _isUploading = mutableStateOf(false)
+    val isUploading: State<Boolean> get() = _isUploading
+
+    private val _tagList = MutableStateFlow<List<AuthResponse.TagResponse>>(emptyList())
+    val tagList: StateFlow<List<AuthResponse.TagResponse>> get() = _tagList
+
+    private val _tagPairs = MutableStateFlow<List<Pair<Int, String>>>(emptyList())
+    val tagPairs: StateFlow<List<Pair<Int, String>>> get() = _tagPairs
 
     // ------------ Record ------------------
     var recordedFile by mutableStateOf<File?>(null)
@@ -93,19 +106,6 @@ class WorkStationViewModel @Inject constructor(
         setCallback(this)
     }
 
-    fun addLayerByInstrument(type: InstrumentType) {
-        val newId = (_tracks.value.maxOfOrNull { it.id } ?: 0) + 1
-        val newLayer = Layer(
-            id = newId,
-            name = type.label,
-            description = "New ${type.label} Layer",
-            category = type.name,
-            length = 4,
-            patternBlocks = emptyList(),
-        )
-        _tracks.value += listOf(newLayer)
-    }
-
     fun addLayer(newLayer: Layer) {
         val newId = _nextId.intValue  // 현재 ID 가져오기
         _nextId.intValue += 1  // ID 증가
@@ -113,8 +113,6 @@ class WorkStationViewModel @Inject constructor(
         val layerWithId = newLayer.copy(id = newId)
         // 레이어를 _tracks에 추가
         _tracks.value += layerWithId
-
-        Log.d("Search", "In LOCAL : ${_tracks.value.size}")
     }
 
     fun deleteLayer(layer: Layer) {
@@ -196,14 +194,26 @@ class WorkStationViewModel @Inject constructor(
                     Log.d("Search", "layer : $layerRes")
                     val fileName = "layer_${UUID.randomUUID()}.wav"
                     val localFile = downloadWavFromS3Url(context, s3Url, fileName)
-                    Log.d("Search", "불러온 레이어 수: $localFile")
+                    val duration = getWavDurationMs(localFile)
+                    val length = getBarsFromDuration(
+                        durationMs = duration,
+                        bpm = 120
+                    )
+                    val barsPattern = layerRes.bars?.map { start ->
+                        PatternBlock(start = start, length = length.toInt())
+                    } ?: emptyList()
+
+                    Log.d("Pattern", barsPattern.toString())
+
                     Layer(
                         name = layerRes.name,
                         description = track.title,
                         category = layerRes.instrumentType.toString(),
+                        instrumentType = layerRes.instrumentType,
                         colorHex = "#BDBDBD",
-                        length = 4,
-                        wavPath = localFile.absolutePath
+                        length = length.toInt(),
+                        wavPath = localFile.absolutePath,
+                        patternBlocks = barsPattern
                     )
                 }
 
@@ -235,33 +245,52 @@ class WorkStationViewModel @Inject constructor(
         val fileName = metadata.title
         val safeFileName = if (fileName.endsWith(".wav")) fileName else "$fileName.wav"
         val mix = File(context.filesDir, safeFileName)
+        var response: ApiResponse<Int>
 
         viewModelScope.launch {
+            _isUploading.value = true
             val infos = getAudioLayerInfos();
             val maxUsedBars = getMaxUsedBars(tracks.value)
             setLayers(infos, maxUsedBars)
-            val success = renderMixToWav(mix.absolutePath)
+            val totalFrames = calculateTotalFrames(
+                maxUsedBars = maxUsedBars,
+                bpm = 120.0f,
+                sampleRate = 44100,
+            )
+            val success = renderMixToWav(mix.absolutePath, totalFrames)
 
             if (!success) {
+                _isUploading.value = false
                 onResult(false)
+                return@launch
             } else {
                 //MultiPart
                 val ids = tracks.value.joinToString(",") { it.id.toString() }
                 val names = tracks.value.joinToString(",") { it.name }
-                val instrumentTypes = tracks.value.joinToString(",") { it.category }
+                val instrumentTypes =
+                    tracks.value.joinToString(",") { it.instrumentType.toString() }
+                val duration = getWavDurationSeconds(mix.absolutePath).toInt().toString()
+                val bars: List<List<Int>> = tracks.value.map { layer ->
+                    layer.patternBlocks.map { it.start }
+                }
+                val barsJsonString = bars.joinToString(prefix = "[", postfix = "]") { block ->
+                    block.joinToString(prefix = "[", postfix = "]", separator = ",")
+                }
 
-
-
+                Log.d("Bars", barsJsonString.toString())
                 val requestBodyMap = hashMapOf(
                     "title" to createRequestBody(fileName), //
                     "description" to createRequestBody(metadata.description),
-                    "duration" to createRequestBody("120"),
+                    "duration" to createRequestBody(duration),
                     "visibility" to createRequestBody(metadata.visibility.toString()), //
                     "tags" to createRequestBody(metadata.tags.joinToString(",")), //
                     "sourceTracks" to createRequestBody(ids),
                     "layerName" to createRequestBody(names),
                     "instrumentType" to createRequestBody(instrumentTypes),
+                    "barsJson" to createRequestBody(barsJsonString)
                 )
+
+                Log.d("Request", requestBodyMap.toString())
                 val trackImg = null
                 val trackSoundFile = createMultipart(mix, "trackSoundFile")
                 val layerSoundFiles = tracks.value.map { layer ->
@@ -270,7 +299,7 @@ class WorkStationViewModel @Inject constructor(
                 }
 
                 requestBodyMap.forEach { (key, value) ->
-                    Log.d("Upload", "$key => ${value.contentType()}")
+                    Log.d("Upload", "$key => ${value.peekContent()}")
                 }
 
                 Log.d(
@@ -284,7 +313,7 @@ class WorkStationViewModel @Inject constructor(
                         "Layer[$index] -> name: ${part.headers}, body type: ${part.body.contentType()}"
                     )
                 }
-                val result = workstationService.uploadTrack(
+                response = workstationService.uploadTrack(
                     WorkstationRequest.UploadTrackRequest(
                         partMap = requestBodyMap,
                         trackImg = trackImg,
@@ -293,29 +322,70 @@ class WorkStationViewModel @Inject constructor(
                     )
                 )
 
-                Log.d("Upload", result.toString())
+                if (response.code != "SU") {
+                    _isUploading.value = false
+                    onResult(false)
+                    return@launch
+                }
             }
-
-            onResult(success)
+            _isUploading.value = false
+            onResult(true)
         }
-
     }
 
+    suspend fun getTagList() {
+        val response = trackService.getTagRecommendation().payload!!
+        _tagList.value = response
+        _tagPairs.value = response.map { it.id to it.name }
+    }
+
+    private fun getWavDurationMs(file: File): Long {
+        val retriever = MediaMetadataRetriever()
+        retriever.setDataSource(file.absolutePath)
+        val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+        retriever.release()
+        return durationStr?.toLongOrNull() ?: 0L
+    }
+
+    private fun getBarsFromDuration(durationMs: Long, bpm: Int): Float {
+        val beatDurationMs = 60000f / bpm
+        val barDurationMs = beatDurationMs * 4
+        return durationMs / barDurationMs
+    }
 
     private fun getAudioLayerInfos(): List<LayerAudioInfo> {
         return tracks.value.map { it.toAudioInfo() }
     }
 
-    fun getMaxUsedBars(layers: List<Layer>): Int {
+    private fun getMaxUsedBars(layers: List<Layer>): Int {
         return layers.flatMap { layer ->
             layer.patternBlocks.map { it.start + it.length }
         }.maxOrNull() ?: 0
+    }
+
+    private fun calculateTotalFrames(maxUsedBars: Int, bpm: Float, sampleRate: Int): Int {
+        val secondsPerBar = (60f / bpm) * 4f
+        val totalSeconds = maxUsedBars * secondsPerBar
+        return (totalSeconds * sampleRate).toInt()
+    }
+
+    fun toggleUploadSheet(show: Boolean) {
+        _showUploadSheet.value = show
+    }
+
+    fun RequestBody.peekContent(): String {
+        val buffer = okio.Buffer()
+        this.writeTo(buffer)
+        return buffer.readUtf8()
     }
 
     val bottomBarActions = BottomBarActions(
         onPlayedClicked = {},
         onTrackUploadClicked = { },
         onAddInstrument = {},
+        onUploadButtonClick = {
+            toggleUploadSheet(true)
+        }
     )
 
     //재생 끝나고 Oboe에서 상태 콜백 받는 함수
@@ -465,6 +535,7 @@ class WorkStationViewModel @Inject constructor(
                 name = name,
                 description = "사용자 녹음",
                 category = "RECORDED",
+                instrumentType = 0,
                 length = 4,
                 patternBlocks = emptyList(),
                 wavPath = file.absolutePath
