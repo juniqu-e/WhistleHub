@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -44,9 +45,11 @@ fun TagRankingScreen(
     LaunchedEffect(Unit) {
         searchViewModel.getRankingByTag(tagId, "WEEK")
         searchViewModel.getTagRecommendTrack(tagId)
+        searchViewModel.getTagRecentTrack(tagId)
     }
-    val tagRanking = searchViewModel.tagRanking.collectAsState().value
-    val tagRecommendTrack = searchViewModel.tagRecommendTrack.collectAsState().value
+    val tagRanking by searchViewModel.tagRanking.collectAsState()
+    val tagRecommendTrack by searchViewModel.tagRecommendTrack.collectAsState()
+    val tagRecentTrack by searchViewModel.tagRecentTrack.collectAsState()
 
     LazyColumn(Modifier.fillMaxWidth()) {
         // 태그 제목
@@ -144,6 +147,53 @@ fun TagRankingScreen(
                     style = TrackItemStyle.RANKING,
                     rank = index + 1,
                     trackPlayViewModel = trackPlayViewModel,
+                    workStationViewModel = workStationViewModel,
+                    navController = navController,
+                    needMoreView = true
+                )
+            }
+        }
+        // 최근 올라온 트랙
+        item {
+            Text(
+                text = "Recent Tracks of \"$tagName\"",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                style = Typography.titleLarge,
+                color = CustomColors().Grey50,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        item {
+            if (tagRecentTrack.isEmpty()) {
+                Text(
+                    text = "No tracks found",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    style = Typography.titleSmall,
+                    color = CustomColors().Grey200,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+                return@item
+            }
+        }
+        items(tagRecentTrack.size) { index ->
+            val track = tagRecentTrack[index]
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                TrackItemRow(
+                    track = TrackEssential(
+                        trackId = track.trackId,
+                        title = track.title,
+                        artist = track.nickname,
+                        imageUrl = track.imageUrl
+                    ),
                     workStationViewModel = workStationViewModel,
                     navController = navController,
                     needMoreView = true

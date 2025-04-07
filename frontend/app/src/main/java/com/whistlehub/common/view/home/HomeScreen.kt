@@ -31,7 +31,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -74,8 +73,8 @@ fun HomeScreen(
 ) {
     val coroutineScope = rememberCoroutineScope()
 
-    // 최근 올라온 트랙 (임시)
-    val newList by trackPlayViewModel.trackList.collectAsState(initial = emptyList())
+    // 최근 올라온 트랙
+    var newList by remember { mutableStateOf<List<TrackEssential>>(emptyList()) }
     // 최근 들은 느낌의 트랙
     var recentList by remember { mutableStateOf<List<TrackEssential>>(emptyList()) }
     // 트랙과 비슷한 느낌의 트랙
@@ -88,7 +87,7 @@ fun HomeScreen(
     var fanmix by remember { mutableStateOf<List<TrackEssential>>(emptyList()) }
 
     LaunchedEffect(Unit) {
-        trackPlayViewModel.getTempTrackList() // 최근 올라온 트랙(임시) 가져오기
+        newList = trackPlayViewModel.getFollowRecentTracks() // 최근 올라온 트랙(임시) 가져오기
         recentList = trackPlayViewModel.getRecentTrackList() // 최근 들은 느낌의 트랙 가져오기
         notListenedList = trackPlayViewModel.getNeverTrackList() // 한 번도 안 들어본 음악 가져오기
         selectedFollowing = trackPlayViewModel.getFollowingMember() // 팔로워 중 한 명 선택
