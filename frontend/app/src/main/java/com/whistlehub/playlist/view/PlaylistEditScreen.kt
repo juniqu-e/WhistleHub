@@ -1,44 +1,50 @@
 package com.whistlehub.playlist.view
 
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.Menu
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.DragHandle
+import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.RemoveCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -51,595 +57,509 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.whistlehub.R
-import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
+import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.common.util.uriToMultipartBodyPart
-import com.whistlehub.common.view.component.ImageUpload
+import com.whistlehub.common.view.component.CommonAppBar
+import com.whistlehub.common.view.component.CustomAlertDialog
+import com.whistlehub.common.view.signup.LabeledInputField
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.viewmodel.PlaylistViewModel
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaylistEditScreen(
     paddingValues: PaddingValues,
     playlistId: Int,
     navController: NavHostController,
     playlistViewModel: PlaylistViewModel = hiltViewModel(),
+    logoutManager: LogoutManager
 ) {
-    LaunchedEffect(playlistId) {
-        // 플레이리스트 트랙 목록을 가져옴
-        playlistViewModel.getPlaylistTrack(playlistId)
-        // 플레이리스트 정보를 가져옴
-        playlistViewModel.getPlaylistInfo(playlistId)
-    }
-
-    val playlistTrack by playlistViewModel.playlistTrack.collectAsState()
-    val playlistInfo by playlistViewModel.playlistInfo.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    val customColors = CustomColors()
     val context = LocalContext.current
-    var showConfirmDialog by remember { mutableStateOf(false) }
-    var showDismissDialog by remember { mutableStateOf(false) }
-    var showImageDialog by remember { mutableStateOf(false) }
 
-    // 플레이리스트 정보 수정 관련
-    var isEditTitle by remember { mutableStateOf(false) } // 제목 수정 모드
-    var isEditDescription by remember { mutableStateOf(false) } // 설명 수정 모드
-    // playlistInfo를 구독하여 제목과 설명 자동 업데이트
+    // States
+    val playlistInfo by playlistViewModel.playlistInfo.collectAsState()
+    val playlistTrack by playlistViewModel.playlistTrack.collectAsState()
+    val isLoading by playlistViewModel.isLoading.collectAsState()
+
     var playlistTitle by remember { mutableStateOf("") }
     var playlistDescription by remember { mutableStateOf("") }
-    var playlistImage: Uri? by remember { mutableStateOf<Uri?>(null) }
-
-    LaunchedEffect(playlistInfo) {
-        if (!isEditTitle) playlistTitle = playlistInfo?.name ?: ""
-        if (!isEditDescription) playlistDescription = playlistInfo?.description ?: ""
-        if (playlistInfo?.imageUrl != null) playlistImage = playlistInfo?.imageUrl?.toUri()
+    var playlistImage by remember { mutableStateOf<Uri?>(null) }
+    var trackList by remember { mutableStateOf(emptyList<com.whistlehub.common.data.remote.dto.response.PlaylistResponse.PlaylistTrackResponse>()) }
+    // 이미지 선택 런처
+    val imageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { playlistImage = it }
     }
 
-    // 트랙 순서 변경 관련
-    var itemHeightPx by remember { mutableFloatStateOf(0f) } // 아이템 높이(픽셀 단위)
-    var trackList by remember { mutableStateOf(emptyList<PlaylistResponse.PlaylistTrackResponse>()) }
-    var draggedVerticalIndex by remember { mutableStateOf<Int?>(null) }  // 트랙 순서 변경 시작 위치
-    var targetIndex by remember { mutableStateOf<Int?>(null) } // 드롭 예상 위치
+    // UI 상태 관리
+    var isTitleFocused by remember { mutableStateOf(false) }
+    var isDescriptionFocused by remember { mutableStateOf(false) }
+    var showDiscardChangesDialog by remember { mutableStateOf(false) }
+    var showSaveChangesDialog by remember { mutableStateOf(false) }
 
-    // 트랙 삭제 관련
-    var draggedHorizontalIndex by remember { mutableStateOf<Int?>(null) } // 삭제하려는 index
+    // 트랙 재정렬 관련 변수
+    var itemHeightPx by remember { mutableFloatStateOf(0f) }
+    var draggedIndex by remember { mutableStateOf<Int?>(null) }
+    var targetIndex by remember { mutableStateOf<Int?>(null) }
 
-    // 트랙 리스트가 변경될 때마다 로컬 상태 업데이트
-    LaunchedEffect(playlistTrack) {
+    // 스크롤 상태
+    val scrollState = rememberScrollState()
+    val lazyListState = rememberLazyListState()
+
+    // 플레이리스트 데이터 로드
+    LaunchedEffect(playlistId) {
+        playlistViewModel.getPlaylistInfo(playlistId)
+        playlistViewModel.getPlaylistTrack(playlistId)
+    }
+
+    // 로컬 상태 업데이트
+    LaunchedEffect(playlistInfo, playlistTrack) {
+        playlistTitle = playlistInfo?.name ?: ""
+        playlistDescription = playlistInfo?.description ?: ""
         trackList = playlistTrack
     }
 
+    // 뒤로가기 버튼 처리
     BackHandler {
-        // 뒤로가기 버튼 클릭 시 수정 취소 확인
-        showDismissDialog = true
+        showDiscardChangesDialog = true
     }
 
-    LazyColumn(
-        Modifier
-            .padding(10.dp)
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = {
-                        draggedHorizontalIndex = null
-                        draggedVerticalIndex = null
-                    }
-                )
-            },
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        // 플레이리스트 정보 수정
-        item {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                AsyncImage(
-                    model = playlistImage,
-                    contentDescription = "Playlist Image",
-                    modifier = Modifier
-                        .size(50.dp)
-                        .clip(RoundedCornerShape(5.dp))
-                        .clickable {
-                            showImageDialog = true
-                        },
-                    error = painterResource(R.drawable.default_track),
-                    contentScale = ContentScale.Crop
-                )
-                Column {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(15.dp)
-                    ) {
-                        if (isEditTitle) {
-                            TextField(
-                                value = playlistTitle,
-                                onValueChange = { playlistTitle = it },
-                                placeholder = { Text("Playlist Name") },
-                                modifier = Modifier.weight(1f),
-                                maxLines = 1,
-                                singleLine = true
-                            )
-                            Icon(
-                                Icons.Rounded.Check,
-                                contentDescription = "Check",
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .clickable {
-                                        isEditTitle = false
-                                    },
-                                tint = CustomColors().CommonIconColor
-                            )
-                            Icon(
-                                Icons.Rounded.Close,
-                                contentDescription = "Close",
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .clickable {
-                                        isEditTitle = false
-                                        playlistTitle = playlistInfo?.name ?: ""
-                                    },
-                                tint = CustomColors().CommonIconColor
-                            )
-                        } else {
-                            Text(
-                                playlistTitle,
-                                style = Typography.titleLarge,
-                                fontSize = Typography.displaySmall.fontSize
-                            )
-                            Icon(
-                                Icons.Rounded.Edit,
-                                contentDescription = "Edit",
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .clickable {
-                                        isEditTitle = true
-                                        isEditDescription = false
-                                    },
-                                tint = CustomColors().CommonIconColor
-                            )
-                            if (!isEditDescription) {
-                                Row(
-                                    Modifier.weight(1f),
-                                    horizontalArrangement = Arrangement.spacedBy(
-                                        15.dp,
-                                        Alignment.End
-                                    ),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.Close,
-                                        contentDescription = "Close",
-                                        modifier = Modifier
-                                            .size(24.dp)
-                                            .clickable {
-                                                // 편집 취소
-                                                showDismissDialog = true
-                                            })
-                                    Icon(
-                                        Icons.Rounded.Check,
-                                        contentDescription = "Check",
-                                        modifier = Modifier
-                                            .size(24.dp)
-                                            .clickable {
-                                                coroutineScope.launch {
-                                                    // 편집 완료
-                                                    showConfirmDialog = true
-                                                }
-                                            })
-                                }
-                            }
-                        }
-                    }
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        if (isEditDescription) {
-                            TextField(
-                                value = playlistDescription,
-                                onValueChange = { playlistDescription = it },
-                                placeholder = { Text("Playlist Description") },
-                                modifier = Modifier.weight(1f),
-                                maxLines = 1,
-                                singleLine = true
-                            )
-                            Icon(
-                                Icons.Rounded.Check,
-                                contentDescription = "Check",
-                                modifier = Modifier
-                                    .size(16.dp)
-                                    .clickable {
-                                        isEditDescription = false
-                                    },
-                                tint = CustomColors().CommonIconColor
-                            )
-                            Icon(
-                                Icons.Rounded.Close,
-                                contentDescription = "Close",
-                                modifier = Modifier
-                                    .size(16.dp)
-                                    .clickable {
-                                        isEditDescription = false
-                                        playlistDescription = playlistInfo?.description ?: ""
-                                    },
-                                tint = CustomColors().CommonIconColor
-                            )
-                        } else {
-                            Text(
-                                playlistDescription,
-                                style = Typography.bodyMedium,
-                                color = CustomColors().CommonSubTextColor
-                            )
-                            Icon(
-                                Icons.Rounded.Edit,
-                                contentDescription = "Edit",
-                                modifier = Modifier
-                                    .size(16.dp)
-                                    .clickable {
-                                        isEditDescription = true
-                                        isEditTitle = false
-                                    },
-                                tint = CustomColors().CommonIconColor
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // 플레이리스트 트랙 순서 수정, 트랙 삭제
-        itemsIndexed(trackList) { index, track ->
-            val isCurrentVerticalDragging = index == draggedVerticalIndex
-            var dragOffsetX by remember { mutableFloatStateOf(0f) }
-            var dragOffsetY by remember { mutableFloatStateOf(0f) }
-            val animatedOffsetY by animateFloatAsState(
-                targetValue = dragOffsetY,
-                label = "dragY"
+    Scaffold(
+        topBar = {
+            CommonAppBar(
+                title = "Playlist",
+                navController = navController,
+                logoutManager = logoutManager,
+                coroutineScope = coroutineScope,
+                showBackButton = true,
+                showMenuButton = false,
+                onBackClick = { showDiscardChangesDialog = true }
             )
-            var showDeleteButton by remember { mutableStateOf(false) }
-
-            if (index == targetIndex) {
-                // 예상 위치에 Divider 삽입
-                HorizontalDivider(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(2.dp),
-                    thickness = 2.dp
-                )
-            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp)
+                .verticalScroll(scrollState)
+        ) {
+            // 플레이리스트 이미지 업로드 UI
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-                    .background(
-                        when {
-                            isCurrentVerticalDragging -> CustomColors().CommonSubBackgroundColor.copy(
-                                alpha = 0.3f
-                            )
-
-                            else -> Color.Transparent
-                        },
-                        RoundedCornerShape(8.dp)
-                    )
-                    .zIndex(if (isCurrentVerticalDragging) 1f else 0f)
-                    .offset { IntOffset(0, animatedOffsetY.roundToInt()) }
-                    // 아이템 높이 측정 추가
-                    .onGloballyPositioned { coordinates ->
-                        itemHeightPx = coordinates.size.height.toFloat()
-                    }
-                    .pointerInput(Unit) {
-                        detectHorizontalDragGestures(
-                            onDragStart = {
-                                // 드래그 시작 시 드래그 인덱스 설정
-                                if (draggedHorizontalIndex != index) {
-                                    dragOffsetX = 0f
-                                    draggedHorizontalIndex = index
-                                }
-                                dragOffsetY = 0f
-                            },
-                            onDragEnd = {
-                                if (dragOffsetX < -100) {
-                                    showDeleteButton = true
-                                    dragOffsetX = -70f
-                                } else {
-                                    dragOffsetX = 0f
-                                }
-                            },
-                            onHorizontalDrag = { change, dragAmount ->
-                                change.consume()
-                                dragOffsetX += dragAmount
-
-                                if (dragOffsetX < -100) {
-                                    showDeleteButton = true
-                                } else {
-                                    showDeleteButton = false
-                                }
-                            }
-                        )
-                    }
+                    .padding(vertical = 16.dp)
+                    .align(Alignment.CenterHorizontally),
+                contentAlignment = Alignment.Center
             ) {
-                Row(
+                // 플레이리스트 이미지
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                        .size(120.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(customColors.Grey800)
+                        .border(2.dp, customColors.Grey500, RoundedCornerShape(8.dp))
+                        .clickable { imageLauncher.launch("image/*") },
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Menu,
-                        contentDescription = "Drag Handle",
-                        tint = CustomColors().CommonIconColor,
-                        modifier = Modifier
-                            .pointerInput(Unit) {
-                                detectDragGestures(
-                                    onDragStart = {
-                                        draggedHorizontalIndex = null
-                                        draggedVerticalIndex = index
-                                    },
-                                    onDragEnd = {
-                                        draggedVerticalIndex?.let { fromIndex ->
-                                            targetIndex?.let { toIndex ->
-                                                if (fromIndex != toIndex) {
-                                                    trackList = trackList.toMutableList().apply {
-                                                        add(toIndex, removeAt(fromIndex))
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        draggedVerticalIndex = null
-                                        dragOffsetY = 0f
-                                        targetIndex = null
-                                    },
-                                    onDrag = { _, dragAmount ->
-                                        dragOffsetY += dragAmount.y
-
-                                        val movedItems = (dragOffsetY / itemHeightPx).toInt()
-                                        targetIndex =
-                                            (index + movedItems).coerceIn(0, trackList.size - 1)
-                                    }
-                                )
-                            }
-                    )
-                    Row(
-                        Modifier
-                            .weight(1f)
-                            .padding(horizontal = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
+                    if (playlistImage != null) {
                         AsyncImage(
-                            model = track.trackInfo.imageUrl,
-                            contentDescription = "Track Image",
-                            modifier = Modifier
-                                .size(50.dp)
-                                .clip(RoundedCornerShape(5.dp)),
-                            error = null,
+                            model = playlistImage,
+                            contentDescription = "플레이리스트 이미지",
+                            modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
                         )
-                        Column(
-                            Modifier
-                                .weight(1f)
-                                .padding(horizontal = 10.dp)
-                        ) {
-                            Text(
-                                track.trackInfo.title,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                style = Typography.titleLarge,
-                                color = CustomColors().CommonTextColor
-                            )
-                            Text(
-                                track.trackInfo.nickname,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                style = Typography.bodyMedium,
-                                color = CustomColors().CommonSubTextColor
-                            )
-                        }
+                    } else if (playlistInfo?.imageUrl != null) {
+                        AsyncImage(
+                            model = playlistInfo?.imageUrl,
+                            contentDescription = "플레이리스트 이미지",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.MusicNote,
+                            contentDescription = "기본 플레이리스트",
+                            tint = customColors.Grey300,
+                            modifier = Modifier.size(60.dp)
+                        )
                     }
-                    if (draggedHorizontalIndex == index) {
-                        Box(
-                            Modifier
-                                .background(Color.Red)
-                                .heightIn(min = 50.dp)
-                                .widthIn(max = 70.dp)
-                                .width(
-                                    if (!showDeleteButton && dragOffsetX < 0) {
-                                        -dragOffsetX.dp
-                                    } else if (showDeleteButton && dragOffsetX >= 0) {
-                                        dragOffsetX.dp
-                                    } else if (showDeleteButton && dragOffsetX < 0) {
-                                        70.dp
-                                    } else {
-                                        0.dp
-                                    }
-                                )
-                                .clickable {
-                                    if (showDeleteButton) {
-                                        // 리스트에서 삭제
-                                        trackList = trackList.toMutableList().apply {
-                                            removeAt(index)
-                                            draggedHorizontalIndex = null
-                                        }
-                                    }
-                                    showDeleteButton = false
-                                },
-                            contentAlignment = Alignment.Center
+                }
+
+                // 카메라 아이콘
+                Box(
+                    modifier = Modifier
+                        .padding(start = 90.dp, top = 90.dp)
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(customColors.Grey800)
+                        .border(1.dp, customColors.Grey500, CircleShape)
+                        .clickable { imageLauncher.launch("image/*") },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = "사진 선택",
+                        tint = customColors.Grey50,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+
+            // 이미지 삭제 버튼
+            if (playlistImage != null || playlistInfo?.imageUrl != null) {
+                Button(
+                    onClick = { playlistImage = null },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = customColors.Error700
+                    ),
+                    modifier = Modifier
+                        .padding(top = 8.dp, bottom = 16.dp)
+                        .align(Alignment.CenterHorizontally)
+                ) {
+                    Text("이미지 삭제")
+                }
+            }
+
+            // 플레이리스트 제목 입력
+            LabeledInputField(
+                label = "Playlist Name",
+                value = playlistTitle,
+                onValueChange = { playlistTitle = it },
+                placeholder = "플레이리스트 이름을 입력하세요",
+                labelStyle = Typography.bodyLarge.copy(color = customColors.Grey50),
+                textStyle = Typography.bodyMedium.copy(color = customColors.Grey50),
+                placeholderStyle = Typography.bodyMedium.copy(color = customColors.Grey300),
+                isFocused = isTitleFocused,
+                onFocusChange = { isTitleFocused = it },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                errorMessage = if (playlistTitle.isBlank()) "플레이리스트 이름은 필수입니다" else null
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 플레이리스트 설명 입력
+            LabeledInputField(
+                label = "Description",
+                value = playlistDescription,
+                onValueChange = {
+                    if (it.length <= 48) {
+                        playlistDescription = it
+                    }
+                },
+                placeholder = "플레이리스트 설명을 입력하세요",
+                labelStyle = Typography.bodyLarge.copy(color = customColors.Grey50),
+                textStyle = Typography.bodyMedium.copy(color = customColors.Grey50),
+                placeholderStyle = Typography.bodyMedium.copy(color = customColors.Grey300),
+                isFocused = isDescriptionFocused,
+                onFocusChange = { isDescriptionFocused = it },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default), // 줄바꿈 허용
+                errorMessage = null,
+                maxLines = 2
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 트랙 목록 헤더
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "트랙 목록",
+                    style = Typography.titleMedium,
+                    color = customColors.Grey50
+                )
+
+                Text(
+                    text = "${trackList.size}개의 트랙",
+                    style = Typography.bodyMedium,
+                    color = customColors.Grey300
+                )
+            }
+
+            // 트랙 목록
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                trackList.forEachIndexed { index, track ->
+                    val isCurrentDragging = index == draggedIndex
+                    var dragOffsetY by remember { mutableFloatStateOf(0f) }
+                    val animatedOffsetY by animateFloatAsState(
+                        targetValue = dragOffsetY,
+                        label = "dragY"
+                    )
+
+                    // Show divider at target position during drag
+                    if (index == targetIndex) {
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(2.dp),
+                            color = customColors.Mint500,
+                            thickness = 2.dp
+                        )
+                    }
+
+                    // Track item
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .background(
+                                if (isCurrentDragging) customColors.Grey800.copy(alpha = 0.7f)
+                                else Color.Transparent,
+                                RoundedCornerShape(8.dp)
+                            )
+                            .zIndex(if (isCurrentDragging) 1f else 0f)
+                            .offset { IntOffset(0, animatedOffsetY.roundToInt()) }
+                            .onGloballyPositioned { coordinates ->
+                                itemHeightPx = coordinates.size.height.toFloat()
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            if (showDeleteButton) {
-                                Text(
-                                    "삭제",
-                                    style = Typography.titleMedium,
-                                    color = CustomColors().CommonTextColor,
+                            // Delete button
+                            Box(
+                                modifier = Modifier
+                                    .size(25.dp)
+                                    .clip(CircleShape)
+                                    .background(customColors.Error700)
+                                    .clickable {
+                                        // Remove track at this index
+                                        val newList = trackList.toMutableList()
+                                        newList.removeAt(index)
+                                        trackList = newList
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Remove,
+                                    contentDescription = "Delete Track",
+                                    tint = customColors.CommonTextColor,
+                                    modifier = Modifier.size(25.dp)
                                 )
                             }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            // Track image
+                            AsyncImage(
+                                model = track.trackInfo.imageUrl,
+                                contentDescription = "Track Image",
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(4.dp)),
+                                error = painterResource(id = R.drawable.default_track),
+                                contentScale = ContentScale.Crop
+                            )
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            // Track info
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = track.trackInfo.title,
+                                    style = Typography.bodyLarge,
+                                    color = customColors.Grey50,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+
+                                Text(
+                                    text = track.trackInfo.nickname,
+                                    style = Typography.bodySmall,
+                                    color = customColors.Grey300,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            // Drag handle
+                            Icon(
+                                imageVector = Icons.Rounded.DragHandle,
+                                contentDescription = "Reorder",
+                                tint = customColors.Grey400,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .pointerInput(Unit) {
+                                        detectDragGestures(
+                                            onDragStart = {
+                                                draggedIndex = index
+                                            },
+                                            onDragEnd = {
+                                                draggedIndex?.let { fromIndex ->
+                                                    targetIndex?.let { toIndex ->
+                                                        if (fromIndex != toIndex) {
+                                                            // Reorder the list
+                                                            val newList = trackList.toMutableList()
+                                                            val item = newList.removeAt(fromIndex)
+                                                            newList.add(toIndex, item)
+                                                            trackList = newList
+                                                        }
+                                                    }
+                                                }
+                                                draggedIndex = null
+                                                dragOffsetY = 0f
+                                                targetIndex = null
+                                            },
+                                            onDragCancel = {
+                                                draggedIndex = null
+                                                dragOffsetY = 0f
+                                                targetIndex = null
+                                            },
+                                            onDrag = { change, dragAmount ->
+                                                change.consume()
+                                                dragOffsetY += dragAmount.y
+
+                                                // Calculate target index based on drag distance
+                                                val movedItems = (dragOffsetY / itemHeightPx).toInt()
+                                                targetIndex = (index + movedItems).coerceIn(0, trackList.size - 1)
+                                            }
+                                        )
+                                    }
+                            )
                         }
+                    }
+
+                    // Show divider at bottom if this is the target and it's the last item
+                    if (targetIndex == trackList.size && index == trackList.size - 1) {
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(2.dp),
+                            color = customColors.Mint500,
+                            thickness = 2.dp
+                        )
                     }
                 }
             }
-            // 마지막 아이템 뒤에도 Divider를 추가할 수 있음 (필요 시)
-            if (targetIndex == trackList.size) {
-                HorizontalDivider(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(2.dp),
-                    thickness = 2.dp
+
+            // 저장 버튼
+            Button(
+                onClick = { showSaveChangesDialog = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = customColors.CommonButtonColor
+                ),
+                shape = RoundedCornerShape(8.dp),
+                enabled = playlistTitle.isNotBlank()
+            ) {
+                Text(
+                    text = "변경사항 저장",
+                    style = Typography.titleMedium,
+                    color = customColors.CommonTextColor,
+                    modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
-        }
-        item {
-            Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
+
+            // Bottom padding
+            Spacer(modifier = Modifier.height(paddingValues.calculateBottomPadding()))
         }
     }
 
-    if (showConfirmDialog) {
-        AlertDialog(
-            onDismissRequest = { showConfirmDialog = false },
-            title = { Text("플레이리스트 수정") },
-            text = { Text("수정사항을 적용하시겠습니까?") },
-            confirmButton = {
-                Button(
-                    {
-                        showConfirmDialog = false
-                        coroutineScope.launch {
-                            val image =
-                                if (playlistImage != null && playlistImage != playlistInfo?.imageUrl?.toUri()) {
-                                    uriToMultipartBodyPart(context, playlistImage!!)
-                                } else {
-                                    null
-                                }
-                            playlistViewModel.updatePlaylist(
-                                playlistId = playlistId,
-                                name = playlistTitle,
-                                description = playlistDescription,
-                                trackIds = trackList.map { it.trackInfo.trackId },
-                                image = image
-                            )
-                            navController.popBackStack()
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = CustomColors().CommonButtonColor,
-                        contentColor = CustomColors().CommonTextColor
-                    )
-                ) {
-                    Text("확인")
-                }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    {
-                        showConfirmDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = CustomColors().CommonTextColor
-                    ),
-                    border = BorderStroke(1.dp, CustomColors().CommonOutLineColor),
-                ) {
-                    Text("취소")
-                }
-            }
-        )
-    }
-    if (showDismissDialog) {
-        AlertDialog(
-            onDismissRequest = { showDismissDialog = false },
-            title = { Text("플레이리스트 수정 취소") },
-            text = { Text("모든 수정 사항이 삭제되고, 이전 상태로 돌아갑니다.") },
-            confirmButton = {
-                Button(
-                    {
-                        showDismissDialog = false
-                        navController.popBackStack()
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = CustomColors().CommonButtonColor,
-                        contentColor = CustomColors().CommonTextColor
-                    )
-                ) {
-                    Text("확인")
-                }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    {
-                        showDismissDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = CustomColors().CommonTextColor
-                    ),
-                    border = BorderStroke(1.dp, CustomColors().CommonOutLineColor),
-                ) {
-                    Text("취소")
-                }
-            }
-        )
-    }
-    if (showImageDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                playlistImage = playlistInfo?.imageUrl?.toUri()
-                showImageDialog = false
-            },
-            title = { Text("플레이리스트 이미지 수정") },
-            text = {
-                ImageUpload(
-                    onChangeImage = { uri ->
-                        playlistImage = uri
-                    },
-                    originImageUri = playlistInfo?.imageUrl?.toUri(),
-                    canDelete = false
+    // 전체화면 로딩 인디케이터
+    if (isLoading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(customColors.Grey900.copy(alpha = 0.8f))
+                .zIndex(10f),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(64.dp),
+                    color = customColors.Mint500,
+                    strokeWidth = 6.dp
                 )
-            },
-            confirmButton = {
-                Button(
-                    {
-                        showImageDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = CustomColors().CommonButtonColor,
-                        contentColor = CustomColors().CommonTextColor
-                    )
-                ) {
-                    Text("적용")
-                }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    {
-                        playlistImage = playlistInfo?.imageUrl?.toUri()
-                        showImageDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = CustomColors().CommonTextColor
-                    ),
-                    border = BorderStroke(1.dp, CustomColors().CommonOutLineColor),
-                ) {
-                    Text("취소")
-                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "저장 중...",
+                    style = Typography.titleMedium,
+                    color = customColors.Grey50
+                )
             }
-        )
+        }
     }
+
+    // Discard changes confirmation dialog
+    CustomAlertDialog(
+        showDialog = showDiscardChangesDialog,
+        title = "변경사항 취소",
+        message = "변경사항을 취소하고 이전 화면으로 돌아가시겠습니까?",
+        confirmButtonText = "취소하기",
+        onDismiss = { showDiscardChangesDialog = false },
+        onConfirm = { navController.popBackStack() }
+    )
+
+    // Save changes confirmation dialog
+    CustomAlertDialog(
+        showDialog = showSaveChangesDialog,
+        title = "변경사항 저장",
+        message = "변경사항을 저장하시겠습니까?",
+        confirmButtonText = "저장하기",
+        onDismiss = { showSaveChangesDialog = false },
+        onConfirm = {
+            coroutineScope.launch {
+                // Prepare image if changed
+                val image = if (playlistImage != null) {
+                    uriToMultipartBodyPart(context, playlistImage!!)
+                } else {
+                    null
+                }
+
+                // Save changes to playlist
+                playlistViewModel.updatePlaylist(
+                    playlistId = playlistId,
+                    name = playlistTitle,
+                    description = playlistDescription,
+                    trackIds = trackList.map { it.trackInfo.trackId },
+                    image = image
+                )
+
+                // Navigate back
+                navController.popBackStack()
+            }
+        }
+    )
 }
-
-

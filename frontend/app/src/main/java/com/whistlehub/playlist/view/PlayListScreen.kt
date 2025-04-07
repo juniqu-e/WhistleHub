@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -16,20 +17,26 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AddCircleOutline
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -40,12 +47,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.whistlehub.R
+import com.whistlehub.common.util.LogoutManager
+import com.whistlehub.common.view.component.CommonAppBar
 import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Pretendard
@@ -55,157 +65,194 @@ import com.whistlehub.playlist.viewmodel.PlaylistViewModel
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayListScreen(
     paddingValues: PaddingValues,
+    logoutManager: LogoutManager,
     navController: NavHostController,
     playlistViewModel: PlaylistViewModel = hiltViewModel()
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    val customColors = CustomColors()
+
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
     var showDeletePlaylistDialog by remember { mutableStateOf(false) }
-    var playlistId by remember { mutableStateOf(0) }
-    val coroutineScope = rememberCoroutineScope()
+    var selectedPlaylistId by remember { mutableIntStateOf(0) }
+
+    // 드롭다운 메뉴
+    var expandedMenuPlaylistId by remember { mutableIntStateOf(-1) }
 
     LaunchedEffect(Unit) {
         playlistViewModel.getPlaylists()
     }
-    val playlists = playlistViewModel.playlists.collectAsState()
 
-    // 플레이리스트 화면
-    Column(Modifier.fillMaxWidth()) {
-        LazyColumn(
+    val playlists = playlistViewModel.playlists.collectAsState()
+    val buttonTextStyle = Typography.titleMedium.copy(color = customColors.CommonTextColor)
+
+    // 탑 바
+    Scaffold(
+        topBar = {
+            CommonAppBar(
+                title = "Playlist",
+                navController = navController,
+                logoutManager = logoutManager,
+                coroutineScope = coroutineScope
+            )
+        }
+    ) { innerPadding ->
+        // 플레이리스트 화면
+        Column(
             Modifier
-                .height(800.dp)
-                .padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)
-        )
-        {
-            // 페이지 제목
-            item {
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            LazyColumn(
+                Modifier
+                    .weight(1f)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // 좋아하는 트랙 목록
+                item {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .clickable {
+                                // 좋아하는 트랙 클릭 시 트랙 목록 받아옴
+                                navController.navigate(Screen.PlayListTrackList.route + "/like")
+                            },
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Filled.Favorite,
+                            contentDescription = "좋아하는 트랙",
+                            tint = customColors.Error700,
+                            modifier = Modifier.size(50.dp)
+                        )
+                        Text(
+                            "Liked Track",
+                            modifier = Modifier.weight(1f),
+                            fontSize = Typography.titleLarge.fontSize,
+                            fontFamily = Pretendard,
+                            fontWeight = FontWeight.Bold,
+                            color = customColors.CommonTextColor
+                        )
+                    }
+                }
+
+                // 플레이리스트 목록
+                items(playlists.value.size) { index ->
+                    val playlist = playlists.value[index]
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 10.dp)
+                            .clickable {
+                                // 플레이리스트 클릭 시 트랙 목록 받아옴
+                                navController.navigate(Screen.PlayListTrackList.route + "/${playlist.playlistId}")
+                            },
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AsyncImage(
+                            model = playlist.imageUrl,
+                            contentDescription = "${playlist.name} 이미지",
+                            modifier = Modifier
+                                .size(50.dp)
+                                .clip(RoundedCornerShape(5.dp)),
+                            error = painterResource(R.drawable.default_track),
+                            contentScale = ContentScale.Crop
+                        )
+                        Text(
+                            playlist.name,
+                            modifier = Modifier.weight(1f),
+                            fontSize = Typography.titleLarge.fontSize,
+                            fontFamily = Pretendard,
+                            fontWeight = FontWeight.Bold,
+                            color = customColors.CommonTextColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        // 드롭다운
+                        Box {
+                            IconButton(onClick = { expandedMenuPlaylistId = playlist.playlistId }) {
+                                Icon(
+                                    Icons.Default.MoreVert,
+                                    contentDescription = "더 보기",
+                                    tint = customColors.CommonIconColor
+                                )
+                            }
+
+                            DropdownMenu(
+                                expanded = expandedMenuPlaylistId == playlist.playlistId,
+                                onDismissRequest = { expandedMenuPlaylistId = -1 },
+                                modifier = Modifier.background(customColors.Grey800)
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("수정", color = customColors.Grey50) },
+                                    onClick = {
+                                        expandedMenuPlaylistId = -1
+                                        navController.navigate(Screen.PlayListTrackList.route + "/${playlist.playlistId}")
+                                        navController.navigate(Screen.PlayListEdit.route + "/${playlist.playlistId}")
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.Edit,
+                                            contentDescription = null,
+                                            tint = customColors.Grey50
+                                        )
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("삭제", color = customColors.Error700) },
+                                    onClick = {
+                                        expandedMenuPlaylistId = -1
+                                        selectedPlaylistId = playlist.playlistId
+                                        showDeletePlaylistDialog = true
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.Delete,
+                                            contentDescription = null,
+                                            tint = customColors.Error700
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // 하단 여백
+                item {
+                    Spacer(Modifier.height(80.dp))
+                }
+            }
+
+            // Create Playlist 버튼 (하단 고정)
+            Button(
+                onClick = { showCreatePlaylistDialog = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .height(48.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = customColors.CommonButtonColor
+                )
+            ) {
                 Text(
-                    "Playlist",
-                    modifier = Modifier.fillMaxSize(),
-                    style = Typography.displaySmall,
-                    fontFamily = Pretendard,
-                    color = CustomColors().CommonTitleColor,
+                    "Create Playlist",
+                    style = buttonTextStyle
                 )
             }
-            // 좋아하는 트랙 목록
-            item {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            // 좋아하는 트랙 클릭 시 트랙 목록 받아옴
-                            navController.navigate(Screen.PlayListTrackList.route + "/like")
-                        },
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Rounded.Favorite,
-                        contentDescription = "좋아하는 트랙",
-                        tint = CustomColors().CommonIconColor,
-                        modifier = Modifier.size(40.dp)
-                    )
-                    Text(
-                        "Liked Track",
-                        modifier = Modifier.weight(1f),
-                        fontSize = Typography.titleLarge.fontSize,
-                        fontFamily = Pretendard,
-                        color = CustomColors().CommonTextColor
-                    )
-                }
-            }
-            // 플레이리스트
-            items(playlists.value.size) { index ->
-                val playlist = playlists.value[index]
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            // 플레이리스트 클릭 시 트랙 목록 받아옴
-                            navController.navigate(Screen.PlayListTrackList.route + "/${playlist.playlistId}")
-                        },
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    AsyncImage(
-                        model = playlist.imageUrl,
-                        contentDescription = "${playlist.name} 이미지",
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(10.dp)),
-                        error = painterResource(R.drawable.default_track),
-                        contentScale = ContentScale.Crop
-                    )
-                    Text(
-                        playlist.name,
-                        modifier = Modifier.weight(1f),
-                        fontSize = Typography.titleLarge.fontSize,
-                        fontFamily = Pretendard,
-                        color = CustomColors().CommonTextColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Icon(
-                        Icons.Rounded.Edit,
-                        contentDescription = "플레이리스트 수정",
-                        tint = CustomColors().CommonIconColor,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable {
-                                // 플레이리스트 수정
-                                navController.navigate(Screen.PlayListTrackList.route + "/${playlist.playlistId}")
-                                navController.navigate(Screen.PlayListEdit.route + "/${playlist.playlistId}")
-                            }
-                    )
-                    Icon(
-                        Icons.Rounded.Delete,
-                        contentDescription = "플레이리스트 삭제",
-                        tint = CustomColors().CommonIconColor,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable {
-                                // 플레이리스트 삭제
-                                playlistId = playlist.playlistId
-                                showDeletePlaylistDialog = true
-                            }
-                    )
-                }
-            }
 
-            // 플레이리스트 추가
-            item {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            showCreatePlaylistDialog = true
-                        },
-                    horizontalArrangement = Arrangement.spacedBy(
-                        10.dp,
-                        alignment = Alignment.CenterHorizontally
-                    ),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Rounded.AddCircleOutline,
-                        contentDescription = "플레이리스트 추가",
-                        tint = CustomColors().CommonIconColor,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Text(
-                        "Create Playlist",
-                        modifier = Modifier.padding(10.dp),
-                        fontSize = Typography.titleLarge.fontSize,
-                        fontFamily = Pretendard,
-                        color = CustomColors().CommonTextColor
-                    )
-                }
-            }
-            item {
-                Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
-            }
+            // 바텀 내비게이션 패딩
+            Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
         }
     }
 
@@ -221,7 +268,7 @@ fun PlayListScreen(
                 Text(
                     text = "플레이리스트 생성",
                     style = Typography.titleLarge,
-                    color = CustomColors().CommonTextColor,
+                    color = customColors.CommonTextColor,
                 )
             },
             text = {
@@ -235,7 +282,7 @@ fun PlayListScreen(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .background(CustomColors().CommonSubBackgroundColor),
+                .background(customColors.CommonSubBackgroundColor),
             confirmButton = {
                 Button(
                     onClick = {
@@ -249,8 +296,8 @@ fun PlayListScreen(
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = CustomColors().CommonButtonColor,
-                        contentColor = CustomColors().CommonTextColor,
+                        containerColor = customColors.CommonButtonColor,
+                        contentColor = customColors.CommonTextColor,
                     )
                 ) {
                     Text("생성", style = Typography.bodyLarge)
@@ -261,15 +308,17 @@ fun PlayListScreen(
                     onClick = { showCreatePlaylistDialog = false },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Transparent,
-                        contentColor = CustomColors().CommonTextColor,
+                        contentColor = customColors.CommonTextColor,
                     ),
-                    border = BorderStroke(1.dp, CustomColors().CommonOutLineColor),
+                    border = BorderStroke(1.dp, customColors.CommonOutLineColor),
                 ) {
                     Text("취소", style = Typography.bodyLarge)
                 }
             }
         )
     }
+
+    // Delete Confirmation Dialog
     if (showDeletePlaylistDialog) {
         AlertDialog(
             onDismissRequest = { showDeletePlaylistDialog = false },
@@ -279,13 +328,13 @@ fun PlayListScreen(
                 Button(
                     onClick = {
                         coroutineScope.launch {
-                            playlistViewModel.deletePlaylist(playlistId)
+                            playlistViewModel.deletePlaylist(selectedPlaylistId)
                         }
                         showDeletePlaylistDialog = false
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = CustomColors().Error700,
-                        contentColor = CustomColors().CommonTextColor
+                        containerColor = customColors.Error700,
+                        contentColor = customColors.CommonTextColor
                     )
                 ) {
                     Text("삭제")
@@ -296,9 +345,9 @@ fun PlayListScreen(
                     onClick = { showDeletePlaylistDialog = false },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Transparent,
-                        contentColor = CustomColors().CommonTextColor
+                        contentColor = customColors.CommonTextColor
                     ),
-                    border = BorderStroke(1.dp, CustomColors().CommonOutLineColor),
+                    border = BorderStroke(1.dp, customColors.CommonOutLineColor),
                 ) {
                     Text("취소")
                 }

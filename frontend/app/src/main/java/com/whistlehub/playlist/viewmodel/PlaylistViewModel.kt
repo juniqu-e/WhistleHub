@@ -31,6 +31,10 @@ class PlaylistViewModel @Inject constructor(
         MutableStateFlow<List<PlaylistResponse.PlaylistTrackResponse>>(emptyList())
     val playlistTrack: StateFlow<List<PlaylistResponse.PlaylistTrackResponse>> get() = _playlistTrack
 
+    // 로딩 상태 추적을 위한 상태 변수
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
 
     suspend fun getPlaylists() {
         try {
@@ -186,6 +190,9 @@ class PlaylistViewModel @Inject constructor(
         image: MultipartBody.Part? = null
     ) {
         try {
+            // 로딩 상태 시작
+            _isLoading.value = true
+
             lateinit var updatePlaylistImage: ApiResponse<Unit>
             // 정보 수정
             val updatePlaylistResponse = playlistService.updatePlaylist(
@@ -223,6 +230,9 @@ class PlaylistViewModel @Inject constructor(
             }
         } catch (e: Exception) {
             Log.d("error", "Failed to update playlist: ${e.message}")
+        } finally {
+            // 로딩 상태 종료
+            _isLoading.value = false
         }
     }
 }
