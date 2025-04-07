@@ -44,6 +44,7 @@ import com.whistlehub.common.view.theme.Pretendard
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import com.whistlehub.profile.view.components.ProfileTrackDetailSheet
+import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -51,6 +52,7 @@ import kotlinx.coroutines.launch
 fun NewTrackCard(
     track: TrackResponse.GetTrackDetailResponse,
     trackPlayViewModel: TrackPlayViewModel,
+    workStationViewModel: WorkStationViewModel,
     navController: NavHostController
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -164,6 +166,8 @@ fun NewTrackCard(
             isOwnProfile = user?.memberId == track.artist.memberId,
             sheetState = sheetState,
             onDismiss = { showBottomSheet = false },
+            workStationViewModel = workStationViewModel,
+            navController = navController
         )
     }
 }

@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.whistlehub.R
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
@@ -34,12 +35,15 @@ import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.data.TrackEssential
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import com.whistlehub.profile.view.components.ProfileTrackDetailSheet
+import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun TrackItemColumn(
     track: TrackEssential,
+    workStationViewModel: WorkStationViewModel,
+    navController: NavHostController,
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -102,6 +106,8 @@ fun TrackItemColumn(
             isOwnProfile = user?.memberId == trackInfo!!.artist.memberId,
             sheetState = sheetState,
             onDismiss = { showBottomSheet = false },
+            workStationViewModel = workStationViewModel,
+            navController = navController
         )
     }
 }

@@ -183,7 +183,11 @@ fun SearchScreen(
                                 horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 Box(modifier = Modifier.weight(1f)) {
-                                    TrackItemRow(track, trackPlayViewModel = trackPlayViewModel)
+                                    TrackItemRow(track,
+                                        trackPlayViewModel = trackPlayViewModel,
+                                        workStationViewModel = workStationViewModel,
+                                        navController = navController,
+                                    )
                                 }
                                 IconButton(onClick = { searchViewModel.getTrackDetails(track.trackId) }) {
                                     Icon(
