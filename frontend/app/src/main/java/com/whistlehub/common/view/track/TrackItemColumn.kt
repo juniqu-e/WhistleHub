@@ -49,7 +49,7 @@ fun TrackItemColumn(
     val coroutineScope = rememberCoroutineScope()
     val user by trackPlayViewModel.user.collectAsState()
     var showBottomSheet by remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var trackInfo by remember { mutableStateOf<TrackResponse.GetTrackDetailResponse?>(null) }
 
     Column(

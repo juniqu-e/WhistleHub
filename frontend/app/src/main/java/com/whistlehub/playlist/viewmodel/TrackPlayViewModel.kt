@@ -14,12 +14,9 @@ import com.whistlehub.playlist.data.TrackEssential
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.Timer
 import javax.inject.Inject
 import kotlin.concurrent.timer
@@ -64,11 +61,6 @@ class TrackPlayViewModel @Inject constructor(
     private val _user = MutableStateFlow<UserEntity?>(null)
     val user: StateFlow<UserEntity?> get() = _user
 
-    // 테스트용 트랙 리스트 (최종 API 연결 후 삭제)
-    private val _trackList =
-        MutableStateFlow<List<TrackEssential>>(emptyList())
-    val trackList: StateFlow<List<TrackEssential>> get() = _trackList
-
     // 플레이어 화면 상태
     private val _playerViewState = MutableStateFlow<PlayerViewState>(PlayerViewState.PLAYING)
     val playerViewState: StateFlow<PlayerViewState> get() = _playerViewState
@@ -81,46 +73,32 @@ class TrackPlayViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             // 유저 정보 가져오기
             _user.value = userRpository.getUser()
-            // 임시 트랙 리스트 가져오기
-            getTempTrackList()
-        }
-    }
-
-    suspend fun getTempTrackList() {
-        try {
-            viewModelScope.launch(Dispatchers.IO) {
-                val trackRequests = (1 until 7).map { trackId ->
-                    async {
-                        val resopnse = trackService.getTrackDetail(trackId.toString()).payload
-                        if (resopnse == null) {
-                            Log.d("TrackPlayViewModel", "트랙 정보가 없습니다.")
-                            return@async null
-                        }
-                        val track = TrackEssential(
-                            trackId = resopnse.trackId,
-                            title = resopnse.title,
-                            artist = resopnse.artist.nickname,
-                            imageUrl = resopnse.imageUrl
-                        )
-                        track
-                    } // 병렬 요청
-                }
-                val trackResults =
-                    trackRequests.awaitAll().mapNotNull { it } // 모든 요청 완료 후 리스트 생성
-
-                withContext(Dispatchers.Main) {
-                    _trackList.emit(trackResults)
-                }
-                Log.d("TrackPlayViewModel", "트랙 리스트: $trackResults")
-                Log.d("TrackPlayViewModel", "갱신된 리스트: ${_trackList.value}")
-            }
-        } catch (e: Exception) {
-            Log.d("TrackPlayViewModel", "Error fetching track list: ${e.message}")
         }
     }
 
     // 대시보드용 리스트 갱신
     // 팔로우 한 사람의 최신 트랙
+    suspend fun getFollowRecentTracks(size: Int = 5): List<TrackEssential> {
+        try {
+            val response = trackService.getFollowingRecentTracks(size)
+            if (response.code == "SU") {
+                return response.payload?.map { track ->
+                    TrackEssential(
+                        trackId = track.trackId,
+                        title = track.title,
+                        artist = track.nickname,
+                        imageUrl = track.imageUrl
+                    )
+                } ?: emptyList()
+            } else {
+                Log.d("TrackPlayViewModel", "Failed to get follow tracks: ${response.message}")
+                return emptyList()
+            }
+        } catch (e: Exception) {
+            Log.d("TrackPlayViewModel", "Error fetching follow tracks: ${e.message}")
+            return emptyList()
+        }
+    }
 
     // 최근 들은 곡 조회
     suspend fun getRecentTrackList(size: Int = 3): List<TrackEssential> {

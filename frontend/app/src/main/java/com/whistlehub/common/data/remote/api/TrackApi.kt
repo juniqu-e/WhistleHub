@@ -188,4 +188,17 @@ interface TrackApi {
         @Query("memberId") memberId: Int,
         @Query("size") size: Int
     ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
+
+    // 팔로우한 사람의 최신 트랙 조회
+    @GET("discovery/recent/following")
+    suspend fun getFollowingRecentTracks(
+        @Query("size") size: Int
+    ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
+
+    // 태그별 최신 트랙 조회
+    @GET("discovery/recent/tag")
+    suspend fun getTagRecentTracks(
+        @Query("tagId") tagId: Int,
+        @Query("size") size: Int
+    ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
 }

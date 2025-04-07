@@ -5,9 +5,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -24,7 +27,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.whistlehub.common.data.remote.dto.response.AuthResponse
 import com.whistlehub.common.view.navigation.Screen
@@ -39,6 +41,7 @@ fun DiscoveryView(
     tags: List<AuthResponse.TagResponse>,
     navController: NavHostController,
     searchViewModel: SearchViewModel,
+    paddingValues: PaddingValues
 ) {
     val coroutineScope = rememberCoroutineScope()
 
@@ -89,6 +92,9 @@ fun DiscoveryView(
                     modifier = Modifier.padding(bottom = 10.dp, end = 10.dp)
                 )
             }
+        }
+        item {
+            Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
         }
     }
 }
