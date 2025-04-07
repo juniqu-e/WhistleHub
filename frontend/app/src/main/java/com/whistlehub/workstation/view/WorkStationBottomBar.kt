@@ -22,6 +22,7 @@ import com.whistlehub.workstation.data.BottomBarActions
 import com.whistlehub.workstation.di.WorkStationBottomBarProvider
 import com.whistlehub.workstation.view.component.GradientIconButton
 import com.whistlehub.workstation.view.component.UploadMixDialog
+import com.whistlehub.workstation.view.component.UploadSheet
 import javax.inject.Inject
 
 class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
@@ -33,6 +34,7 @@ class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
     ) {
         var menuExpanded by remember { mutableStateOf(false) }
         var showUploadDialog by remember { mutableStateOf(false) }
+        var showUploadSheet by remember { mutableStateOf(false) }
 
         Row(
             modifier = Modifier
@@ -59,7 +61,7 @@ class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
             )
             GradientIconButton(
                 icon = Icons.Default.CloudUpload,
-                onClick = { showUploadDialog = true },
+                onClick = { showUploadSheet = true },
                 gradientColors = listOf(Color(0xFFFF758C), Color(0xFFFF7EB3)) // 핑크 계열
             )
 //            IconButton(
@@ -124,6 +126,15 @@ class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
 //            }
         }
 
+        if(showUploadSheet) {
+            UploadSheet(
+                onDismiss = {showUploadSheet = false},
+                onUploadClicked = { metadata ->
+                    viewModel
+                }
+                ) { }
+        }
+
         if (showUploadDialog) {
             UploadMixDialog(
                 onConfirm = { name ->
@@ -136,37 +147,6 @@ class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
                 title = "너의 이름은"
             )
         }
-//        DropdownMenu(
-//            expanded = menuExpanded,
-//            onDismissRequest = { menuExpanded = false },
-//            offset = DpOffset(x = (-40).dp, y = (-28).dp),
-//            containerColor = Color.LightGray
-//        ) {
-//            DropdownMenuItem(
-//                text = { Text("Save") },
-//                onClick = {
-//                    menuExpanded = false
-//                },
-//                leadingIcon = {
-//                    Icon(
-//                        Icons.Outlined.Save,
-//                        contentDescription = "Save Track"
-//                    )
-//                }
-//            )
-//            DropdownMenuItem(
-//                text = { Text("Upload") },
-//                onClick = {
-//                    menuExpanded = false
-//                },
-//                leadingIcon = {
-//                    Icon(
-//                        Icons.Outlined.Upload,
-//                        contentDescription = "Save Track"
-//                    )
-//                }
-//            )
-//        }
     }
 }
 

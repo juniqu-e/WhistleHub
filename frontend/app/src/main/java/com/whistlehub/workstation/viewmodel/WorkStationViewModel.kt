@@ -39,6 +39,7 @@ import com.whistlehub.workstation.data.InstrumentType
 import com.whistlehub.workstation.data.Layer
 import com.whistlehub.workstation.data.LayerAudioInfo
 import com.whistlehub.workstation.data.PatternBlock
+import com.whistlehub.workstation.data.UploadMetadata
 import com.whistlehub.workstation.data.toAudioInfo
 import com.whistlehub.workstation.di.AudioLayerPlayer
 import com.whistlehub.workstation.di.WorkStationBottomBarProvider
@@ -230,28 +231,36 @@ class WorkStationViewModel @Inject constructor(
         _isPlaying.value = !_isPlaying.value
     }
 
-    fun onUpload(context: Context, fileName: String, onResult: (Boolean) -> Unit = {}) {
+    fun onUpload(context: Context, metadata: UploadMetadata, onResult: (Boolean) -> Unit = {}) {
+        val fileName = metadata.title
         val safeFileName = if (fileName.endsWith(".wav")) fileName else "$fileName.wav"
         val mix = File(context.filesDir, safeFileName)
 
         viewModelScope.launch {
             val infos = getAudioLayerInfos();
-//            setLayers(infos, maxUsedBars)
+            val maxUsedBars = getMaxUsedBars(tracks.value)
+            setLayers(infos, maxUsedBars)
             val success = renderMixToWav(mix.absolutePath)
 
             if (!success) {
                 onResult(false)
             } else {
                 //MultiPart
+                val ids = tracks.value.joinToString(",") { it.id.toString() }
+                val names = tracks.value.joinToString(",") { it.name }
+                val instrumentTypes = tracks.value.joinToString(",") { it.category }
+
+
+
                 val requestBodyMap = hashMapOf(
                     "title" to createRequestBody(fileName), //
-                    "description" to createRequestBody("Description Hard Coding (。・ω・。)"),
+                    "description" to createRequestBody(metadata.description),
                     "duration" to createRequestBody("120"),
-                    "visibility" to createRequestBody("1"), //
-                    "tags" to createRequestBody("1,2,3,4"), //
-                    "sourceTracks" to createRequestBody("1,2"),
-                    "layerName" to createRequestBody("layer1, layer2"),
-                    "instrumentType" to createRequestBody("1,2")
+                    "visibility" to createRequestBody(metadata.visibility.toString()), //
+                    "tags" to createRequestBody(metadata.tags.joinToString(",")), //
+                    "sourceTracks" to createRequestBody(ids),
+                    "layerName" to createRequestBody(names),
+                    "instrumentType" to createRequestBody(instrumentTypes),
                 )
                 val trackImg = null
                 val trackSoundFile = createMultipart(mix, "trackSoundFile")
@@ -380,11 +389,9 @@ class WorkStationViewModel @Inject constructor(
             recorder?.release()
             recorder = null
             isRecording = false
-
             val channels = 1
             val bitsPerSample = 16
             val byteRate = sampleRate * channels * (bitsPerSample / 8)
-
             val wavStream = FileOutputStream(file)
             val pcmData = pcmStream.toByteArray()
 

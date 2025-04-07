@@ -36,11 +36,15 @@ fun UploadSheet(
     var isPublic by remember { mutableStateOf(true) } // 공개 여부
     var selectedTags by remember { mutableStateOf(setOf<Int>()) } // Tag
     val tagOptions = listOf(
-        1 to "로파이",
-        2 to "드럼",
-        3 to "재즈",
-        4 to "기타",
-        5 to "피아노"
+        0 to "Record",
+        1 to "Whistle",
+        2 to "Acoustic Guitar",
+        3 to "Voice",
+        4 to "Drums",
+        5 to "Bass",
+        6 to "Electric Guitar",
+        7 to "Piano",
+        8 to "Synth",
     )
 
     ModalBottomSheet(onDismissRequest = onDismiss) {

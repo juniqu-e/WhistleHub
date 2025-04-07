@@ -68,7 +68,7 @@ fun AddLayerDialog(
         Surface(
             modifier = Modifier
                 .width(600.dp)
-                .height(300.dp)
+                .height(600.dp)
                 .padding(16.dp),
             shape = RoundedCornerShape(12.dp),
             color = Color.Gray,
@@ -120,10 +120,8 @@ fun AddLayerDialog(
                                             ) {
                                                 Text(
                                                     type.label,
-                                                    style = Typography.titleMedium,
+                                                    style = Typography.bodyLarge,
                                                     textAlign = TextAlign.Center,
-                                                    softWrap = false,
-                                                    maxLines = 1,
                                                     modifier = Modifier.fillMaxWidth()
                                                 )
                                             }
@@ -137,29 +135,6 @@ fun AddLayerDialog(
                                 onDismiss()
                                 navController.navigate("search")
                             }
-//                            val searchResults by viewModel.searchTrackResults.collectAsState();
-//                            val layersOfTrack by viewModel.layersOfSearchTrack;
-//
-//                            SearchLayerSection(searchResults = searchResults?.payload
-//                                ?: emptyList(),
-//                                onSearchClicked = { keyword ->
-//                                    viewModel.searchTrack(
-//                                        TrackRequest.SearchTrackRequest(
-//                                            keyword = keyword, 0, 10, "asc"
-//                                        )
-//                                    )
-//                                },
-//                                onTrackSelected = { trackId ->
-//                                    viewModel.addLayerFromSearchTrack(
-//                                        WorkstationRequest.ImportTrackRequest(
-//                                            trackId = trackId
-//                                        ),
-//                                        context = context,
-//                                    )
-//                                },
-//                                onBack = {
-//                                    selectedType = null
-//                                })
                         }
 
                         LayerButtonType.RECORD -> {

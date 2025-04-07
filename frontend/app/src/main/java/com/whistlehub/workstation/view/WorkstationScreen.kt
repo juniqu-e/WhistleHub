@@ -94,12 +94,14 @@ fun WorkStationScreen(
                 } else {
                     ToastData("믹스 저장 실패", Icons.Default.Error, Color(0xFFF44336))
                 }
-//                Toast.makeText(
-//                    context,
-//                    if (success) "믹스 저장 성공 🎉" else "믹스 저장 실패 ❌",
-//                    Toast.LENGTH_SHORT
-//                ).show()
             }
+//            viewModel.onUpload(context, name) { success ->
+//                toastState.value = if (success) {
+//                    ToastData("믹스 저장 성공", Icons.Default.CheckCircle, Color(0xFF4CAF50))
+//                } else {
+//                    ToastData("믹스 저장 실패", Icons.Default.Error, Color(0xFFF44336))
+//                }
+//            }
         }
     )
 

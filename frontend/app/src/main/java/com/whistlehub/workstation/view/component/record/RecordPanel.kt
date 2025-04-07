@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.Button
@@ -38,6 +40,7 @@ fun RecordingPanel(viewModel: WorkStationViewModel) {
     val isRecordingPending = viewModel.isRecordingPending
     val countdown = viewModel.countdown
     val toastState = rememberToastState()
+    val verticalScroll = rememberScrollState()
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -51,7 +54,11 @@ fun RecordingPanel(viewModel: WorkStationViewModel) {
         }
     }
 
-    Column(Modifier.padding(16.dp)) {
+    Column(
+        Modifier
+            .padding(16.dp)
+            .verticalScroll(verticalScroll)
+    ) {
         CustomToast(
             toastData = toastState.value,
             onDismiss = { toastState.value = null },
@@ -93,19 +100,16 @@ fun RecordingPanel(viewModel: WorkStationViewModel) {
 
             Spacer(Modifier.height(8.dp))
 
-            OutlinedTextField(
-                value = filename,
+            OutlinedTextField(value = filename,
                 onValueChange = { filename = it },
-                label = { Text("파일 이름") }
-            )
+                label = { Text("파일 이름") })
 
             Spacer(Modifier.height(8.dp))
 
             Button(
                 onClick = {
                     viewModel.addRecordedLayer(filename)
-                },
-                enabled = filename.isNotBlank()
+                }, enabled = filename.isNotBlank()
             ) {
                 Text("레이어로 등록")
             }
