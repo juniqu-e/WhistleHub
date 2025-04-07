@@ -12,7 +12,8 @@ fun TrackListColumn(
     modifier: Modifier = Modifier,
     trackList: List<TrackEssential>,
     workStationViewModel: WorkStationViewModel,
-    navController: NavHostController
+    navController: NavHostController,
+    needViewMore: Boolean = false,
 ) {
     if (trackList.isEmpty()) {
         return
@@ -23,7 +24,8 @@ fun TrackListColumn(
             TrackItemRow(
                 track,
                 workStationViewModel = workStationViewModel,
-                navController = navController
+                navController = navController,
+                needMoreView = needViewMore
             )
         }
     }

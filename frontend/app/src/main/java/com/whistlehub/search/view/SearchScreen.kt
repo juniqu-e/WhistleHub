@@ -1,7 +1,6 @@
 package com.whistlehub.search.view
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,15 +14,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -34,8 +32,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusEvent
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -47,7 +47,6 @@ import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.common.view.track.TrackItemRow
 import com.whistlehub.playlist.data.TrackEssential
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
-import com.whistlehub.search.view.component.SearchTrackDetailSheet
 import com.whistlehub.search.view.discovery.DiscoveryView
 import com.whistlehub.search.viewmodel.SearchViewModel
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
@@ -63,83 +62,87 @@ fun SearchScreen(
     workStationViewModel: WorkStationViewModel,
 ) {
     val coroutineScope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+    val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
-    var searchText by remember { mutableStateOf("") }
+    var isFocused by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
     var searchMode by remember { mutableStateOf(SearchMode.DISCOVERY) }  // 기본 탐색 모드
     val searchResult by searchViewModel.searchResult.collectAsState()
     val tagList by searchViewModel.tagList.collectAsState()
-    val trackDetail by searchViewModel.trackDetail.collectAsState()
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var isSheetVisible by remember { mutableStateOf(false) }
+    val customColors = CustomColors()
 
     LaunchedEffect(Unit) {
         searchViewModel.recommendTag()
     }
 
-    LaunchedEffect(trackDetail) {
-        if (trackDetail != null) {
-            isSheetVisible = true
-        }
-    }
-
     Column(Modifier.fillMaxSize()) {
         // 검색창
-        TextField(
-            value = searchText,
-            onValueChange = { searchText = it },
-            placeholder = {
-                Text(
-                    text = "Search Track",
-                    style = Typography.bodyMedium,
-                )
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { newQuery ->
+                searchQuery = newQuery
             },
             modifier = Modifier
                 .padding(10.dp)
                 .fillMaxWidth()
-                .onFocusEvent {
-                    if (it.isFocused) {
-                        searchText = ""
-                        searchMode = SearchMode.SEARCHING
-                    }
+                .focusRequester(focusRequester)
+                .onFocusChanged { state ->
+                    isFocused = state.isFocused
                 },
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedContainerColor = CustomColors().Grey200,
-                unfocusedContainerColor = CustomColors().Grey200,
-                unfocusedPlaceholderColor = CustomColors().Grey700,
-                unfocusedTrailingIconColor = CustomColors().Grey950,
-                focusedTrailingIconColor = CustomColors().Grey950,
-                unfocusedTextColor = CustomColors().Grey950,
-                focusedTextColor = CustomColors().Grey950,
-            ),
-            shape = RoundedCornerShape(20.dp),
-            textStyle = Typography.bodyMedium,
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                imeAction = ImeAction.Search
-            ),
-            keyboardActions = KeyboardActions {
-                coroutineScope.launch {
-                    searchViewModel.searchTracks(searchText)
-                    searchMode = SearchMode.COMPLETE_SEARCH
-                    keyboardController?.hide()
-                }
-            },
+            placeholder = { Text(
+                text = "Search Track",
+                style = Typography.bodyMedium,
+            ) },
             trailingIcon = {
-                IconButton({
-                    coroutineScope.launch {
-                        searchViewModel.searchTracks(searchText)
-                        searchMode = SearchMode.COMPLETE_SEARCH
-                        keyboardController?.hide()
+                if (searchMode == SearchMode.SEARCHING || searchMode == SearchMode.DISCOVERY) {
+                    IconButton({
+                        coroutineScope.launch {
+                            searchViewModel.searchTracks(searchQuery)
+                            searchMode = SearchMode.COMPLETE_SEARCH
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                        }
+                    }) {
+                        Icon(
+                            Icons.Rounded.Search,
+                            contentDescription = "Search Icon"
+                        )
                     }
-                }) {
-                    Icon(
-                        Icons.Rounded.Search,
-                        contentDescription = "Search Icon"
-                    )
+                } else if (searchMode == SearchMode.COMPLETE_SEARCH) {
+                    IconButton({
+                        searchMode = SearchMode.DISCOVERY
+                        searchQuery = ""
+                    }) {
+                        Icon(
+                            Icons.Rounded.Close,
+                            contentDescription = "Close",
+                            tint = customColors.Grey200
+                        )
+                    }
                 }
             },
+            singleLine = true,
+            colors = TextFieldDefaults.colors(
+                focusedTextColor = customColors.Grey50,
+                unfocusedTextColor = customColors.Grey50,
+                focusedPlaceholderColor = customColors.Grey200,
+                unfocusedPlaceholderColor = customColors.Grey200,
+                cursorColor = customColors.Mint500,
+                focusedIndicatorColor = customColors.Mint500,
+                unfocusedIndicatorColor = customColors.Grey200,
+                focusedContainerColor = customColors.Grey700.copy(alpha = 0.5f),
+                unfocusedContainerColor = customColors.Grey700.copy(alpha = 0.5f)
+            ),
+            shape = RoundedCornerShape(8.dp),
+            textStyle = Typography.bodyMedium,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(
+                onSearch = {
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
+                }
+            )
         )
         when (searchMode) {
             SearchMode.DISCOVERY -> {
@@ -149,8 +152,8 @@ fun SearchScreen(
                         tagList,
                         navController = navController,
                         searchViewModel = searchViewModel,
+                        paddingValues = paddingValues
                     )
-                    Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
                 }
             }
 
@@ -182,20 +185,12 @@ fun SearchScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
-                                Box(modifier = Modifier.weight(1f)) {
-                                    TrackItemRow(track,
-                                        trackPlayViewModel = trackPlayViewModel,
-                                        workStationViewModel = workStationViewModel,
-                                        navController = navController,
-                                    )
-                                }
-                                IconButton(onClick = { searchViewModel.getTrackDetails(track.trackId) }) {
-                                    Icon(
-                                        Icons.Filled.MoreVert,
-                                        contentDescription = "Options",
-                                        tint = CustomColors().Grey50
-                                    )
-                                }
+                                TrackItemRow(track,
+                                    trackPlayViewModel = trackPlayViewModel,
+                                    workStationViewModel = workStationViewModel,
+                                    navController = navController,
+                                    needMoreView = true,
+                                )
                             }
                         }
                         item {
@@ -205,19 +200,6 @@ fun SearchScreen(
                 }
             }
         }
-    }
-
-    if (isSheetVisible && trackDetail != null) {
-        SearchTrackDetailSheet(
-            track = trackDetail!!,
-            sheetState = sheetState,
-            onDismiss = {
-                isSheetVisible = false
-                searchViewModel.clearTrackDetail()
-            },
-            workStationViewModel = workStationViewModel,
-            navController = navController
-        )
     }
 }
 

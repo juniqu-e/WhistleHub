@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -19,13 +18,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Favorite
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -188,20 +185,12 @@ fun PlaylistTrackListScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Box(Modifier.weight(1f)) {
-                        TrackItemRow(
-                            track,
-                            workStationViewModel = workStationViewModel,
-                            navController = navController,
-                        )
-                    }
-                    IconButton({}) {
-                        Icon(
-                            Icons.Rounded.MoreVert,
-                            contentDescription = "More Options",
-                            tint = CustomColors().CommonIconColor
-                        )
-                    }
+                    TrackItemRow(
+                        track = track,
+                        workStationViewModel = workStationViewModel,
+                        navController = navController,
+                        needMoreView = true
+                    )
                 }
             }
             item {
