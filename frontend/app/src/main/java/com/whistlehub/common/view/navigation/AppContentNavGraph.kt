@@ -87,6 +87,7 @@ fun AppContentNavGraph(
         composable(route = Screen.PlayList.route) {
             PlayListScreen(
                 paddingValues,
+                logoutManager = logoutManager,
                 navController
             )
         }
@@ -133,7 +134,8 @@ fun AppContentNavGraph(
                     playlistId,
                     navController,
                     trackPlayViewModel,
-                    workStationViewModel = workStationViewModel
+                    workStationViewModel = workStationViewModel,
+                    logoutManager = logoutManager,
                 )
             }
         }
@@ -144,7 +146,8 @@ fun AppContentNavGraph(
                 PlaylistEditScreen(
                     paddingValues,
                     playlistId.toInt(),
-                    navController
+                    navController,
+                    logoutManager = logoutManager,
                 )
             }
         }

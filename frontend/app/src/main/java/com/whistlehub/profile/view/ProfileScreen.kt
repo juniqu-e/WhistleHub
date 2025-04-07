@@ -171,7 +171,7 @@ fun ProfileScreen(
         modifier = touchInterceptor,
         topBar = {
             CommonAppBar(
-                title = "Whistle Hub",
+                title = "Profile",
                 navController = navController,
                 logoutManager = logoutManager,
                 coroutineScope = coroutineScope,
