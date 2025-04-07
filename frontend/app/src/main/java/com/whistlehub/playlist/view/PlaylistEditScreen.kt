@@ -3,6 +3,7 @@ package com.whistlehub.playlist.view
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -35,6 +36,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -54,6 +56,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -62,6 +65,7 @@ import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import com.whistlehub.R
 import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
 import com.whistlehub.common.util.uriToMultipartBodyPart
 import com.whistlehub.common.view.component.ImageUpload
@@ -126,21 +130,23 @@ fun PlaylistEditScreen(
         showDismissDialog = true
     }
 
-    LazyColumn(Modifier
-        .padding(10.dp)
-        .pointerInput(Unit) {
-            detectTapGestures(
-                onTap = {
-                    draggedHorizontalIndex = null
-                    draggedVerticalIndex = null
-                }
-            )
-        },
+    LazyColumn(
+        Modifier
+            .padding(10.dp)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = {
+                        draggedHorizontalIndex = null
+                        draggedVerticalIndex = null
+                    }
+                )
+            },
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         // 플레이리스트 정보 수정
         item {
-            Row(Modifier.fillMaxWidth(),
+            Row(
+                Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -153,7 +159,7 @@ fun PlaylistEditScreen(
                         .clickable {
                             showImageDialog = true
                         },
-                    error = null,
+                    error = painterResource(R.drawable.default_track),
                     contentScale = ContentScale.Crop
                 )
                 Column {
@@ -161,82 +167,87 @@ fun PlaylistEditScreen(
                         Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(15.dp)
-                    ) { if (isEditTitle) {
-                        TextField(
-                            value = playlistTitle,
-                            onValueChange = { playlistTitle = it },
-                            placeholder = { Text("Playlist Name") },
-                            modifier = Modifier.weight(1f),
-                            maxLines = 1,
-                            singleLine = true
-                        )
-                        Icon(
-                            Icons.Rounded.Check,
-                            contentDescription = "Check",
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clickable {
-                                    isEditTitle = false
-                                },
-                            tint = CustomColors().Grey50
-                        )
-                        Icon(
-                            Icons.Rounded.Close,
-                            contentDescription = "Close",
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clickable {
-                                    isEditTitle = false
-                                    playlistTitle = playlistInfo?.name ?: ""
-                                },
-                            tint = CustomColors().Grey50
-                        )
-                    } else {
-                        Text(
-                            playlistTitle,
-                            style = Typography.titleLarge,
-                            fontSize = Typography.displaySmall.fontSize
-                        )
-                        Icon(
-                            Icons.Rounded.Edit,
-                            contentDescription = "Edit",
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clickable {
-                                    isEditTitle = true
-                                    isEditDescription = false
-                                },
-                            tint = CustomColors().Grey50
-                        )
-                        if (!isEditDescription) {
-                            Row(
-                                Modifier.weight(1f),
-                                horizontalArrangement = Arrangement.spacedBy(15.dp, Alignment.End),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    Icons.Rounded.Close,
-                                    contentDescription = "Close",
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .clickable {
-                                            // 편집 취소
-                                            showDismissDialog = true
-                                        })
-                                Icon(
-                                    Icons.Rounded.Check,
-                                    contentDescription = "Check",
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .clickable {
-                                            coroutineScope.launch {
-                                                // 편집 완료
-                                                showConfirmDialog = true
-                                            }
-                                        })
+                    ) {
+                        if (isEditTitle) {
+                            TextField(
+                                value = playlistTitle,
+                                onValueChange = { playlistTitle = it },
+                                placeholder = { Text("Playlist Name") },
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1,
+                                singleLine = true
+                            )
+                            Icon(
+                                Icons.Rounded.Check,
+                                contentDescription = "Check",
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clickable {
+                                        isEditTitle = false
+                                    },
+                                tint = CustomColors().CommonIconColor
+                            )
+                            Icon(
+                                Icons.Rounded.Close,
+                                contentDescription = "Close",
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clickable {
+                                        isEditTitle = false
+                                        playlistTitle = playlistInfo?.name ?: ""
+                                    },
+                                tint = CustomColors().CommonIconColor
+                            )
+                        } else {
+                            Text(
+                                playlistTitle,
+                                style = Typography.titleLarge,
+                                fontSize = Typography.displaySmall.fontSize
+                            )
+                            Icon(
+                                Icons.Rounded.Edit,
+                                contentDescription = "Edit",
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clickable {
+                                        isEditTitle = true
+                                        isEditDescription = false
+                                    },
+                                tint = CustomColors().CommonIconColor
+                            )
+                            if (!isEditDescription) {
+                                Row(
+                                    Modifier.weight(1f),
+                                    horizontalArrangement = Arrangement.spacedBy(
+                                        15.dp,
+                                        Alignment.End
+                                    ),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.Close,
+                                        contentDescription = "Close",
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .clickable {
+                                                // 편집 취소
+                                                showDismissDialog = true
+                                            })
+                                    Icon(
+                                        Icons.Rounded.Check,
+                                        contentDescription = "Check",
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .clickable {
+                                                coroutineScope.launch {
+                                                    // 편집 완료
+                                                    showConfirmDialog = true
+                                                }
+                                            })
+                                }
                             }
                         }
-                    } }
+                    }
                     Row(
                         Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -259,7 +270,7 @@ fun PlaylistEditScreen(
                                     .clickable {
                                         isEditDescription = false
                                     },
-                                tint = CustomColors().Grey50
+                                tint = CustomColors().CommonIconColor
                             )
                             Icon(
                                 Icons.Rounded.Close,
@@ -270,13 +281,13 @@ fun PlaylistEditScreen(
                                         isEditDescription = false
                                         playlistDescription = playlistInfo?.description ?: ""
                                     },
-                                tint = CustomColors().Grey50
+                                tint = CustomColors().CommonIconColor
                             )
                         } else {
                             Text(
                                 playlistDescription,
                                 style = Typography.bodyMedium,
-                                color = CustomColors().Grey200
+                                color = CustomColors().CommonSubTextColor
                             )
                             Icon(
                                 Icons.Rounded.Edit,
@@ -287,7 +298,7 @@ fun PlaylistEditScreen(
                                         isEditDescription = true
                                         isEditTitle = false
                                     },
-                                tint = CustomColors().Grey50
+                                tint = CustomColors().CommonIconColor
                             )
                         }
                     }
@@ -308,10 +319,10 @@ fun PlaylistEditScreen(
 
             if (index == targetIndex) {
                 // 예상 위치에 Divider 삽입
-                HorizontalDivider(modifier = Modifier
-                    .fillMaxWidth()
-                    .height(2.dp)
-                    .background(CustomColors().Mint500),
+                HorizontalDivider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(2.dp),
                     thickness = 2.dp
                 )
             }
@@ -321,13 +332,16 @@ fun PlaylistEditScreen(
                     .padding(8.dp)
                     .background(
                         when {
-                            isCurrentVerticalDragging -> CustomColors().Grey400.copy(alpha = 0.3f)
+                            isCurrentVerticalDragging -> CustomColors().CommonSubBackgroundColor.copy(
+                                alpha = 0.3f
+                            )
+
                             else -> Color.Transparent
                         },
                         RoundedCornerShape(8.dp)
                     )
                     .zIndex(if (isCurrentVerticalDragging) 1f else 0f)
-                    .offset { IntOffset( 0, animatedOffsetY.roundToInt()) }
+                    .offset { IntOffset(0, animatedOffsetY.roundToInt()) }
                     // 아이템 높이 측정 추가
                     .onGloballyPositioned { coordinates ->
                         itemHeightPx = coordinates.size.height.toFloat()
@@ -371,7 +385,7 @@ fun PlaylistEditScreen(
                     Icon(
                         imageVector = Icons.Rounded.Menu,
                         contentDescription = "Drag Handle",
-                        tint = CustomColors().Grey200,
+                        tint = CustomColors().CommonIconColor,
                         modifier = Modifier
                             .pointerInput(Unit) {
                                 detectDragGestures(
@@ -397,7 +411,8 @@ fun PlaylistEditScreen(
                                         dragOffsetY += dragAmount.y
 
                                         val movedItems = (dragOffsetY / itemHeightPx).toInt()
-                                        targetIndex = (index + movedItems).coerceIn(0, trackList.size - 1)
+                                        targetIndex =
+                                            (index + movedItems).coerceIn(0, trackList.size - 1)
                                     }
                                 )
                             }
@@ -428,62 +443,64 @@ fun PlaylistEditScreen(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 style = Typography.titleLarge,
-                                color = CustomColors().Grey50
+                                color = CustomColors().CommonTextColor
                             )
                             Text(
                                 track.trackInfo.nickname,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 style = Typography.bodyMedium,
-                                color = CustomColors().Grey200
+                                color = CustomColors().CommonSubTextColor
                             )
                         }
                     }
-                    if ( draggedHorizontalIndex == index ) {
-                        Box(Modifier
-                            .background(Color.Red)
-                            .heightIn(min = 50.dp)
-                            .widthIn(max = 70.dp)
-                            .width(
-                                if (!showDeleteButton && dragOffsetX < 0) {
-                                    -dragOffsetX.dp
-                                } else if (showDeleteButton && dragOffsetX >= 0) {
-                                    dragOffsetX.dp
-                                } else if (showDeleteButton && dragOffsetX < 0) {
-                                    70.dp
-                                } else {
-                                    0.dp
-                                }
-                            )
-                            .clickable {
-                                if (showDeleteButton) {
-                                    // 리스트에서 삭제
-                                    trackList = trackList.toMutableList().apply {
-                                        removeAt(index)
-                                        draggedHorizontalIndex = null
+                    if (draggedHorizontalIndex == index) {
+                        Box(
+                            Modifier
+                                .background(Color.Red)
+                                .heightIn(min = 50.dp)
+                                .widthIn(max = 70.dp)
+                                .width(
+                                    if (!showDeleteButton && dragOffsetX < 0) {
+                                        -dragOffsetX.dp
+                                    } else if (showDeleteButton && dragOffsetX >= 0) {
+                                        dragOffsetX.dp
+                                    } else if (showDeleteButton && dragOffsetX < 0) {
+                                        70.dp
+                                    } else {
+                                        0.dp
                                     }
-                                }
-                                showDeleteButton = false
-                            },
+                                )
+                                .clickable {
+                                    if (showDeleteButton) {
+                                        // 리스트에서 삭제
+                                        trackList = trackList.toMutableList().apply {
+                                            removeAt(index)
+                                            draggedHorizontalIndex = null
+                                        }
+                                    }
+                                    showDeleteButton = false
+                                },
                             contentAlignment = Alignment.Center
                         ) {
                             if (showDeleteButton) {
-                                Text("삭제",
+                                Text(
+                                    "삭제",
                                     style = Typography.titleMedium,
-                                    color = CustomColors().Grey50,
+                                    color = CustomColors().CommonTextColor,
                                 )
                             }
                         }
                     }
+                }
             }
-        }
-        // 마지막 아이템 뒤에도 Divider를 추가할 수 있음 (필요 시)
-        if (targetIndex == trackList.size) {
-            HorizontalDivider(modifier = Modifier
-                .fillMaxWidth()
-                .height(2.dp)
-                .background(CustomColors().Mint500),
-                thickness = 2.dp
+            // 마지막 아이템 뒤에도 Divider를 추가할 수 있음 (필요 시)
+            if (targetIndex == trackList.size) {
+                HorizontalDivider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(2.dp),
+                    thickness = 2.dp
                 )
             }
         }
@@ -498,40 +515,45 @@ fun PlaylistEditScreen(
             title = { Text("플레이리스트 수정") },
             text = { Text("수정사항을 적용하시겠습니까?") },
             confirmButton = {
-                Button({
-                    showConfirmDialog = false
-                    coroutineScope.launch {
-                        val image = if (playlistImage != null && playlistImage != playlistInfo?.imageUrl?.toUri()) {
-                            uriToMultipartBodyPart(context, playlistImage!!)
-                        } else {
-                            null
+                Button(
+                    {
+                        showConfirmDialog = false
+                        coroutineScope.launch {
+                            val image =
+                                if (playlistImage != null && playlistImage != playlistInfo?.imageUrl?.toUri()) {
+                                    uriToMultipartBodyPart(context, playlistImage!!)
+                                } else {
+                                    null
+                                }
+                            playlistViewModel.updatePlaylist(
+                                playlistId = playlistId,
+                                name = playlistTitle,
+                                description = playlistDescription,
+                                trackIds = trackList.map { it.trackInfo.trackId },
+                                image = image
+                            )
+                            navController.popBackStack()
                         }
-                        playlistViewModel.updatePlaylist(
-                            playlistId = playlistId,
-                            name = playlistTitle,
-                            description = playlistDescription,
-                            trackIds = trackList.map { it.trackInfo.trackId },
-                            image = image
-                        )
-                        navController.popBackStack()
-                    } },
+                    },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = CustomColors().Mint500,
-                        contentColor = CustomColors().Grey950
+                        containerColor = CustomColors().CommonButtonColor,
+                        contentColor = CustomColors().CommonTextColor
                     )
-                    ) {
+                ) {
                     Text("확인")
                 }
             },
             dismissButton = {
-                Button({
-                    showConfirmDialog = false
-                },
+                OutlinedButton(
+                    {
+                        showConfirmDialog = false
+                    },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = CustomColors().Grey400,
-                        contentColor = CustomColors().Grey950
-                    )
-                    ) {
+                        containerColor = Color.Transparent,
+                        contentColor = CustomColors().CommonTextColor
+                    ),
+                    border = BorderStroke(1.dp, CustomColors().CommonOutLineColor),
+                ) {
                     Text("취소")
                 }
             }
@@ -543,26 +565,29 @@ fun PlaylistEditScreen(
             title = { Text("플레이리스트 수정 취소") },
             text = { Text("모든 수정 사항이 삭제되고, 이전 상태로 돌아갑니다.") },
             confirmButton = {
-                Button({
-                    showDismissDialog = false
-                    navController.popBackStack()
-                },
+                Button(
+                    {
+                        showDismissDialog = false
+                        navController.popBackStack()
+                    },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = CustomColors().Mint500,
-                        contentColor = CustomColors().Grey950
+                        containerColor = CustomColors().CommonButtonColor,
+                        contentColor = CustomColors().CommonTextColor
                     )
                 ) {
                     Text("확인")
                 }
             },
             dismissButton = {
-                Button({
-                    showDismissDialog = false
-                },
+                OutlinedButton(
+                    {
+                        showDismissDialog = false
+                    },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = CustomColors().Grey400,
-                        contentColor = CustomColors().Grey950
-                    )
+                        containerColor = Color.Transparent,
+                        contentColor = CustomColors().CommonTextColor
+                    ),
+                    border = BorderStroke(1.dp, CustomColors().CommonOutLineColor),
                 ) {
                     Text("취소")
                 }
@@ -576,34 +601,39 @@ fun PlaylistEditScreen(
                 showImageDialog = false
             },
             title = { Text("플레이리스트 이미지 수정") },
-            text = { ImageUpload(
-                onChangeImage = { uri ->
-                    playlistImage = uri
-                },
-                originImageUri = playlistInfo?.imageUrl?.toUri(),
-                canDelete = false
-            ) },
+            text = {
+                ImageUpload(
+                    onChangeImage = { uri ->
+                        playlistImage = uri
+                    },
+                    originImageUri = playlistInfo?.imageUrl?.toUri(),
+                    canDelete = false
+                )
+            },
             confirmButton = {
-                Button({
-                    showImageDialog = false
-                },
+                Button(
+                    {
+                        showImageDialog = false
+                    },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = CustomColors().Mint500,
-                        contentColor = CustomColors().Grey950
+                        containerColor = CustomColors().CommonButtonColor,
+                        contentColor = CustomColors().CommonTextColor
                     )
                 ) {
                     Text("적용")
                 }
             },
             dismissButton = {
-                Button({
-                    playlistImage = playlistInfo?.imageUrl?.toUri()
-                    showImageDialog = false
-                },
+                OutlinedButton(
+                    {
+                        playlistImage = playlistInfo?.imageUrl?.toUri()
+                        showImageDialog = false
+                    },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = CustomColors().Grey400,
-                        contentColor = CustomColors().Grey950
-                    )
+                        containerColor = Color.Transparent,
+                        contentColor = CustomColors().CommonTextColor
+                    ),
+                    border = BorderStroke(1.dp, CustomColors().CommonOutLineColor),
                 ) {
                     Text("취소")
                 }

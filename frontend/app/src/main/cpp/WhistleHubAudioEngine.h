@@ -33,7 +33,7 @@ public :
 
     std::vector <LayerAudioInfo> parseLayerList(JNIEnv *env, jobject layerList);
 
-    void setLayers(const std::vector <LayerAudioInfo> &layers);
+    void setLayers(const std::vector <LayerAudioInfo> &layers, float maxUsedBars);
 
     void renderAudio(float *outputBuffer, int32_t numFrames);
 
@@ -45,6 +45,8 @@ private :
     int bpm = 120;
     bool isFirstRender = true;
 
+    bool mShouldStopStream = false;
+
     void log(const char *message);
 
     void logError(const char *message);
@@ -55,7 +57,7 @@ private :
     double mTotalFrameRendered = 0;
     float mLoopLengthInBeats = 64.0f;
 
-    float mMaxBars = 64.0f;
+    float mMaxUsedBars = 64.0f;
     int mPreviousBar = -1;
 };
 

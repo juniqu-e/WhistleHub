@@ -16,6 +16,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -87,7 +89,8 @@ fun ProfileHeader(
             Column(modifier = Modifier.weight(1f)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
                         text = nickname,
@@ -95,30 +98,51 @@ fun ProfileHeader(
                         color = colors.Grey50,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false)
+                        modifier = Modifier.weight(1f)
                     )
 
                     // 본인이 아닌 경우에만 팔로우 버튼 표시
                     if (showFollowButton) {
                         Button(
                             onClick = {
-                                Log.d("ProfileHeader", "Follow button clicked, current state: $isFollowing")
+                                Log.d(
+                                    "ProfileHeader",
+                                    "Follow button clicked, current state: $isFollowing"
+                                )
                                 onFollowClick()
                             },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isFollowing) colors.Grey700 else colors.Mint500,
-                                contentColor = if (isFollowing) colors.Grey200 else colors.Grey950
+                                containerColor = if (isFollowing) colors.Error700 else colors.CommonButtonColor,
+                                contentColor = colors.CommonTextColor
                             ),
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier.height(32.dp),
                             contentPadding = PaddingValues(
-                                horizontal = 8.dp
+                                horizontal = 8.dp,
+                                vertical = 4.dp
                             )
                         ) {
-                            Text(
-                                text = if (isFollowing) "Unfollow" else "Follow",
-                                style = Typography.titleSmall
-                            )
+                            // Show different text and icon based on follow state
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                if (isFollowing) {
+                                    Icon(
+                                        imageVector = Icons.Default.PersonRemove,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = colors.CommonTextColor
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Default.PersonAdd,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = colors.CommonTextColor
+                                    )
+                                }
+                            }
                         }
                     }
                 }

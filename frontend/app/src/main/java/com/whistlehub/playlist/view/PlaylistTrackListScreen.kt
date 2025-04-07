@@ -1,6 +1,7 @@
 package com.whistlehub.playlist.view
 
 import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +26,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,12 +39,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import com.whistlehub.R
 import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
@@ -92,7 +97,7 @@ fun PlaylistTrackListScreen(
                             Icons.Rounded.Favorite,
                             contentDescription = "Favorite",
                             modifier = Modifier.size(50.dp),
-                            tint = CustomColors().Mint500
+                            tint = CustomColors().CommonIconColor
                         )
                     } else {
                         AsyncImage(
@@ -101,7 +106,7 @@ fun PlaylistTrackListScreen(
                             modifier = Modifier
                                 .size(50.dp)
                                 .clip(RoundedCornerShape(5.dp)),
-                            error = null,
+                            error = painterResource(R.drawable.default_track),
                             contentScale = ContentScale.Crop
                         )
                     }
@@ -127,7 +132,7 @@ fun PlaylistTrackListScreen(
                                     .clickable {
                                         showPlayPlaylistDialog = true
                                     },
-                                tint = CustomColors().Mint500
+                                tint = CustomColors().CommonIconColor
                             )
                             if (playlistId != "like") {
                                 Icon(
@@ -138,7 +143,7 @@ fun PlaylistTrackListScreen(
                                         .clickable {
                                             navController.navigate(Screen.PlayListEdit.route + "/$playlistId")
                                         },
-                                    tint = CustomColors().Grey50
+                                    tint = CustomColors().CommonIconColor
                                 )
                                 Icon(
                                     Icons.Rounded.Delete,
@@ -148,7 +153,7 @@ fun PlaylistTrackListScreen(
                                         .clickable {
                                             showDeletePlaylistDialog = true
                                         },
-                                    tint = CustomColors().Grey50
+                                    tint = CustomColors().CommonIconColor
                                 )
                             }
                         }
@@ -160,7 +165,7 @@ fun PlaylistTrackListScreen(
                             Text(
                                 playlistInfo?.description ?: "",
                                 style = Typography.bodyLarge,
-                                color = CustomColors().Grey200,
+                                color = CustomColors().CommonSubTextColor,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -188,7 +193,7 @@ fun PlaylistTrackListScreen(
                         Icon(
                             Icons.Rounded.MoreVert,
                             contentDescription = "More Options",
-                            tint = CustomColors().Grey50
+                            tint = CustomColors().CommonIconColor
                         )
                     }
                 }
@@ -216,19 +221,20 @@ fun PlaylistTrackListScreen(
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = CustomColors().Error700,
-                        contentColor = CustomColors().Grey950
+                        contentColor = CustomColors().CommonTextColor
                     )
                 ) {
                     Text("삭제")
                 }
             },
             dismissButton = {
-                Button(
+                OutlinedButton(
                     onClick = { showDeletePlaylistDialog = false },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = CustomColors().Grey400,
-                        contentColor = CustomColors().Grey950
-                    )
+                        containerColor = Color.Transparent,
+                        contentColor = CustomColors().CommonTextColor
+                    ),
+                    border = BorderStroke(1.dp, CustomColors().CommonOutLineColor),
                 ) {
                     Text("취소")
                 }
@@ -257,20 +263,21 @@ fun PlaylistTrackListScreen(
                         showPlayPlaylistDialog = false
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = CustomColors().Mint500,
-                        contentColor = CustomColors().Grey950
+                        containerColor = CustomColors().CommonButtonColor,
+                        contentColor = CustomColors().CommonTextColor
                     )
                 ) {
                     Text("재생")
                 }
             },
             dismissButton = {
-                Button(
+                OutlinedButton(
                     onClick = { showPlayPlaylistDialog = false },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = CustomColors().Grey400,
-                        contentColor = CustomColors().Grey950
-                    )
+                        containerColor = Color.Transparent,
+                        contentColor = CustomColors().CommonTextColor
+                    ),
+                    border = BorderStroke(1.dp, CustomColors().CommonOutLineColor),
                 ) {
                     Text("취소")
                 }

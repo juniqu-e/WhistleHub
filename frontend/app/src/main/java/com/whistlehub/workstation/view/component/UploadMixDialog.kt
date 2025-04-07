@@ -1,4 +1,4 @@
-package com.whistlehub.workstation.view
+package com.whistlehub.workstation.view.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

@@ -127,14 +127,32 @@ fun ProfileTrackDetailSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Track Image
-                AsyncImage(
-                    model = track.imageUrl,
-                    contentDescription = track.title,
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(RoundedCornerShape(8.dp)),
-                    contentScale = ContentScale.Crop
-                )
+                if (track.imageUrl.isNullOrEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(customColors.Grey800),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MusicNote,
+                            contentDescription = "Music",
+                            tint = customColors.Grey500,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                } else {
+                    AsyncImage(
+                        model = track.imageUrl,
+                        contentDescription = track.title,
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
 
                 // Track Details
                 Column(
@@ -152,7 +170,7 @@ fun ProfileTrackDetailSheet(
                     Text(
                         text = track.artist?.nickname ?: "Unknown Artist",
                         style = Typography.bodyLarge,
-                        color = customColors.Mint500,
+                        color = customColors.CommonSubTextColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -179,7 +197,7 @@ fun ProfileTrackDetailSheet(
             Text(
                 text = "Description",
                 style = Typography.titleMedium,
-                color = customColors.Grey200,
+                color = customColors.CommonSubTitleColor,
                 modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
             )
             Text(
@@ -194,7 +212,7 @@ fun ProfileTrackDetailSheet(
                 Text(
                     text = "Tags",
                     style = Typography.titleMedium,
-                    color = customColors.Grey200,
+                    color = customColors.CommonSubTitleColor,
                     modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
                 )
 
@@ -247,14 +265,14 @@ fun ProfileTrackDetailSheet(
                         Text(
                             text = likeCount.toString(),
                             style = Typography.bodyLarge,
-                            color = customColors.Grey200
+                            color = customColors.CommonTextColor
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Likes",
                         style = Typography.bodySmall,
-                        color = customColors.Grey400
+                        color = customColors.CommonTextColor
                     )
                 }
 
@@ -266,13 +284,13 @@ fun ProfileTrackDetailSheet(
                     Text(
                         text = track.viewCount.toString(),
                         style = Typography.bodyLarge,
-                        color = customColors.Grey200
+                        color = customColors.CommonTextColor
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Views",
                         style = Typography.bodySmall,
-                        color = customColors.Grey400
+                        color = customColors.CommonTextColor
                     )
                 }
 
@@ -284,13 +302,13 @@ fun ProfileTrackDetailSheet(
                     Text(
                         text = track.importCount.toString(),
                         style = Typography.bodyLarge,
-                        color = customColors.Grey200
+                        color = customColors.CommonTextColor
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Imports",
                         style = Typography.bodySmall,
-                        color = customColors.Grey400
+                        color = customColors.CommonTextColor
                     )
                 }
             }
@@ -402,7 +420,7 @@ fun ProfileTrackDetailSheet(
                             onValueChange = { editedTitle = it },
                             label = { Text("Title", color = customColors.Grey300) },
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = customColors.Mint500,
+                                focusedBorderColor = customColors.CommonFocusColor,
                                 unfocusedBorderColor = customColors.Grey700,
                                 focusedTextColor = customColors.Grey50,
                                 unfocusedTextColor = customColors.Grey50
@@ -422,7 +440,7 @@ fun ProfileTrackDetailSheet(
                             onValueChange = { editedDescription = it },
                             label = { Text("Description", color = customColors.Grey300) },
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = customColors.Mint500,
+                                focusedBorderColor = customColors.CommonFocusColor,
                                 unfocusedBorderColor = customColors.Grey700,
                                 focusedTextColor = customColors.Grey50,
                                 unfocusedTextColor = customColors.Grey50
@@ -454,8 +472,8 @@ fun ProfileTrackDetailSheet(
                                     )
                                 },
                                 colors = SwitchDefaults.colors(
-                                    checkedThumbColor = customColors.Mint500,
-                                    checkedTrackColor = customColors.Mint900,
+                                    checkedThumbColor = customColors.CommonFocusColor,
+                                    checkedTrackColor = customColors.CommonButtonColor,
                                     uncheckedThumbColor = customColors.Grey700,
                                     uncheckedTrackColor = customColors.Grey900,
                                 )
@@ -506,14 +524,14 @@ fun ProfileTrackDetailSheet(
                                 },
                                 enabled = !isUpdateLoading,
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = customColors.Mint500,
-                                    contentColor = customColors.Grey950
+                                    containerColor = customColors.CommonButtonColor,
+                                    contentColor = customColors.CommonTextColor
                                 )
                             ) {
                                 if (isUpdateLoading) {
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(20.dp),
-                                        color = customColors.Grey950,
+                                        color = customColors.CommonTextColor,
                                         strokeWidth = 2.dp
                                     )
                                 } else {
@@ -595,7 +613,7 @@ fun ProfileTrackDetailSheet(
                         onValueChange = { },
                         placeholder = { Text("Enter your reason", color = customColors.Grey400) },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = customColors.Mint500,
+                            focusedBorderColor = customColors.CommonFocusColor,
                             unfocusedBorderColor = customColors.Grey700,
                             focusedTextColor = customColors.Grey50,
                             unfocusedTextColor = customColors.Grey50
@@ -747,9 +765,10 @@ fun ProfileTrackDetailSheet(
                             showCreatePlaylistDialog = true
                         },
                         modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = customColors.Mint500,
-                            contentColor = customColors.Grey950
+                            containerColor = customColors.CommonButtonColor,
+                            contentColor = customColors.CommonTextColor
                         )
                     ) {
                         Icon(
@@ -777,7 +796,7 @@ fun ProfileTrackDetailSheet(
                         onValueChange = { newPlaylistName = it },
                         label = { Text("Playlist Name", color = customColors.Grey300) },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = customColors.Mint500,
+                            focusedBorderColor = customColors.CommonFocusColor,
                             unfocusedBorderColor = customColors.Grey700,
                             focusedTextColor = customColors.Grey50,
                             unfocusedTextColor = customColors.Grey50
@@ -793,7 +812,7 @@ fun ProfileTrackDetailSheet(
                         onValueChange = { newPlaylistDescription = it },
                         label = { Text("Description (Optional)", color = customColors.Grey300) },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = customColors.Mint500,
+                            focusedBorderColor = customColors.CommonFocusColor,
                             unfocusedBorderColor = customColors.Grey700,
                             focusedTextColor = customColors.Grey50,
                             unfocusedTextColor = customColors.Grey50
@@ -818,8 +837,8 @@ fun ProfileTrackDetailSheet(
                     },
                     enabled = newPlaylistName.isNotEmpty(),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = customColors.Mint500,
-                        contentColor = customColors.Grey950
+                        containerColor = customColors.CommonButtonColor,
+                        contentColor = customColors.CommonTextColor
                     )
                 ) {
                     Text("Create")

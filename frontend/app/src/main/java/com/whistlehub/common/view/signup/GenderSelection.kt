@@ -40,7 +40,7 @@ fun GenderSelection(
                 selected = selectedGender == "남성",
                 onClick = { onGenderSelected("남성") },
                 colors = RadioButtonDefaults.colors(
-                    selectedColor = colors.Mint500,
+                    selectedColor = colors.CommonFocusColor,
                     unselectedColor = Color.White
                 )
             )
@@ -53,7 +53,7 @@ fun GenderSelection(
                 selected = selectedGender == "여성",
                 onClick = { onGenderSelected("여성") },
                 colors = RadioButtonDefaults.colors(
-                    selectedColor = colors.Mint500,
+                    selectedColor = colors.CommonFocusColor,
                     unselectedColor = Color.White
                 )
             )

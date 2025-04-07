@@ -9,6 +9,14 @@
 
 //전역 오디오 엔진 인스턴스
 static WhistleHubAudioEngine engine;
+jobject g_callback = nullptr;
+JavaVM* g_vm = nullptr;
+
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
+    g_vm = vm;
+    return JNI_VERSION_1_6;
+}
+
 
 extern "C"
 JNIEXPORT jint JNICALL
@@ -73,9 +81,9 @@ Java_com_whistlehub_common_util_AudioEngineBridge_stopAudioEngine(JNIEnv *env, j
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_whistlehub_common_util_AudioEngineBridge_setLayers(JNIEnv *env, jobject thiz, jobject layers) {
+Java_com_whistlehub_common_util_AudioEngineBridge_setLayers(JNIEnv *env, jobject thiz, jobject layers, jint maxUsedBars) {
     std::vector<LayerAudioInfo> parsed = engine.parseLayerList(env, layers);
-    engine.setLayers(parsed);
+    engine.setLayers(parsed, static_cast<float>(maxUsedBars));
 }
 
 extern "C"
@@ -85,4 +93,13 @@ Java_com_whistlehub_common_util_AudioEngineBridge_renderMixToWav(JNIEnv* env, jo
     bool result = engine.renderToFile(path, 44100 * 60);  // 예: 1분
     env->ReleaseStringUTFChars(jPath, path);
     return result;
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_whistlehub_common_util_AudioEngineBridge_setCallback(JNIEnv *env, jobject thiz, jobject listener) {
+    if (g_callback) {
+        env->DeleteGlobalRef(g_callback);
+        g_callback = nullptr;
+    }
+    g_callback = env->NewGlobalRef(listener);
 }

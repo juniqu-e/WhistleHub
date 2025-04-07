@@ -33,31 +33,46 @@ class TrackPlayViewModel @Inject constructor(
     // exoPlayer 관련 변수
     // 앱 context
     private val app = context.applicationContext as WhistleHub
+
     // ExoPlayer 인스턴스
     val exoPlayer get() = app.exoPlayer
+
     // 현재 재생 중인 트랙
     val currentTrack: StateFlow<TrackResponse.GetTrackDetailResponse?> get() = app.currentTrack
+
     // 재생 상태 (재생 중/일시 정지)
     val isPlaying: StateFlow<Boolean> get() = app.isPlaying
+
     // 현재 트랙 위치
     val playerPosition: StateFlow<Long> get() = app.playerPosition
+
     // 현재 트랙 길이
     val trackDuration: StateFlow<Long> get() = app.trackDuration
+
     // 플레이어 내부 트랙 리스트
     val playerTrackList: MutableStateFlow<List<TrackEssential>> get() = app.playerTrackList
+
+    // 반복 재생 여부
+    val isLooping: StateFlow<Boolean> get() = app.isLooping
+
+    // 셔플 재생 여부
+    val isShuffle: StateFlow<Boolean> get() = app.isShuffle
 
 
     // 내부 고유 상태
     // 현재 유저 정보
     private val _user = MutableStateFlow<UserEntity?>(null)
     val user: StateFlow<UserEntity?> get() = _user
+
     // 테스트용 트랙 리스트 (최종 API 연결 후 삭제)
     private val _trackList =
         MutableStateFlow<List<TrackEssential>>(emptyList())
     val trackList: StateFlow<List<TrackEssential>> get() = _trackList
+
     // 플레이어 화면 상태
     private val _playerViewState = MutableStateFlow<PlayerViewState>(PlayerViewState.PLAYING)
     val playerViewState: StateFlow<PlayerViewState> get() = _playerViewState
+
     // 트랙 로그 기준 시간
     private val _LOG_TIME = 15L
 
@@ -84,7 +99,7 @@ class TrackPlayViewModel @Inject constructor(
                         val track = TrackEssential(
                             trackId = resopnse.trackId,
                             title = resopnse.title,
-                            artist = resopnse.artist?.nickname ?: "Unknown Artist",
+                            artist = resopnse.artist.nickname,
                             imageUrl = resopnse.imageUrl
                         )
                         track
@@ -101,6 +116,130 @@ class TrackPlayViewModel @Inject constructor(
             }
         } catch (e: Exception) {
             Log.d("TrackPlayViewModel", "Error fetching track list: ${e.message}")
+        }
+    }
+
+    // 대시보드용 리스트 갱신
+    // 팔로우 한 사람의 최신 트랙
+
+    // 최근 들은 곡 조회
+    suspend fun getRecentTrackList(size: Int = 3): List<TrackEssential> {
+        try {
+            val response = trackService.getRecentTracks(size)
+            if (response.code == "SU") {
+                return response.payload?.map { track ->
+                    TrackEssential(
+                        trackId = track.trackId,
+                        title = track.title,
+                        artist = track.nickname,
+                        imageUrl = track.imageUrl
+                    )
+                } ?: emptyList()
+            } else {
+                Log.d("TrackPlayViewModel", "Failed to get recent tracks: ${response.message}")
+                return emptyList()
+            }
+        } catch (e: Exception) {
+            Log.d("TrackPlayViewModel", "Error fetching recent tracks: ${e.message}")
+            return emptyList()
+        }
+    }
+
+    // 특정 트랙과 비슷한 느낌의 트랙 리스트
+    suspend fun getSimilarTrackList(trackId: Int): List<TrackEssential> {
+        try {
+            val response = trackService.getSimilarTracks(trackId)
+            if (response.code == "SU") {
+                return response.payload?.map { track ->
+                    TrackEssential(
+                        trackId = track.trackId,
+                        title = track.title,
+                        artist = track.nickname,
+                        imageUrl = track.imageUrl
+                    )
+                } ?: emptyList()
+            } else {
+                Log.d("TrackPlayViewModel", "Failed to get similar tracks: ${response.message}")
+                return emptyList()
+            }
+        } catch (e: Exception) {
+            Log.d("TrackPlayViewModel", "Error fetching similar tracks: ${e.message}")
+            return emptyList()
+        }
+    }
+
+    // 한 번도 들어본 적 없는 음악
+    suspend fun getNeverTrackList(size: Int = 3): List<TrackEssential> {
+        try {
+            val response = trackService.getNeverTracks(size)
+            if (response.code == "SU") {
+                return response.payload?.map { track ->
+                    TrackEssential(
+                        trackId = track.trackId,
+                        title = track.title,
+                        artist = track.nickname,
+                        imageUrl = track.imageUrl
+                    )
+                } ?: emptyList()
+            } else {
+                Log.d("TrackPlayViewModel", "Failed to get never tracks: ${response.message}")
+                return emptyList()
+            }
+        } catch (e: Exception) {
+            Log.d("TrackPlayViewModel", "Error fetching never tracks: ${e.message}")
+            return emptyList()
+        }
+    }
+
+    // 팔로우한 사람 한 명
+    suspend fun getFollowingMember(): TrackResponse.MemberInfo {
+        try {
+            val response = trackService.getFollowingMember()
+            if (response.code == "SU") {
+                return response.payload ?: TrackResponse.MemberInfo(
+                    memberId = 0,
+                    nickname = "",
+                    profileImage = ""
+                )
+
+            } else {
+                Log.d("TrackPlayViewModel", "Failed to get following members: ${response.message}")
+                return TrackResponse.MemberInfo(
+                    memberId = 0,
+                    nickname = "",
+                    profileImage = ""
+                )
+            }
+        } catch (e: Exception) {
+            Log.d("TrackPlayViewModel", "Error fetching following members: ${e.message}")
+            return TrackResponse.MemberInfo(
+                memberId = 0,
+                nickname = "",
+                profileImage = ""
+            )
+        }
+    }
+
+    // 특정 회원의 Fanmix 트랙 리스트
+    suspend fun getFanMixTracks(memberId: Int, size: Int = 10): List<TrackEssential> {
+        try {
+            val response = trackService.getFanMixTracks(memberId, size)
+            if (response.code == "SU") {
+                return response.payload?.map { track ->
+                    TrackEssential(
+                        trackId = track.trackId,
+                        title = track.title,
+                        artist = track.nickname,
+                        imageUrl = track.imageUrl
+                    )
+                } ?: emptyList()
+            } else {
+                Log.d("TrackPlayViewModel", "Failed to get fan mix tracks: ${response.message}")
+                return emptyList()
+            }
+        } catch (e: Exception) {
+            Log.d("TrackPlayViewModel", "Error fetching fan mix tracks: ${e.message}")
+            return emptyList()
         }
     }
 
@@ -160,6 +299,41 @@ class TrackPlayViewModel @Inject constructor(
 
     suspend fun nextTrack() {
         app.nextTrack()
+    }
+
+    fun toggleLooping() {
+        app.toggleLooping()
+    }
+
+    fun toggleShuffle() {
+        app.toggleShuffle()
+    }
+
+    // 재생목록 비우기 (로그아웃 시 호출)
+    fun clearTrackList() {
+        app.clearTrackList()
+    }
+
+    // 트랙 신고
+    suspend fun reportTrack(trackId: Int, type: Int = 1, detail: String?): Boolean {
+        return try {
+            val response = trackService.reportTrack(
+                TrackRequest.ReportTrackRequest(
+                    trackId = trackId,
+                    type = type,  // 1: 저작권, 2: 불량 트랙,
+                    detail = detail
+                )
+            )
+            if (response.code == "SU") {
+                true
+            } else {
+                Log.d("TrackPlayViewModel", "Failed to report track: ${response.message}")
+                false
+            }
+        } catch (e: Exception) {
+            Log.d("TrackPlayViewModel", "Error reporting track: ${e.message}")
+            false
+        }
     }
 
     suspend fun playPlaylist(tracks: List<TrackEssential>) {
@@ -320,11 +494,6 @@ class TrackPlayViewModel @Inject constructor(
     private fun resetTimer() {
         _timerTask?.cancel()
         _playTime.value = 0L
-    }
-
-
-    override fun onCleared() {
-        super.onCleared()
     }
 }
 

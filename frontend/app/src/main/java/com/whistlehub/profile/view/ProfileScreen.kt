@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -31,6 +32,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -46,6 +50,7 @@ import com.whistlehub.profile.view.components.ProfileTrackDetailSheet
 import com.whistlehub.profile.view.components.TrackGridItem
 import com.whistlehub.profile.viewmodel.ProfileTrackDetailViewModel
 import com.whistlehub.profile.viewmodel.ProfileViewModel
+import com.whistlehub.workstation.view.component.track
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -87,6 +92,7 @@ fun ProfileScreen(
     val followingList by viewModel.followings.collectAsState()
     val followerCount by viewModel.followerCount.collectAsState()
     val followingCount by viewModel.followingCount.collectAsState()
+    val trackCount by viewModel.trackCount.collectAsState()
     val isFollowing by viewModel.isFollowing.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
 
@@ -113,6 +119,19 @@ fun ProfileScreen(
     var showTrackDetailSheet by remember { mutableStateOf(false) }
     val trackDetailViewModel: ProfileTrackDetailViewModel = hiltViewModel()
     val trackDetail by trackDetailViewModel.trackDetail.collectAsState()
+
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    val touchInterceptor = Modifier.pointerInput(Unit) {
+        detectTapGestures(
+            onTap = {
+                // 화면의 다른 부분 클릭 시 포커스와 키보드 숨김
+                focusManager.clearFocus()
+                keyboardController?.hide()
+            }
+        )
+    }
 
     // 화면이 처음 구성될 때 프로필 데이터를 로드합니다.
     LaunchedEffect(memberId) {
@@ -148,6 +167,7 @@ fun ProfileScreen(
 
     // Main content
     Scaffold(
+        modifier = touchInterceptor,
         topBar = {
             CommonAppBar(
                 title = "Whistle Hub",
@@ -213,7 +233,7 @@ fun ProfileScreen(
                     profileText = profile?.profileText ?: "",
                     followerCount = followerCount,
                     followingCount = followingCount,
-                    trackCount = tracks.size,
+                    trackCount = trackCount,
                     showFollowButton = memberId != currentUserId,
                     isFollowing = isFollowing,
                     onFollowClick = {
@@ -261,7 +281,8 @@ fun ProfileScreen(
                                 trackDetailViewModel.loadTrackDetails(track.trackId)
                                 showTrackDetailSheet = true
                             }
-                        )
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
                     // 기존 TrackGridItem 컴포넌트 사용 (수정 없이)
                     TrackGridItem(

@@ -6,18 +6,24 @@ import com.ssafy.backend.common.service.S3Service;
 import com.ssafy.backend.graph.service.DataCollectingService;
 import com.ssafy.backend.mysql.entity.*;
 import com.ssafy.backend.mysql.repository.*;
-import com.ssafy.backend.openl3.service.Openl3Service;
 import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
 import com.ssafy.backend.workstation.dto.response.LayerImportResponseDto;
 import com.ssafy.backend.workstation.dto.response.TrackImportResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.io.IOException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -32,9 +38,14 @@ public class WorkstationService {
 
     private final DataCollectingService dataCollectingService;
     private final S3Service s3Service;
-    private final Openl3Service openl3Service;
 
     private final AuthService authService;
+
+    @Value("${BACKEND_HOST}")
+    private String BACKEND_HOST;
+
+    @Value("${FASTAPI_HOST}")
+    private String FASTAPI_HOST;
 
     /**
      * 트랙의 업로드
@@ -85,7 +96,7 @@ public class WorkstationService {
         // 1-4-1. Track 노드 생성 및 태그 연결
         dataCollectingService.createTrack(t.getId(), Arrays.stream(trackUploadRequestDto.getTags()).toList());
         // 1-4-2. FastAPI로 음원 보내기
-        openl3Service.uploadAndFindSimilar(trackUploadRequestDto.getTrackSoundFile().getResource(), t.getId(), 10);
+        uploadAndFindSimilar(trackUploadRequestDto.getTrackSoundFile().getResource(), t.getId(), trackUploadRequestDto.getInstrumentType(), 10);
 
         // 2. 레이어 목록 저장
         int layerSize = trackUploadRequestDto.getLayerName().length;
@@ -137,5 +148,144 @@ public class WorkstationService {
                     .build());
         }
         return trackImportResponseDto;
+    }
+
+    /**
+     * FastAPI에 음원 업로드 및 유사 트랙 찾기
+     *
+     * @param audioFile       업로드할 음원 파일
+     * @param trackId         트랙 ID
+     * @param instrumentTypes 악기 유형 배열
+     * @param limit           유사 트랙 개수 제한
+     */
+    public void uploadAndFindSimilar(Resource audioFile, Integer trackId, int[]instrumentTypes, int limit) {
+        try {
+            // 1. 파일을 즉시 byte 배열로 읽어들입니다.
+            byte[] audioBytes = audioFile.getInputStream().readAllBytes();
+
+            MultipartBodyBuilder builder = new MultipartBodyBuilder();
+
+            // 2. Resource 대신 byte 배열을 body part로 추가합니다.
+            builder.part("audio", audioBytes) // byte[] 사용
+                    .filename(audioFile.getFilename())
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM); // 필요시 MediaType 조정
+
+            // 폼 필드 추가
+            if(trackId != null) {
+                builder.part("trackId", trackId);
+            }
+
+            // 배열의 각 요소를 별도의 파트로 추가
+            if (instrumentTypes != null) {
+                for (int type : instrumentTypes) {
+                    builder.part("instrumentTypes", type); // 같은 이름("instrumentTypes")으로 각 int 값을 추가
+                }
+            }
+
+            builder.part("limit", limit);
+            builder.part("callbackUrl", BACKEND_HOST + "/api/openl3/similar/callback");
+
+            log.info("콜백 URL: {}", BACKEND_HOST + "/api/openl3/similar/callback");
+
+            WebClient fastAPIClient = WebClient.builder().baseUrl(FASTAPI_HOST).build();
+
+            // 3. WebClient 호출 (이제 audioBytes를 사용하므로 임시 파일 문제 없음)
+            fastAPIClient.post()
+                    .uri("/api/FastAPI/track/upload/async")
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .body(BodyInserters.fromMultipartData(builder.build()))
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .doOnSuccess(unused -> log.info("backend->fastapi 요청 성공"))
+                    .doOnError(error -> log.error("backend->fastapi 요청 실패: {}", error.getMessage()))
+                    .subscribe();
+
+        } catch (IOException e) {
+            log.error("파일을 byte 배열로 읽는 중 오류 발생: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * ai 트랙 추천 임포트
+     * @param layerIds 레이어 ID 목록
+     * @return 추천된 트랙 및 레이어 정보
+     */
+    public TrackImportResponseDto recommendImportTrack(List<Integer> layerIds) {
+
+        List<Layer> layers = layerRepository.findAllById(layerIds);
+
+        Set<Integer> instrumentTypeSet = new HashSet<>();
+        Set<Integer> trackIdSet = new HashSet<>();
+
+        for (Layer layer : layers) {
+            instrumentTypeSet.add(layer.getInstrumentType());
+            trackIdSet.add(layer.getTrack().getId());
+        }
+
+        //- 0 Record
+        //- 1 Whistle
+        //- 2 Acoustic Guitar
+        //- 3 Voice
+        //- 4 Drums
+        //- 5 Bass
+        //- 6 Electric Guitar
+        //- 7 Piano
+        //- 8 Synth
+
+        // 드럼이 없으면 드럼, 그다음 bass, 그다음은 아무거나
+
+        List<Integer> needInstrumentTypes = new ArrayList<>();
+        if (!instrumentTypeSet.contains(4)) {
+            needInstrumentTypes.add(4);
+        } else if (instrumentTypeSet.contains(5)) {
+            needInstrumentTypes.add(5);
+        } else {
+            // 4,5빼고 전부
+            for (int i = 0; i < 9; i++) {
+                if (i != 4 && i != 5) {
+                    needInstrumentTypes.add(i);
+                }
+            }
+        }
+        log.info("추천할 트랙의 instrumentType: {}", instrumentTypeSet);
+        log.info("추천 요청 instrumentType: {}", needInstrumentTypes);
+
+        WebClient fastAPIClient = WebClient.builder().baseUrl(FASTAPI_HOST).build();
+        Integer recommendedTrackId = fastAPIClient.post()
+                .uri("/api/FastAPI/track/ai/recommend")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(BodyInserters.fromValue(Map.of("needInstrumentTypes", needInstrumentTypes, "trackIds", trackIdSet)))
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, clientResponse -> {
+                    log.error("FastAPI 4xx 에러: {}", clientResponse.statusCode());
+                    return Mono.error(new RuntimeException("FastAPI 4xx 에러"));
+                })
+                .onStatus(HttpStatusCode::is5xxServerError, clientResponse -> {
+                    log.error("FastAPI 5xx 에러: {}", clientResponse.statusCode());
+                    return Mono.error(new RuntimeException("FastAPI 5xx 에러"));
+                })
+                .bodyToMono(Integer.class)
+                .block();
+
+        if (recommendedTrackId == null) {
+            log.error("추천된 트랙 ID가 null입니다.");
+            throw new RuntimeException("추천된 트랙 ID가 null입니다.");
+        }
+
+        log.info("추천된 트랙 ID: {}", recommendedTrackId);
+
+        TrackImportResponseDto track = importTrack(recommendedTrackId);
+
+        // 레이어 정보를 요구했던 instrumentType으로 필터링
+        List<LayerImportResponseDto> filteredLayers = new ArrayList<>();
+        for(LayerImportResponseDto layer : track.getLayers()) {
+            if (needInstrumentTypes.contains(layer.getInstrumentType())) {
+                filteredLayers.add(layer);
+            }
+        }
+
+        track.setLayers(filteredLayers);
+
+        return track;
     }
 }

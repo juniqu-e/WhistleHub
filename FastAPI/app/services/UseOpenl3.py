@@ -35,6 +35,16 @@ class OpenL3Service:
             FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),
             FieldSchema(name="track_id", dtype=DataType.INT64),  # 외부에서 받은 트랙 ID를 저장할 필드
             FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=self.embedding_dim),
+            # 악기 타입 필드 추가
+            FieldSchema(name="has_record", dtype=DataType.BOOL),      # 0: Record
+            FieldSchema(name="has_whistle", dtype=DataType.BOOL),     # 1: Whistle
+            FieldSchema(name="has_acoustic_guitar", dtype=DataType.BOOL),  # 2: Acoustic Guitar
+            FieldSchema(name="has_voice", dtype=DataType.BOOL),       # 3: Voice
+            FieldSchema(name="has_drums", dtype=DataType.BOOL),       # 4: Drums
+            FieldSchema(name="has_bass", dtype=DataType.BOOL),        # 5: Bass
+            FieldSchema(name="has_electric_guitar", dtype=DataType.BOOL),  # 6: Electric Guitar
+            FieldSchema(name="has_piano", dtype=DataType.BOOL),       # 7: Piano
+            FieldSchema(name="has_synth", dtype=DataType.BOOL),       # 8: Synth
         ]
         schema = CollectionSchema(fields, description="음악 임베딩")
         
@@ -136,13 +146,14 @@ class OpenL3Service:
             utils.log(traceback.format_exc(), level=logging.ERROR)
             return None
     
-    def store_embedding(self, embedding, track_id=None):
+    def store_embedding(self, embedding, track_id=None, instrumentTypes=None):
         """
         임베딩을 Milvus에 저장
         
         Args:
             embedding: 저장할 임베딩 벡터
             track_id: 외부에서 받은 트랙 ID (선택적)
+            instrumentTypes: 악기 종류 리스트 (선택적)
             
         Returns:
             id: 저장된 임베딩의 Milvus ID (실패 시 None)
@@ -156,10 +167,42 @@ class OpenL3Service:
             if track_id is None:
                 track_id = -1
             
+            # instrumentTypes가 없으면 기본값 설정 (모두 False)
+            has_record = False
+            has_whistle = False
+            has_acoustic_guitar = False
+            has_voice = False
+            has_drums = False
+            has_bass = False
+            has_electric_guitar = False
+            has_piano = False
+            has_synth = False
+            
+            # instrumentTypes가 리스트로 제공된 경우, 해당 악기들을 True로 설정
+            if instrumentTypes and isinstance(instrumentTypes, list):
+                if 0 in instrumentTypes: has_record = True
+                if 1 in instrumentTypes: has_whistle = True
+                if 2 in instrumentTypes: has_acoustic_guitar = True
+                if 3 in instrumentTypes: has_voice = True
+                if 4 in instrumentTypes: has_drums = True
+                if 5 in instrumentTypes: has_bass = True
+                if 6 in instrumentTypes: has_electric_guitar = True
+                if 7 in instrumentTypes: has_piano = True
+                if 8 in instrumentTypes: has_synth = True
+            
             # Milvus에 삽입할 데이터 준비
             data = [
                 [track_id],      # track_id 필드
-                [embedding]      # embedding 필드
+                [embedding],      # embedding 필드
+                [has_record],     # has_record 필드
+                [has_whistle],    # has_whistle 필드
+                [has_acoustic_guitar],  # has_acoustic_guitar 필드
+                [has_voice],      # has_voice 필드
+                [has_drums],      # has_drums 필드
+                [has_bass],       # has_bass 필드
+                [has_electric_guitar],  # has_electric_guitar 필드
+                [has_piano],      # has_piano 필드
+                [has_synth]       # has_synth 필드
             ]
             
             # Milvus에 데이터 삽입
@@ -178,13 +221,14 @@ class OpenL3Service:
             print(f"임베딩 저장 오류: {e}")
             return None
     
-    def process_audio_file(self, file_path, track_id=None):
+    def process_audio_file(self, file_path, track_id=None, instrumentTypes=None):
         """
         오디오 파일 처리 및 Milvus 저장
         
         Args:
             file_path: 처리할 오디오 파일 경로
             track_id: 외부에서 받은 트랙 ID (선택적)
+            instrumentTypes: 악기 종류 리스트 (선택적)
             
         Returns:
             id: 저장된 임베딩의 Milvus ID (실패 시 None)
@@ -194,8 +238,8 @@ class OpenL3Service:
         if embedding is None:
             return None
             
-        # 임베딩 저장 (track_id 전달)
-        return self.store_embedding(embedding, track_id)
+        # 임베딩 저장 (track_id와 instrumentTypes 전달)
+        return self.store_embedding(embedding, track_id, instrumentTypes)
     
     def find_similar_by_track_id(self, track_id, limit=5):
         """
@@ -334,6 +378,164 @@ class OpenL3Service:
             print("유사한 임베딩을 찾지 못했습니다.")
         
         return similar_embeddings
+    
+    def find_similar_by_instrument_type(self, needInstrumentTypes, trackIds):
+        """
+        악기 종류에 따라 유사한 트랙 검색 - 모든 트랙에서 한 번에 가장 유사한 트랙 찾기
+        
+        Args:
+            needInstrumentTypes: 필요한 악기 종류 리스트 (True인 악기 타입을 검색에 사용)
+            trackIds: 기존 트랙 ID 리스트
+            
+        Returns:
+            int: 추천 트랙 ID (없으면 None)
+        """
+        try:
+            # 입력값 검증
+            utils.log(f"요청 악기 타입: {needInstrumentTypes}, 요청 트랙: {trackIds}", level=logging.INFO)
+
+            # 컬렉션 항목 수 확인
+            count = self.collection.num_entities
+            utils.log(f"컬렉션 항목 수: {count}", level=logging.INFO)
+            
+            if count <= 1:
+                utils.log("컬렉션에 충분한 데이터가 없습니다.", level=logging.WARNING)
+                return None
+            
+            # 1. 입력된 모든 트랙의 임베딩을 한 번에 가져오기
+            trackIds_str = ", ".join(map(str, trackIds))
+            source_embeds = self.collection.query(
+                expr=f"track_id in [{trackIds_str}]",
+                output_fields=["track_id", "embedding"],
+                limit=len(trackIds)
+            )
+            
+            if not source_embeds:
+                utils.log(f"입력된 트랙 ID들에 대한 임베딩을 찾을 수 없습니다.", level=logging.WARNING)
+                return None
+            
+            utils.log(f"{len(source_embeds)}개의 소스 트랙 임베딩을 찾았습니다.", level=logging.INFO)
+            
+            # 2. 필요한 악기 타입에 대한 조건 구성
+            instrument_mapping = [
+                ("has_record", "레코드"),
+                ("has_whistle", "휘슬"),
+                ("has_acoustic_guitar", "어쿠스틱 기타"),
+                ("has_voice", "보이스"),
+                ("has_drums", "드럼"),
+                ("has_bass", "베이스"),
+                ("has_electric_guitar", "일렉기타"),
+                ("has_piano", "피아노"),
+                ("has_synth", "신디")
+            ]
+            
+            # 필요한 악기 종류 파악
+            needed_instruments = []
+            for instrument_idx in needInstrumentTypes:
+                if 0 <= instrument_idx < len(instrument_mapping):
+                    needed_instruments.append(instrument_mapping[instrument_idx])
+                    utils.log(f"악기 요청 추가: {instrument_mapping[instrument_idx][1]}({instrument_mapping[instrument_idx][0]})", level=logging.INFO)
+            
+            # 로그에 요청받은 악기 출력
+            if needed_instruments:
+                instruments_str = ", ".join([name for _, name in needed_instruments])
+                utils.log(f"요청된 악기 종류: {instruments_str}", level=logging.INFO)
+            else:
+                utils.log("요청된 악기 종류 없음, 모든 트랙 대상으로 검색합니다.", level=logging.INFO)
+            
+            # 악기 조건 구성 (OR 조건으로 - 주어진 악기 중 하나라도 있으면 매칭)
+            instrument_condition = ""
+            for field_name, _ in needed_instruments:
+                if instrument_condition:
+                    instrument_condition += " || "
+                instrument_condition += f"{field_name} == true"
+            
+            # 3. 기존 트랙에서 제외 조건 추가
+            exclude_condition = f"track_id not in [{trackIds_str}]"
+            
+            # 4. 최종 쿼리 조건 구성 (악기 조건이 있으면 AND로 추가)
+            final_condition = exclude_condition
+            if instrument_condition:
+                final_condition = f"{exclude_condition} && ({instrument_condition})"
+            
+            utils.log(f"검색 조건: {final_condition}", level=logging.DEBUG)
+            
+            # 5. 각 소스 트랙 임베딩을 사용하여 유사한 트랙 찾기
+            all_similar_tracks = []
+            
+            for source in source_embeds:
+                source_embedding = source["embedding"]
+                source_track_id = source["track_id"]
+                
+                # 임베딩 기반 유사도 검색
+                search_params = {
+                    "metric_type": "L2",
+                    "params": {"nprobe": 16}
+                }
+                
+                search_results = self.collection.search(
+                    data=[source_embedding],
+                    anns_field="embedding",
+                    param=search_params,
+                    limit=10,  # 각 트랙당 상위 10개 후보를 검색
+                    output_fields=["track_id"],
+                    expr=final_condition
+                )
+                
+                # 검색 결과 처리
+                if search_results and len(search_results[0]) > 0:
+                    for hit in search_results[0]:
+                        try:
+                            track_id = hit.entity.get("track_id")
+                            if not track_id or track_id in trackIds:
+                                continue
+                                
+                            similarity_score = 1.0 / (1.0 + hit.distance)
+                            
+                            all_similar_tracks.append({
+                                "track_id": track_id,
+                                "similarity": similarity_score,
+                                "source_track_id": source_track_id,
+                                "distance": hit.distance
+                            })
+                        except Exception as e:
+                            utils.log(f"결과 처리 중 오류: {e}", level=logging.ERROR)
+            
+            # 6. 중복 제거 및 유사도 기준으로 정렬
+            if not all_similar_tracks:
+                utils.log("조건에 맞는 유사한 트랙을 찾을 수 없습니다.", level=logging.WARNING)
+                return None
+            
+            # 트랙 ID별로 가장 높은 유사도 점수 유지 (여러 소스에서 같은 트랙이 나올 경우)
+            track_id_to_best_score = {}
+            for track in all_similar_tracks:
+                track_id = track["track_id"]
+                similarity = track["similarity"]
+                
+                if track_id not in track_id_to_best_score or similarity > track_id_to_best_score[track_id]["similarity"]:
+                    track_id_to_best_score[track_id] = track
+            
+            # 유사도 기준 내림차순 정렬하여 최적의 트랙 찾기
+            best_tracks = sorted(
+                track_id_to_best_score.values(), 
+                key=lambda x: x["similarity"], 
+                reverse=True
+            )
+            
+            if best_tracks:
+                best_track = best_tracks[0]
+                utils.log(f"가장 적합한 트랙 ID: {best_track['track_id']}, 유사도: {best_track['similarity']:.4f}, 소스 트랙: {best_track['source_track_id']}", 
+                        level=logging.INFO)
+                return best_track['track_id']
+                
+            return None
+                
+        except Exception as e:
+            utils.log(f"유사 트랙 검색 중 오류 발생: {e}", level=logging.ERROR)
+            import traceback
+            utils.log(traceback.format_exc(), level=logging.ERROR)
+            return None
+
 
 # 사용 예시
 if __name__ == "__main__":

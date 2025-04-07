@@ -1,4 +1,4 @@
-package com.whistlehub.workstation.view
+package com.whistlehub.workstation.view.component
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer

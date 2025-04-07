@@ -2,6 +2,7 @@ package com.whistlehub.profile.view
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -45,7 +46,7 @@ fun PasswordChangeScreen(
     navController: NavHostController,
     viewModel: PasswordChangeViewModel = hiltViewModel()
 ) {
-    val customColors = CustomColors()
+    val colors = CustomColors()
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
 
@@ -62,10 +63,10 @@ fun PasswordChangeScreen(
     var newPasswordConfirmError by remember { mutableStateOf<String?>(null) }
     var isNewPasswordConfirmFocused by remember { mutableStateOf(false) }
 
-    val textFieldStyle = Typography.bodyMedium.copy(color = customColors.Grey50)
-    val placeholderStyle = Typography.bodyMedium.copy(color = customColors.Grey300)
-    val labelStyle = Typography.bodyLarge.copy(color = customColors.Grey50)
-    val buttonTextStyle = Typography.titleMedium.copy(color = customColors.Grey950)
+    val textFieldStyle = Typography.bodyMedium.copy(color = colors.Grey50)
+    val placeholderStyle = Typography.bodyMedium.copy(color = colors.Grey300)
+    val labelStyle = Typography.bodyLarge.copy(color = colors.Grey50)
+    val buttonTextStyle = Typography.titleMedium.copy(color = colors.Grey950)
 
     // 성공 다이얼로그 표시
     CustomAlertDialog(
@@ -91,13 +92,13 @@ fun PasswordChangeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("비밀번호 변경", color = customColors.Grey50) },
+                title = { Text("비밀번호 변경", color = colors.Grey50) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "뒤로가기",
-                            tint = customColors.Grey50
+                            tint = colors.Grey50
                         )
                     }
                 }
@@ -216,8 +217,6 @@ fun PasswordChangeScreen(
                 errorMessage = newPasswordConfirmError
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
-
             // 4) 비밀번호 변경 버튼
             Button(
                 onClick = {
@@ -261,17 +260,19 @@ fun PasswordChangeScreen(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading,
-                colors = ButtonDefaults.buttonColors(containerColor = customColors.Mint500)
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = colors.CommonButtonColor)
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = customColors.Grey950
+                        color = colors.Grey950
                     )
                 } else {
                     Text(
                         text = "비밀번호 변경",
                         style = buttonTextStyle,
+                        color = colors.CommonTextColor,
                         modifier = Modifier.padding(vertical = 4.dp)
                     )
                 }

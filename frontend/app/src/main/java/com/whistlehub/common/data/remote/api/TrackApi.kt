@@ -158,4 +158,34 @@ interface TrackApi {
         @Query("tagId") tagId: Int,
         @Query("size") size: Int
     ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
+
+    // 최근 들은 트랙 조회
+    @GET("discovery/recent")
+    suspend fun getRecentTracks(
+        @Query("size") size: Int
+    ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
+
+    // 특정 트랙과 비슷한 트랙 리스트 조회
+    @GET("discovery/similar")
+    suspend fun getSimilarTracks(
+        @Query("trackId") trackId: Int
+    ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
+
+    // 한 번도 들어본 적 없는 트랙
+    @GET("discovery/never")
+    suspend fun getNeverTracks(
+        @Query("size") size: Int
+    ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
+
+    // 팔로우한 사람 중 한 명 조회
+    @GET("discovery/fanmix/following")
+    suspend fun getFollowingMember(
+    ): Response<ApiResponse<TrackResponse.MemberInfo>>
+
+    // 특정 회원을 팔로우한 사람들이 좋아하는 트랙 리스트
+    @GET("discovery/fanmix")
+    suspend fun getFanMixTracks(
+        @Query("memberId") memberId: Int,
+        @Query("size") size: Int
+    ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
 }

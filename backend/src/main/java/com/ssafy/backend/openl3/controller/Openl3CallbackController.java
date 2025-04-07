@@ -5,7 +5,6 @@ import com.ssafy.backend.common.FilterApiResponse;
 import com.ssafy.backend.common.error.exception.MissingParameterException;
 import com.ssafy.backend.graph.service.DataCollectingService;
 import com.ssafy.backend.openl3.dto.SimilarCallbackDto;
-import com.ssafy.backend.openl3.service.Openl3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;

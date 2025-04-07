@@ -92,9 +92,9 @@ fun LoginScreen(
     }
 
     val colors = CustomColors()
-    val textFieldStyle = Typography.bodyMedium.copy(color = colors.Grey50)
-    val placeholderStyle = Typography.bodyMedium.copy(color = colors.Grey300)
-    val buttonTextStyle = Typography.titleMedium.copy(color = colors.Grey950)
+    val textFieldStyle = Typography.bodyMedium.copy(color = colors.CommonTextColor)
+    val placeholderStyle = Typography.bodyMedium.copy(color = colors.CommonPlaceholderColor)
+    val buttonTextStyle = Typography.titleMedium.copy(color = colors.CommonTextColor)
 
     Box(
         modifier = Modifier
@@ -108,11 +108,11 @@ fun LoginScreen(
 //            modifier = Modifier.fillMaxSize(),
 //            contentScale = ContentScale.Crop
 //        )
-        // 검은색 가림막 (투명도 70%)
+        // 배경
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black)
+                .background(colors.CommonBackgroundColor)
         )
         // 중앙 정렬을 위한 Box
         Box(
@@ -164,7 +164,7 @@ fun LoginScreen(
                                         val strokeWidth = 1.dp.toPx()
                                         val y = size.height
                                         drawLine(
-                                            color = if (isUserIdFocused) colors.Mint500 else colors.Grey50,
+                                            color = if (isUserIdFocused) colors.CommonFocusColor else colors.Grey50,
                                             start = Offset(0f, y),
                                             end = Offset(size.width, y),
                                             strokeWidth = strokeWidth
@@ -209,7 +209,7 @@ fun LoginScreen(
                                         val strokeWidth = 1.dp.toPx()
                                         val y = size.height
                                         drawLine(
-                                            color = if (isPasswordFocused) colors.Mint500 else colors.Grey50,
+                                            color = if (isPasswordFocused) colors.CommonFocusColor else colors.Grey50,
                                             start = Offset(0f, y),
                                             end = Offset(size.width, y),
                                             strokeWidth = strokeWidth
@@ -259,7 +259,9 @@ fun LoginScreen(
                             Button(
                                 onClick = { viewModel.login(userId, userPassword) },
                                 modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(containerColor = colors.Mint500),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = colors.CommonButtonColor
+                                ),
                                 shape = RoundedCornerShape(8.dp),
                                 enabled = loginState != LoginState.Loading // 로딩 시 비활성화
                             ) {
@@ -292,8 +294,10 @@ fun LoginScreen(
                                 Spacer(modifier = Modifier.width(20.dp))
                                 Text(text = "|", color = colors.Grey50)
                                 Spacer(modifier = Modifier.width(20.dp))
-                                TextButton(onClick = onForgotPasswordClick) {
-                                    Text(text = "비밀번호 찾기", color = colors.Grey50)
+                                TextButton(onClick = {
+                                    onForgotPasswordClick()
+                                }) {
+                                    Text(text = "비밀번호 초기화", color = colors.Grey50)
                                 }
                             }
                         }

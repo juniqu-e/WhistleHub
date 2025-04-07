@@ -21,6 +21,7 @@ import com.whistlehub.profile.view.ProfileMenuScreen
 import com.whistlehub.profile.view.ProfileScreen
 import com.whistlehub.search.view.SearchScreen
 import com.whistlehub.search.view.TagRankingScreen
+import com.whistlehub.search.viewmodel.SearchViewModel
 import com.whistlehub.workstation.view.WorkStationScreen
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 import kotlin.math.log
@@ -35,6 +36,7 @@ fun AppContentNavGraph(
     paddingValues: PaddingValues,
     modifier: Modifier = Modifier,
     workStationViewModel: WorkStationViewModel,
+    searchViewModel: SearchViewModel,
 ) {
     val trackPlayViewModel = hiltViewModel<TrackPlayViewModel>()
     NavHost(
@@ -54,7 +56,9 @@ fun AppContentNavGraph(
             SearchScreen(
                 paddingValues,
                 navController,
-                trackPlayViewModel
+                trackPlayViewModel,
+                searchViewModel,
+                workStationViewModel = workStationViewModel,
             )
         }
         composable(route = Screen.TagRanking.route + "/{tagId}/{tagName}") { backStackEntry ->
@@ -65,7 +69,10 @@ fun AppContentNavGraph(
                     tagId.toInt(),
                     tagName.toString(),
                     paddingValues,
-                    trackPlayViewModel
+                    trackPlayViewModel,
+                    searchViewModel,
+                    workStationViewModel = workStationViewModel,
+                    navController = navController,
                 )
             }
         }

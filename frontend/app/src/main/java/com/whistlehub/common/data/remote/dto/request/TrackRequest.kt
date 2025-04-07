@@ -58,8 +58,7 @@ sealed class TrackRequest {
     // 트랙 신고
     data class ReportTrackRequest(
         val trackId: Int,
-        val reason: String,
+        val type: Int,
         val detail: String?,
-        val layerId: List<Int>?
     )
 }

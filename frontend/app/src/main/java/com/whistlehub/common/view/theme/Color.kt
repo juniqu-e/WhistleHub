@@ -52,13 +52,14 @@ class CustomColors {
     //Common Colorh
     val CommonButtonColor = Color(0xFF3D3D3D)
     val CommonTitleColor = Color(0xFFF7F7F7)
-    val CommonSubTtitleColor = Color(0xFFECECEC)
+    val CommonSubTitleColor = Color(0xFFECECEC)
     val CommonTextColor = Color(0xFFFBFBFB)
-    val CommonSubTextolor = Color(0xFFC1C1C1)
+    val CommonSubTextColor = Color(0xFFC1C1C1)
     val CommonBackgroundColor = Color(0xFF141218)
     val CommonSubBackgroundColor = Color(0xFF191D24)
     val CommonLabelColor = Color(0xFFE0E4EA)
     val CommonIconColor = Color(0xFFFBFBFB)
     val CommonOutLineColor = Color(0xFFC8CED9)
     val CommonPlaceholderColor = Color(0xFFC8CED9)
+    val CommonFocusColor = Color(0xFF42E4CE)
 }
