@@ -16,7 +16,9 @@ object AudioEngineBridge {
 
     external fun setLayers(layers: List<LayerAudioInfo>, maxUsedBars: Int)
 
-    external fun renderMixToWav(outputPath: String): Boolean
+    external fun renderMixToWav(outputPath: String, totalFrames: Int): Boolean
+
+    external fun getWavDurationSeconds(outputPath: String): Float
 
     external fun setCallback(listener: PlaybackListener)
 }

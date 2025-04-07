@@ -119,6 +119,7 @@ pipeline {
                             cd ${remoteDir} && \
                             docker compose down && \
                             docker compose build fastapi && \
+                            docker compose build celeryworker && \
                             docker compose build backend && \
                             docker compose --profile deploy up -d
                             '
