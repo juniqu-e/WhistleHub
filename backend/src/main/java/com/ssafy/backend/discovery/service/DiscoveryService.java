@@ -124,23 +124,23 @@ public class DiscoveryService {
         // 태그 노드가 존재하지 않는 경우
         // 주간 랭킹, 월간랭킹에서 추천 트랙을 가져온다.
         if (trackIds.isEmpty() || trackIds.size() < size) {
-            trackIds.addAll(
-                    rankingService.getTagRanking(
-                            tagId,
-                            "WEEK",
-                            PageRequest.of(0, size - trackIds.size())
-                    )
+            List<Integer> weeklyRanking = rankingService.getTagRanking(
+                    tagId,
+                    "WEEK",
+                    PageRequest.of(0, size - trackIds.size())
             );
+            weeklyRanking.removeAll(trackIds);
+            trackIds.addAll(weeklyRanking);
         }
 
         if (trackIds.isEmpty() || trackIds.size() < size) {
-            trackIds.addAll(
-                    rankingService.getTagRanking(
-                            tagId,
-                            "MONTH",
-                            PageRequest.of(0, size - trackIds.size())
-                    )
+            List<Integer> monthlyRanking = rankingService.getTagRanking(
+                    tagId,
+                    "MONTH",
+                    PageRequest.of(0, size - trackIds.size())
             );
+            monthlyRanking.removeAll(trackIds);
+            trackIds.addAll(monthlyRanking);
         }
 
         return getTrackInfoList(findTrackByIds(trackIds));
