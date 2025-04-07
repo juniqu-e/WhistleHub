@@ -114,7 +114,11 @@ fun TagRankingScreen(
                     imageUrl = it.imageUrl
                 )
             }
-            TrackListRow(modifier = Modifier, trackList = tracks)
+            TrackListRow(modifier = Modifier,
+                trackList = tracks,
+                workStationViewModel = workStationViewModel,
+                navController = navController
+            )
         }
         // 랭킹
         item {
@@ -161,6 +165,8 @@ fun TagRankingScreen(
                         style = TrackItemStyle.RANKING,
                         rank = index + 1,
                         trackPlayViewModel = trackPlayViewModel,
+                        workStationViewModel = workStationViewModel,
+                        navController = navController,
                     )
                 }
                 IconButton(

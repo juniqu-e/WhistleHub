@@ -42,5 +42,7 @@ public class Layer extends Common{
     @Column(name = "blocked", nullable = false)
     private Boolean blocked = false;
 
+    @Column(name = "bars", nullable = false)
+    private String bars;
 
 }

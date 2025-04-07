@@ -79,6 +79,7 @@ import com.whistlehub.playlist.view.component.PlayerPlaylist
 import com.whistlehub.playlist.viewmodel.PlayerViewState
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import com.whistlehub.profile.view.components.ProfileTrackDetailSheet
+import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
@@ -87,6 +88,7 @@ import java.util.concurrent.TimeUnit
 fun FullPlayerScreen(
     navController: NavHostController,
     paddingValues: PaddingValues,
+    workStationViewModel: WorkStationViewModel,
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -177,7 +179,10 @@ fun FullPlayerScreen(
                 }
 
                 PlayerViewState.PLAYLIST -> {
-                    PlayerPlaylist(Modifier.weight(1f))
+                    PlayerPlaylist(Modifier.weight(1f),
+                        workStationViewModel = workStationViewModel,
+                        navController = navController
+                    )
                 }
 
                 PlayerViewState.COMMENT -> {
@@ -192,6 +197,8 @@ fun FullPlayerScreen(
                 isOwnProfile = user?.memberId == currentTrack?.artist?.memberId,
                 sheetState = sheetState,
                 onDismiss = { showPlayerMenu = false },
+                workStationViewModel = workStationViewModel,
+                navController = navController,
             )
         }
     }

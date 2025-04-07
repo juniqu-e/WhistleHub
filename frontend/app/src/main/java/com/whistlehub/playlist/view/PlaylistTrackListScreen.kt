@@ -55,6 +55,7 @@ import com.whistlehub.common.view.track.TrackItemRow
 import com.whistlehub.playlist.data.TrackEssential
 import com.whistlehub.playlist.viewmodel.PlaylistViewModel
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
+import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -63,7 +64,8 @@ fun PlaylistTrackListScreen(
     playlistId: String,
     navController: NavHostController,
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
-    playlistViewModel: PlaylistViewModel = hiltViewModel()
+    playlistViewModel: PlaylistViewModel = hiltViewModel(),
+    workStationViewModel: WorkStationViewModel
 ) {
     LaunchedEffect(playlistId) {
         Log.d("PlaylistTrackListScreen", "playlistId: $playlistId")
@@ -187,7 +189,11 @@ fun PlaylistTrackListScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Box(Modifier.weight(1f)) {
-                        TrackItemRow(track)
+                        TrackItemRow(
+                            track,
+                            workStationViewModel = workStationViewModel,
+                            navController = navController,
+                        )
                     }
                     IconButton({}) {
                         Icon(

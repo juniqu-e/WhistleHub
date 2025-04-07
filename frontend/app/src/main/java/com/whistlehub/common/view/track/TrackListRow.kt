@@ -11,12 +11,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import com.whistlehub.playlist.data.TrackEssential
+import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 
 @Composable
 fun TrackListRow(
     modifier: Modifier = Modifier,
     trackList: List<TrackEssential>,
+    workStationViewModel: WorkStationViewModel,
+    navController: NavHostController,
 ) {
     if (trackList.isEmpty()) {
         return
@@ -30,7 +34,9 @@ fun TrackListRow(
     ) {
         items(3) { index ->
             if (index < trackList.size) {
-                TrackItemColumn(trackList[index])
+                TrackItemColumn(trackList[index],
+                    workStationViewModel = workStationViewModel,
+                    navController = navController)
             } else {
                 Box(Modifier.size(100.dp)) {
                     Text("No Data")
