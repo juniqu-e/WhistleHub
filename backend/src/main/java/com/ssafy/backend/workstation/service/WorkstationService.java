@@ -107,9 +107,12 @@ public class WorkstationService {
             LayerFile layerFile = new LayerFile();
             layerFile.setSoundUrl(s3Service.uploadFile(trackUploadRequestDto.getLayerSoundFiles()[i], S3Service.MUSIC));
             LayerFile lf = layerFileRepository.save(layerFile);
-            String list = listToStr(Arrays.stream(trackUploadRequestDto.getBars()[i])
-                    .boxed()
-                    .toList());
+            String list = null;
+            if(trackUploadRequestDto.getBars() != null && trackUploadRequestDto.getBars().length > 0) {
+                list = listToStr(Arrays.stream(trackUploadRequestDto.getBars()[i])
+                        .boxed()
+                        .toList());
+            }
 
             Layer layer = Layer.builder()
                     .name(trackUploadRequestDto.getLayerName()[i])
@@ -145,8 +148,12 @@ public class WorkstationService {
                 .build();
 
         for (Layer layer : layers) {
-            List<Integer> bars = strToList(layer.getBars());
-            if(bars.isEmpty()) bars = null;
+            List<Integer> bars;
+            if(layer.getBars() == null || layer.getBars().isEmpty()){
+                bars = null;
+            } else {
+                bars = strToList(layer.getBars());
+            }
             trackImportResponseDto.getLayers().add(LayerImportResponseDto.builder()
                     .layerId(layer.getId())
                     .trackId(track.getId())
