@@ -153,13 +153,9 @@ public class DiscoveryService {
      */
     public List<TrackInfo> getRecentTrack(int size) {
         Member member = authService.getMember();
-        List<ListenRecord> listenRecordList = listenRecoredRepository.findByMemberId(member.getId(), PageRequest.of(0, size, Sort.by(Sort.Direction.DESC, "createdAt")));
-        List<Track> trackList = new ArrayList<>();
-        for (ListenRecord listenRecord : listenRecordList) {
-            trackList.add(listenRecord.getTrack());
-        }
+        List<Integer> trackIds = listenRecoredRepository.findByMemberId(member.getId(), size);
 
-        return getTrackInfoList(trackList);
+        return getTrackInfoList(findTrackByIds(trackIds));
     }
 
     /**

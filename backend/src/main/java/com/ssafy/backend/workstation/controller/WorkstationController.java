@@ -34,7 +34,7 @@ public class WorkstationController {
     private final Neo4jContentRetrieverService neo4jContentRetrieverService;
 
     @PostMapping()
-    public ApiResponse<?> createTrack(TrackUploadRequestDto trackUploadRequestDto) {
+    public ApiResponse<?> createTrack(@ModelAttribute TrackUploadRequestDto trackUploadRequestDto) {
         log.info("⭐ Create new track ⭐ {}", trackUploadRequestDto.toString());
         return new ApiResponse.builder<Object>()
                 .payload(workstationService.createTrack(trackUploadRequestDto))
