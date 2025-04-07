@@ -15,17 +15,17 @@ from common import ApiResponse
 from app.services.UseOpenl3 import openl3_service # 싱글톤 인스턴스 가정
 
 @app.task(bind=True, name='tasks.process_audio') # bind=True는 self 인자를 통해 작업 컨텍스트 접근 허용
-def task_process_audio(self, temp_file_path: str, track_id: int | None):
+def task_process_audio(self, temp_file_path: str, track_id: int | None, instrumentTypes: list | None = None):
     """
     Celery 작업: OpenL3를 사용하여 오디오를 처리하고 Milvus에 저장합니다.
     다음 작업을 위해 track_id를 반환합니다 (필요하다면 Milvus ID 반환 가능).
     """
-    utils.log(f"[Task {self.request.id}] 오디오 파일 처리 시작: {temp_file_path} (track_id: {track_id})", level=logging.INFO)
+    utils.log(f"[Task {self.request.id}] 오디오 파일 처리 시작: {temp_file_path} (track_id: {track_id}, instrumentTypes: {instrumentTypes})", level=logging.INFO)
     try:
         # OpenL3로 임베딩 추출 및 Milvus에 저장
         # process_audio_file이 Milvus ID를 반환하거나 성공 여부를 확인한다고 가정
         # 다음 단계(유사도 검색)를 위해 원본 track_id가 필요하다고 가정
-        milvus_id = openl3_service.process_audio_file(temp_file_path, track_id)
+        milvus_id = openl3_service.process_audio_file(temp_file_path, track_id, instrumentTypes)
 
         if not milvus_id:
             utils.log(f"[Task {self.request.id}] 오디오 파일 처리 실패: {temp_file_path}", level=logging.ERROR)

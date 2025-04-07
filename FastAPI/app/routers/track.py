@@ -7,14 +7,16 @@ import uuid
 from fastapi import APIRouter, UploadFile, File, Form, Query, Path, HTTPException, status, BackgroundTasks
 from celery import chain
 from typing import List, Optional
+from pydantic import BaseModel
 
 from common import ApiResponse, ResponseType
 from common.exceptions import CustomException
 
 from utils.file_util import *
 
-from app.services.UseOpenl3 import OpenL3Service
+from app.services.UseOpenl3 import *
 from app.services.openl3Tasks import *
+from app.models.request.RecommendTrackRequestDto import *
 
 
 router = APIRouter(prefix=f"{config.API_BASE_URL}/track", tags=["audio"])
@@ -34,8 +36,10 @@ os.makedirs(SHARED_AUDIO_DIR, exist_ok=True)
 )
 @utils.logger()
 async def async_process_audio_celery(
+
     audio: UploadFile = File(..., description="처리할 오디오 파일"),
     trackId: Optional[int] = Form(None, description="RDB 트랙 ID"),
+    instrumentTypes: Optional[List[int]] = Form(None, description="악기 종류"),
     limit: int = Form(5, description="반환할 결과 수", gt=0, le=100),
     callbackUrl: str = Form(..., description="결과를 받을 Callback URL")
 ):
@@ -79,7 +83,7 @@ async def async_process_audio_celery(
         # task_send_callback에는 trackId를 명시적으로 전달해야 합니다.
         processing_chain = chain(
             # temp_file_path와 track_id 전달
-            task_process_audio.s(temp_file_path=file_path, track_id=trackId) |
+            task_process_audio.s(temp_file_path=file_path, track_id=trackId, instrumentTypes=instrumentTypes) |
             # limit 전달 (이전 결과인 track_id가 첫 인자로 자동 전달됨)
             task_find_similar.s(limit=limit) |
             # callback_url과 trackId 명시적 전달
@@ -116,3 +120,30 @@ async def async_process_audio_celery(
                 utils.log(f"제출 오류 후 임시 파일({file_path}) 정리 실패.", level=logging.ERROR)
         utils.log(f"Celery 작업 제출 중 오류 발생: {str(e)}", level=logging.ERROR)
         raise CustomException(ResponseType.SERVER_ERROR, f"Celery 작업 제출 중 오류 발생: {str(e)}")
+    
+
+@router.post(
+    "/ai/recommend",
+    summary="추천 트랙 API",
+    description="악기 종류에 따라 추천 트랙을 반환합니다.",
+    response_model=int | None,
+)
+@utils.logger()
+async def recommend_track(request: RecommendTrackRequest):
+    """
+    추천 트랙을 반환하는 API입니다.
+    필요 악기 종류와 기존 트랙 ID를 기반으로 추천 트랙을 찾습니다.
+    """
+    try:
+        utils.log(f"추천 트랙 요청: {request}", level=logging.DEBUG)
+
+        # OpenL3Service의 find_similar_by_track_id 메서드를 사용하여 추천 트랙 검색
+        recommended_track_id = openl3_service.find_similar_by_instrument_type(
+            needInstrumentTypes=request.needInstrumentTypes,
+            trackIds=request.trackIds
+        )
+        return recommended_track_id
+
+    except Exception as e:
+        utils.log(f"추천 트랙 검색 중 오류 발생: {str(e)}", level=logging.ERROR)
+        raise CustomException(ResponseType.SERVER_ERROR, f"추천 트랙 검색 중 오류 발생: {str(e)}")

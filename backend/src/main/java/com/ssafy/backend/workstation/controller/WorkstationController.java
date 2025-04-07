@@ -2,6 +2,7 @@ package com.ssafy.backend.workstation.controller;
 
 import com.ssafy.backend.ai.service.Neo4jContentRetrieverService;
 import com.ssafy.backend.common.ApiResponse;
+import com.ssafy.backend.openl3.dto.AiRecommendRequestDto;
 import com.ssafy.backend.track.dto.request.TrackUploadRequestDto;
 import com.ssafy.backend.track.service.TrackService;
 import com.ssafy.backend.workstation.service.WorkstationService;
@@ -12,10 +13,9 @@ import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 /**
  * <pre>Track 컨트롤러</pre>
@@ -45,6 +45,15 @@ public class WorkstationController {
     public ApiResponse<?> importTrack(int trackId) {
         return new ApiResponse.builder<Object>()
                 .payload(workstationService.importTrack(trackId))
+                .build();
+    }
+
+    @PostMapping("/ai/recommend")
+    public ApiResponse<?> recommendImportTrack(@RequestBody AiRecommendRequestDto requset) {
+
+        log.info("⭐ Recommend import track ⭐ {}", requset.getLayerIds());
+        return new ApiResponse.builder<Object>()
+                .payload(workstationService.recommendImportTrack(requset.getLayerIds()))
                 .build();
     }
 
