@@ -26,9 +26,7 @@ public class AiController {
     public ResponseEntity generate() {
         String genre = "jazz";
         String mood = "happy";
-        int tempo = 90; //
         int durationSeconds = 8;
-        String instruments = "guitar";
         String additionalNotes = "none";
 
         SoundGenerationRequest request = new SoundGenerationRequest(genre, mood, durationSeconds, tempo, instruments, additionalNotes);
