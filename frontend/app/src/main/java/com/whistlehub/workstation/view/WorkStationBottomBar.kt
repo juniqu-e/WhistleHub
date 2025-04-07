@@ -22,6 +22,7 @@ import com.whistlehub.workstation.data.BottomBarActions
 import com.whistlehub.workstation.di.WorkStationBottomBarProvider
 import com.whistlehub.workstation.view.component.GradientIconButton
 import com.whistlehub.workstation.view.component.UploadMixDialog
+import com.whistlehub.workstation.view.component.UploadSheet
 import javax.inject.Inject
 
 class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
@@ -29,7 +30,8 @@ class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
     override fun WorkStationBottomBar(
         actions: BottomBarActions,
         context: Context,
-        isPlaying: Boolean
+        isPlaying: Boolean,
+        showBottomSheet: Boolean
     ) {
         var menuExpanded by remember { mutableStateOf(false) }
         var showUploadDialog by remember { mutableStateOf(false) }
@@ -59,7 +61,7 @@ class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
             )
             GradientIconButton(
                 icon = Icons.Default.CloudUpload,
-                onClick = { showUploadDialog = true },
+                onClick = actions.onUploadButtonClick,
                 gradientColors = listOf(Color(0xFFFF758C), Color(0xFFFF7EB3)) // 핑크 계열
             )
 //            IconButton(
@@ -124,49 +126,7 @@ class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
 //            }
         }
 
-        if (showUploadDialog) {
-            UploadMixDialog(
-                onConfirm = { name ->
-                    showUploadDialog = false
-                    actions.onUploadConfirm(name)
-                },
-                onDismiss = {
-                    showUploadDialog = false
-                },
-                title = "너의 이름은"
-            )
-        }
-//        DropdownMenu(
-//            expanded = menuExpanded,
-//            onDismissRequest = { menuExpanded = false },
-//            offset = DpOffset(x = (-40).dp, y = (-28).dp),
-//            containerColor = Color.LightGray
-//        ) {
-//            DropdownMenuItem(
-//                text = { Text("Save") },
-//                onClick = {
-//                    menuExpanded = false
-//                },
-//                leadingIcon = {
-//                    Icon(
-//                        Icons.Outlined.Save,
-//                        contentDescription = "Save Track"
-//                    )
-//                }
-//            )
-//            DropdownMenuItem(
-//                text = { Text("Upload") },
-//                onClick = {
-//                    menuExpanded = false
-//                },
-//                leadingIcon = {
-//                    Icon(
-//                        Icons.Outlined.Upload,
-//                        contentDescription = "Save Track"
-//                    )
-//                }
-//            )
-//        }
+
     }
 }
 
