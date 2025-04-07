@@ -740,7 +740,7 @@ public class AiService {
                         COMPOSITION SPECIFICATIONS:
                         - Genre: %s
                         - Mood: %s
-                        - Duration: %d seconds
+                        - Duration: %f seconds
                         - Tempo: %d BPM
                         - Instruments: %s
                         - Additional requirements: %s

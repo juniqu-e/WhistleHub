@@ -29,6 +29,7 @@ public class TrackUploadRequestDto {
     String[] layerName;
     @NotBlank
     int[] instrumentType;
+    int[][] bars;
     MultipartFile trackSoundFile;
     MultipartFile[] layerSoundFiles; //
     MultipartFile trackImg;

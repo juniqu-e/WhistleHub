@@ -2,6 +2,8 @@ package com.ssafy.backend.workstation.dto.response;
 
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @ToString
@@ -14,4 +16,5 @@ public class LayerImportResponseDto {
     String name;
     Integer instrumentType;
     String soundUrl;
+    List<Integer> bars;
 }
