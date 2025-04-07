@@ -315,8 +315,8 @@ public class WorkstationService {
      * @return ','로 구분된 문자열 반환
      */
     private String listToStr(List<Integer> list) {
-        StringBuilder result = new StringBuilder();
-        for(Integer i : list) result.append(i).append(",");
-        return result.toString();
+        return list.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
     }
 }
