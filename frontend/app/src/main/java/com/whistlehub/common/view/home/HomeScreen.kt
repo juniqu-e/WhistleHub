@@ -3,8 +3,10 @@ package com.whistlehub.common.view.home
 import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -16,10 +18,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Replay
@@ -40,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -59,10 +64,11 @@ import com.whistlehub.common.view.track.TrackListRow
 import com.whistlehub.playlist.data.TrackEssential
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
-@SuppressLint("StateFlowValueCalledInComposition")
+@SuppressLint("StateFlowValueCalledInComposition", "UnusedBoxWithConstraintsScope")
 @Composable
 fun HomeScreen(
     paddingValues: PaddingValues,
@@ -98,6 +104,13 @@ fun HomeScreen(
     var showFanmixSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
 
+    // 최신 트랙 상태관리
+    val scrollState = rememberScrollState()
+    val density = LocalDensity.current
+    val spacingDp = 10.dp
+    val spacingPx = with(density) { spacingDp.toPx() }
+    var currentIndex by remember { mutableStateOf(0) }
+
     Scaffold(
         topBar = {
             CommonAppBar(
@@ -116,42 +129,95 @@ fun HomeScreen(
         ) {
             // 최근 올라온 트랙
             item {
-                Text(
-                    text = "최근 올라온 트랙",
-                    style = Typography.titleLarge,
-                    modifier = Modifier.padding(start = 10.dp, top = 10.dp, end = 10.dp)
-                )
-                if (newList.isEmpty()) {
-                    Box(
+                Column {
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(100.dp)
-                            .padding(10.dp),
-                        contentAlignment = Alignment.Center
+                            .padding(10.dp)
                     ) {
-                        Text("최근 올라온 트랙이 없습니다.")
+                        Text(
+                            "최근 올라온 트랙",
+                            style = Typography.titleLarge,
+                            modifier = Modifier.weight(1f)
+                        )
                     }
-                    return@item
+                    if (newList.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(100.dp)
+                                .padding(10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("최근 올라온 트랙이 없습니다.")
+                        }
+                        return@item
+                    }
                 }
-                LazyRow(
-                    Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(newList.size) { index ->
-                        var trackData by remember {
-                            mutableStateOf<TrackResponse.GetTrackDetailResponse?>(
-                                null
-                            )
+                // 자동 슬라이딩 카드
+                Column {
+                    BoxWithConstraints (
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        val screenWidth = constraints.maxWidth.toFloat()
+                        val cardPx = screenWidth // 카드 한 장이 전체 너비를 차지
+                        val totalPxPerCard = cardPx + spacingPx
+
+                        // 자동 슬라이딩
+                        LaunchedEffect(newList.size) {
+                            if (newList.isNotEmpty()) {
+                                while (true) {
+                                    delay(3000L)
+                                    val nextIndex = (currentIndex + 1) % newList.size
+                                    currentIndex = nextIndex
+                                    scrollState.animateScrollTo((nextIndex * totalPxPerCard).toInt())
+                                }
+                            }
                         }
-                        LaunchedEffect(Unit) {
-                            trackData = trackPlayViewModel.getTrackbyTrackId(newList[index].trackId)
+                        Row(
+                            modifier = Modifier
+                                .horizontalScroll(scrollState),
+                            horizontalArrangement = Arrangement.spacedBy(spacingDp)
+                        ) {
+                            newList.forEach { track ->
+                                var getTrackData by remember {
+                                    mutableStateOf<TrackResponse.GetTrackDetailResponse?>(
+                                        null
+                                    )
+                                }
+                                LaunchedEffect(Unit) {
+                                    getTrackData = trackPlayViewModel.getTrackbyTrackId(track.trackId)
+                                }
+                                getTrackData?.let { trackData ->
+                                    // 트랙 카드
+                                    Box(
+                                        modifier = Modifier
+                                            .width(with(density) { cardPx.toDp() })
+                                            .padding(5.dp)
+                                    ) {
+                                        NewTrackCard(
+                                            track = trackData,
+                                            trackPlayViewModel = trackPlayViewModel,
+                                            navController = navController,
+                                            workStationViewModel = workStationViewModel
+                                        )
+                                    }
+                                }
+                            }
                         }
-                        trackData?.let { track ->
-                            // 트랙 카드
-                            NewTrackCard(
-                                track = track,
-                                trackPlayViewModel = trackPlayViewModel,
-                                navController = navController,
-                                workStationViewModel = workStationViewModel
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, alignment = Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        newList.forEachIndexed { index, _ ->
+                            Box(
+                                modifier = Modifier
+                                    .size(if (index == currentIndex) 10.dp else 8.dp)
+                                    .clip(CircleShape)
+                                    .background(if (index == currentIndex) CustomColors().CommonIconColor else CustomColors().CommonButtonColor)
                             )
                         }
                     }
