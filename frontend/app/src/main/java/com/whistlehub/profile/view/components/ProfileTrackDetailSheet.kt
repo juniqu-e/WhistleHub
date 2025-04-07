@@ -135,6 +135,11 @@ fun ProfileTrackDetailSheet(
     var newPlaylistName by remember { mutableStateOf("") }
     var newPlaylistDescription by remember { mutableStateOf("") }
 
+    // Load initial data
+    LaunchedEffect(Unit) {
+        viewModel.loadTrackDetails(track.trackId)
+    }
+
     // Load user playlists when "Add to Playlist" is clicked
     LaunchedEffect(showAddToPlaylistDialog) {
         if (showAddToPlaylistDialog) {
