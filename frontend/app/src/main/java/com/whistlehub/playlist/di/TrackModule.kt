@@ -3,6 +3,7 @@ package com.whistlehub.playlist.di
 import android.content.Context
 import androidx.media3.exoplayer.ExoPlayer
 import com.whistlehub.common.data.local.room.UserRepository
+import com.whistlehub.common.data.repository.ProfileService
 import com.whistlehub.common.data.repository.TrackService
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import dagger.Module
@@ -26,8 +27,9 @@ object TrackModule {
     fun provideTrackPlayViewModel(
         @ApplicationContext context: Context,
         trackService: TrackService,
-        userRepository: UserRepository
+        profileService: ProfileService,
+        userRepository: UserRepository,
     ): TrackPlayViewModel {
-        return TrackPlayViewModel(context, trackService, userRepository)
+        return TrackPlayViewModel(context, trackService, profileService, userRepository)
     }
 }

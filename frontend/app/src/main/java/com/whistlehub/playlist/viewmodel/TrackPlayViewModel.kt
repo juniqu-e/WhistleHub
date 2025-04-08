@@ -9,6 +9,7 @@ import com.whistlehub.common.data.local.entity.UserEntity
 import com.whistlehub.common.data.local.room.UserRepository
 import com.whistlehub.common.data.remote.dto.request.TrackRequest
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
+import com.whistlehub.common.data.repository.ProfileService
 import com.whistlehub.common.data.repository.TrackService
 import com.whistlehub.playlist.data.TrackEssential
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,6 +26,7 @@ import kotlin.concurrent.timer
 class TrackPlayViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     val trackService: TrackService,
+    val profileService: ProfileService,
     val userRpository: UserRepository,
 ) : ViewModel() {
     // exoPlayer 관련 변수
@@ -170,9 +172,9 @@ class TrackPlayViewModel @Inject constructor(
     }
 
     // 팔로우한 사람 한 명
-    suspend fun getFollowingMember(): TrackResponse.MemberInfo {
+    suspend fun getFollowingMember(size: Int = 10): TrackResponse.MemberInfo {
         try {
-            val response = trackService.getFollowingMember()
+            val response = trackService.getFollowingMember(size)
             if (response.code == "SU") {
                 return response.payload ?: TrackResponse.MemberInfo(
                     memberId = 0,
@@ -217,6 +219,29 @@ class TrackPlayViewModel @Inject constructor(
             }
         } catch (e: Exception) {
             Log.d("TrackPlayViewModel", "Error fetching fan mix tracks: ${e.message}")
+            return emptyList()
+        }
+    }
+
+    // 특정 회원의 트랙 리스트
+    suspend fun getMemberTracks(memberId: Int, size: Int = 5): List<TrackEssential> {
+        try {
+            val response = profileService.getMemberTracks(memberId, 0, size)
+            if (response.code == "SU") {
+                return response.payload?.map { track ->
+                    TrackEssential(
+                        trackId = track.trackId,
+                        title = track.title,
+                        artist = track.nickname,
+                        imageUrl = track.imageUrl
+                    )
+                } ?: emptyList()
+            } else {
+                Log.d("TrackPlayViewModel", "Failed to get member tracks: ${response.message}")
+                return emptyList()
+            }
+        } catch (e: Exception) {
+            Log.d("TrackPlayViewModel", "Error fetching member tracks: ${e.message}")
             return emptyList()
         }
     }
