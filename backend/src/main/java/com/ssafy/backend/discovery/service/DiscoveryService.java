@@ -202,14 +202,14 @@ public class DiscoveryService {
         return getTrackInfoList(trackList);
     }
 
-    public MemberInfo getRandomFollowingMember(){
+    public MemberInfo getRandomFollowingMember(int size){
         Member member = authService.getMember();
         if(followRepository.countByFromMemberId(member.getId()) == 0){
             log.warn("No following members found for member id: {}", member.getId());
             return null;
         }
 
-        Integer randomFollowing =  followRepository.findRandomFollowing(member.getId());
+        Integer randomFollowing =  recommendationService.getFanmixMemberId(member.getId(), size);
         if(randomFollowing == null){
             log.warn("No random following member found for member id: {}", member.getId());
             return null;
