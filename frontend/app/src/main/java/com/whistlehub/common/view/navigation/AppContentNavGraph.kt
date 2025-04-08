@@ -59,6 +59,7 @@ fun AppContentNavGraph(
                 trackPlayViewModel,
                 searchViewModel,
                 workStationViewModel = workStationViewModel,
+                logoutManager = logoutManager
             )
         }
         composable(route = Screen.TagRanking.route + "/{tagId}/{tagName}") { backStackEntry ->
@@ -73,6 +74,7 @@ fun AppContentNavGraph(
                     searchViewModel,
                     workStationViewModel = workStationViewModel,
                     navController = navController,
+                    logoutManager = logoutManager
                 )
             }
         }

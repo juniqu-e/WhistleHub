@@ -1,5 +1,6 @@
 package com.whistlehub.search.view
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,12 +15,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -42,6 +44,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.whistlehub.common.util.LogoutManager
+import com.whistlehub.common.view.component.CommonAppBar
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.common.view.track.TrackItemRow
@@ -52,6 +56,7 @@ import com.whistlehub.search.viewmodel.SearchViewModel
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 import kotlinx.coroutines.launch
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
@@ -60,6 +65,7 @@ fun SearchScreen(
     trackPlayViewModel: TrackPlayViewModel = hiltViewModel(),
     searchViewModel: SearchViewModel,
     workStationViewModel: WorkStationViewModel,
+    logoutManager: LogoutManager,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
@@ -76,125 +82,140 @@ fun SearchScreen(
         searchViewModel.recommendTag()
     }
 
-    Column(Modifier.fillMaxSize()) {
-        // 검색창
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { newQuery ->
-                searchQuery = newQuery
-            },
-            modifier = Modifier
-                .padding(10.dp)
-                .fillMaxWidth()
-                .focusRequester(focusRequester)
-                .onFocusChanged { state ->
-                    isFocused = state.isFocused
-                },
-            placeholder = { Text(
-                text = "Search Track",
-                style = Typography.bodyMedium,
-            ) },
-            trailingIcon = {
-                if (searchMode == SearchMode.SEARCHING || searchMode == SearchMode.DISCOVERY) {
-                    IconButton({
-                        coroutineScope.launch {
-                            searchViewModel.searchTracks(searchQuery)
-                            searchMode = SearchMode.COMPLETE_SEARCH
-                            keyboardController?.hide()
-                            focusManager.clearFocus()
-                        }
-                    }) {
-                        Icon(
-                            Icons.Rounded.Search,
-                            contentDescription = "Search Icon"
-                        )
-                    }
-                } else if (searchMode == SearchMode.COMPLETE_SEARCH) {
-                    IconButton({
-                        searchMode = SearchMode.DISCOVERY
-                        searchQuery = ""
-                    }) {
-                        Icon(
-                            Icons.Rounded.Close,
-                            contentDescription = "Close",
-                            tint = customColors.Grey200
-                        )
-                    }
-                }
-            },
-            singleLine = true,
-            colors = TextFieldDefaults.colors(
-                focusedTextColor = customColors.Grey50,
-                unfocusedTextColor = customColors.Grey50,
-                focusedPlaceholderColor = customColors.Grey200,
-                unfocusedPlaceholderColor = customColors.Grey200,
-                cursorColor = customColors.Mint500,
-                focusedIndicatorColor = customColors.Mint500,
-                unfocusedIndicatorColor = customColors.Grey200,
-                focusedContainerColor = customColors.Grey700.copy(alpha = 0.5f),
-                unfocusedContainerColor = customColors.Grey700.copy(alpha = 0.5f)
-            ),
-            shape = RoundedCornerShape(8.dp),
-            textStyle = Typography.bodyMedium,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(
-                onSearch = {
-                    keyboardController?.hide()
-                    focusManager.clearFocus()
-                }
+    Scaffold(
+        topBar = {
+            CommonAppBar(
+                title = "Discovery",
+                navController = navController,
+                logoutManager = logoutManager,
+                coroutineScope = coroutineScope
             )
-        )
-        when (searchMode) {
-            SearchMode.DISCOVERY -> {
-                Column(Modifier.weight(1f)) {
-                    DiscoveryView(
-                        Modifier.weight(1f),
-                        tagList,
-                        navController = navController,
-                        searchViewModel = searchViewModel,
-                        paddingValues = paddingValues
-                    )
-                }
-            }
-
-            SearchMode.SEARCHING -> {}
-            SearchMode.COMPLETE_SEARCH -> {
-                if (searchResult.isEmpty()) {
-                    // 검색 결과가 없을 때 보여주는 UI
-                    Text(
-                        text = "검색 결과가 없습니다.",
-                        modifier = Modifier
-                            .padding(10.dp)
-                            .fillMaxWidth(),
-                        style = Typography.bodyMedium,
-                        color = CustomColors().Grey400,
-                        textAlign = TextAlign.Center
-                    )
-                } else {
-                    // 검색 결과를 보여주는 UI
-                    LazyColumn(Modifier.weight(1f)) {
-                        items(searchResult.size) { index ->
-                            val track = TrackEssential(
-                                trackId = searchResult[index].trackId,
-                                title = searchResult[index].title,
-                                artist = searchResult[index].nickname,
-                                imageUrl = searchResult[index].imageUrl,
-                            )
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+        }
+    ) { innerPadding ->
+        Column(Modifier
+            .padding(innerPadding)
+            .fillMaxSize()
+        ) {
+            // 검색창
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { newQuery ->
+                    searchQuery = newQuery
+                },
+                modifier = Modifier
+                    .padding(10.dp)
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester)
+                    .onFocusChanged { state ->
+                        isFocused = state.isFocused
+                    },
+                placeholder = { Text(
+                    text = "Search Track",
+                    style = Typography.bodyMedium,
+                ) },
+                trailingIcon = {
+                    Row {
+                        if (isFocused && searchQuery.isNotEmpty()) {
+                            IconButton(
+                                onClick = {
+                                    searchQuery = ""
+                                }
                             ) {
-                                TrackItemRow(track,
-                                    trackPlayViewModel = trackPlayViewModel,
-                                    workStationViewModel = workStationViewModel,
-                                    navController = navController,
-                                    needMoreView = true,
+                                Icon(
+                                    Icons.Rounded.Cancel,
+                                    contentDescription = "Clear Search Icon"
                                 )
                             }
                         }
-                        item {
-                            Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
+                        IconButton({
+                            coroutineScope.launch {
+                                searchViewModel.searchTracks(searchQuery)
+                                searchMode = SearchMode.COMPLETE_SEARCH
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                            }
+                        }) {
+                            Icon(
+                                Icons.Rounded.Search,
+                                contentDescription = "Search Icon"
+                            )
+                        }
+                    }
+                },
+                singleLine = true,
+                colors = TextFieldDefaults.colors(
+                    focusedTextColor = customColors.Grey50,
+                    unfocusedTextColor = customColors.Grey50,
+                    focusedPlaceholderColor = customColors.Grey200,
+                    unfocusedPlaceholderColor = customColors.Grey200,
+                    cursorColor = customColors.Mint500,
+                    focusedIndicatorColor = customColors.Mint500,
+                    unfocusedIndicatorColor = customColors.Grey200,
+                    focusedContainerColor = customColors.Grey700.copy(alpha = 0.5f),
+                    unfocusedContainerColor = customColors.Grey700.copy(alpha = 0.5f)
+                ),
+                shape = RoundedCornerShape(8.dp),
+                textStyle = Typography.bodyMedium,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(
+                    onSearch = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    }
+                )
+            )
+            when (searchMode) {
+                SearchMode.DISCOVERY -> {
+                    Column(Modifier.weight(1f)) {
+                        DiscoveryView(
+                            Modifier.weight(1f),
+                            tagList,
+                            navController = navController,
+                            searchViewModel = searchViewModel,
+                            paddingValues = paddingValues
+                        )
+                    }
+                }
+
+                SearchMode.SEARCHING -> {}
+                SearchMode.COMPLETE_SEARCH -> {
+                    if (searchResult.isEmpty()) {
+                        // 검색 결과가 없을 때 보여주는 UI
+                        Text(
+                            text = "검색 결과가 없습니다.",
+                            modifier = Modifier
+                                .padding(10.dp)
+                                .fillMaxWidth(),
+                            style = Typography.bodyMedium,
+                            color = CustomColors().Grey400,
+                            textAlign = TextAlign.Center
+                        )
+                    } else {
+                        // 검색 결과를 보여주는 UI
+                        LazyColumn(Modifier.weight(1f)) {
+                            items(searchResult.size) { index ->
+                                val track = TrackEssential(
+                                    trackId = searchResult[index].trackId,
+                                    title = searchResult[index].title,
+                                    artist = searchResult[index].nickname,
+                                    imageUrl = searchResult[index].imageUrl,
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    TrackItemRow(track,
+                                        trackPlayViewModel = trackPlayViewModel,
+                                        workStationViewModel = workStationViewModel,
+                                        navController = navController,
+                                        needMoreView = true,
+                                    )
+                                }
+                            }
+                            item {
+                                Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
+                            }
                         }
                     }
                 }
