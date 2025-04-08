@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,12 +24,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
@@ -50,7 +51,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.whistlehub.common.view.component.UploadProgressOverlay
+import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.workstation.data.Layer
 import com.whistlehub.workstation.data.ToastData
@@ -65,6 +66,7 @@ import com.whistlehub.workstation.data.rememberToastState
 import com.whistlehub.workstation.view.component.AddLayerDialog
 import com.whistlehub.workstation.view.component.BeatAdjustmentPanel
 import com.whistlehub.workstation.view.component.CustomToast
+import com.whistlehub.workstation.view.component.MixProgressBar
 import com.whistlehub.workstation.view.component.UploadSheet
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 
@@ -84,6 +86,7 @@ fun WorkStationScreen(
     val toastState = rememberToastState()
     val isPlaying by viewModel.isPlaying
     val showUploadSheet by viewModel.showUploadSheet
+    val showAddLayerDialog by viewModel.showAddLayerDialog
     val isUploading by viewModel.isUploading
     val tagPairs by viewModel.tagPairs.collectAsState()
     val bottomBarActions = viewModel.bottomBarActions.copy(
@@ -96,7 +99,7 @@ fun WorkStationScreen(
             }
         },
         onAddInstrument = {
-            showDialog = true
+            viewModel.toggleAddLayerDialog(true)
         },
 //        onUploadTrackConfirm = { metadata ->
 //            viewModel.onUpload(context, metadata) { success ->
@@ -144,16 +147,29 @@ fun WorkStationScreen(
             },
         )
 
-        AddLayerDialog(
-            context = context,
-            showDialog = showDialog,
-            onDismiss = { showDialog = false },
-            onLayerAdded = { newLayer ->
-                viewModel.addLayer(newLayer)
-            },
-            viewModel = viewModel,
-            navController = navController,
+        if (showAddLayerDialog) {
+            AddLayerDialog(
+                context = context,
+                onDismiss = { viewModel.toggleAddLayerDialog(false) },
+                onLayerAdded = { newLayer ->
+                    viewModel.addLayer(newLayer)
+                },
+                viewModel = viewModel,
+                navController = navController,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        MixProgressBar(
+            progress = 0.5f,
+            modifier = Modifier.fillMaxWidth(),
+            backgroundColor = Color(0xFF1E1E1E),
+            progressColor = Color(0xFF8E2DE2),
+            height = 8.dp
         )
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         Column(
             verticalArrangement = Arrangement.Center,
@@ -275,8 +291,7 @@ fun LayerItem(
     onReset: (Layer) -> Unit,
     onBeatAdjustment: (Layer) -> Unit,
 ) {
-    val bgColor = getTrackColor(layer)
-    val textColor = if (bgColor.luminance() > 0.5f) Color.Black else Color.White
+    val customColors = CustomColors()
     var menuExpanded by remember { mutableStateOf(false) }
 
     Row(
@@ -288,7 +303,15 @@ fun LayerItem(
     ) {
         Box(
             modifier = Modifier
-                .background(bgColor, RoundedCornerShape(6.dp))
+                .background(
+                    customColors.CommonSubBackgroundColor.copy(0.3f),
+                    RoundedCornerShape(12.dp)
+                )
+                .border(
+                    2.dp,
+                    Color(android.graphics.Color.parseColor(layer.colorHex)),
+                    RoundedCornerShape(12.dp)
+                )
                 .size(80.dp)
                 .padding(12.dp),
             contentAlignment = Alignment.Center
@@ -296,21 +319,45 @@ fun LayerItem(
             Text(text = layer.name, color = Color.Black, fontSize = 14.sp)
         }
 
-        Spacer(modifier = Modifier.width(8.dp))
-
+        Spacer(modifier = Modifier.width(4.dp))
         Row(
             modifier = Modifier
-                .height(100.dp)
                 .weight(1f)
-                .background(bgColor, RoundedCornerShape(6.dp))
+                .height(200.dp)
+                .background(
+                    customColors.CommonSubBackgroundColor.copy(0.3f),
+                    RoundedCornerShape(12.dp)
+                )
+                .border(
+                    2.dp,
+                    Color(android.graphics.Color.parseColor(layer.colorHex)),
+                    RoundedCornerShape(12.dp)
+                )
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = layer.name, style = Typography.bodyLarge, color = textColor)
+                Text(
+                    text = layer.name,
+                    style = Typography.titleMedium,
+                    color = customColors.CommonTextColor
+                )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(text = layer.description, style = Typography.bodyMedium, color = textColor)
+
+                Text(
+                    text = layer.description,
+                    style = Typography.bodySmall,
+                    color = customColors.CommonSubTextColor
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = layer.category,
+                    style = Typography.bodySmall,
+                    color = customColors.CommonSubTextColor
+                )
 
                 Spacer(modifier = Modifier.height(6.dp))
             }
@@ -319,7 +366,7 @@ fun LayerItem(
                 Icon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = "More Options",
-                    tint = textColor,
+                    tint = customColors.CommonIconColor,
                     modifier = Modifier
                         .size(24.dp)
                         .clickable { menuExpanded = true }

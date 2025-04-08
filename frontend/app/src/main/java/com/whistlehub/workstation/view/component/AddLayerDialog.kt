@@ -1,7 +1,6 @@
 package com.whistlehub.workstation.view.component
 
 import android.content.Context
-import android.media.MediaMetadataRetriever
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.fadeIn
@@ -9,13 +8,14 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -38,6 +38,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import com.whistlehub.common.util.rawWavList
+import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.workstation.data.InstrumentType
 import com.whistlehub.workstation.data.Layer
@@ -51,13 +52,12 @@ import java.io.FileOutputStream
 @Composable
 fun AddLayerDialog(
     context: Context,
-    showDialog: Boolean,
     onDismiss: () -> Unit,
     onLayerAdded: (Layer) -> Unit,
     viewModel: WorkStationViewModel,
     navController: NavController,
 ) {
-    if (!showDialog) return
+    val customColor = CustomColors()
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -68,10 +68,10 @@ fun AddLayerDialog(
         Surface(
             modifier = Modifier
                 .width(600.dp)
-                .height(600.dp)
+                .wrapContentHeight()
                 .padding(16.dp),
-            shape = RoundedCornerShape(12.dp),
-            color = Color.Gray,
+            shape = RoundedCornerShape(20.dp),
+            color = customColor.CommonSubBackgroundColor,
             tonalElevation = 16.dp
         ) {
             Column(
@@ -93,7 +93,7 @@ fun AddLayerDialog(
                             (slideInHorizontally { it } + fadeIn()).togetherWith(
                                 slideOutHorizontally { -it } + fadeOut())
                         }
-                    }, modifier = Modifier.fillMaxSize()
+                    }
                 ) { target ->
                     when (target) {
                         null -> {
@@ -103,7 +103,7 @@ fun AddLayerDialog(
                             ) {
                                 LazyVerticalGrid(columns = GridCells.Fixed(2),
                                     modifier = Modifier
-                                        .height(300.dp),
+                                        .height(150.dp),
                                     verticalArrangement = Arrangement.Center,
                                     content = {
                                         items(LayerButtonType.entries) { type ->
@@ -111,18 +111,26 @@ fun AddLayerDialog(
                                                 onClick = { selectedType = type },
                                                 modifier = Modifier
                                                     .padding(8.dp)
-                                                    .height(120.dp),
-                                                shape = RoundedCornerShape(8.dp),
+                                                    .height(140.dp)
+                                                    .border(
+                                                        1.dp,
+                                                        type.hexColor,
+                                                        RoundedCornerShape(15.dp)
+                                                    ),
+                                                shape = RoundedCornerShape(15.dp),
                                                 colors = ButtonDefaults.buttonColors(
-                                                    containerColor = type.hexColor,
-                                                    contentColor = Color.Black
+                                                    containerColor = customColor.CommonButtonColor.copy(
+                                                        0.1f
+                                                    ),
+                                                    contentColor = customColor.CommonTextColor
                                                 )
                                             ) {
                                                 Text(
                                                     type.label,
                                                     style = Typography.bodyLarge,
                                                     textAlign = TextAlign.Center,
-                                                    modifier = Modifier.fillMaxWidth()
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    color = customColor.CommonLabelColor
                                                 )
                                             }
                                         }
@@ -157,7 +165,6 @@ fun getRawWavResMapForInstrument(context: Context, type: InstrumentType): Map<St
     return rawWavList.filter { it.startsWith(type.assetFolder) }
         .associateWith { res.getIdentifier(it, "raw", pkg) }.filterValues { it != 0 }
 }
-
 
 
 fun copyRawToInternal(context: Context, resId: Int, outFileName: String): File {

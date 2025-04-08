@@ -36,3 +36,20 @@ fun Layer.toAudioInfo(): LayerAudioInfo {
         patternBlocks = this.patternBlocks
     )
 }
+
+
+// Define a function to map instrumentType to category and colorHex
+fun getCategoryAndColorHex(instrumentType: Int): Pair<String, String> {
+    return when (instrumentType) {
+        0 -> Pair("Record", "#7A7A7A") // Record (Tone down further)
+        1 -> Pair("Whistle", "#B7A700") // Whistle (Yellow, tone down more)
+        2 -> Pair("Acoustic Guitar", "#5F7320") // Acoustic Guitar (Green, tone down more)
+        3 -> Pair("Voice", "#D14400") // Voice (Orange, tone down more)
+        4 -> Pair("Drums", "#E67E00") // Drums (Amber, tone down more)
+        5 -> Pair("Bass", "#5D1070") // Bass (Purple, tone down more)
+        6 -> Pair("Electric Guitar", "#144D9A") // Electric Guitar (Blue, tone down more)
+        7 -> Pair("Piano", "#2A2D72") // Piano (Indigo, tone down more)
+        8 -> Pair("Synth", "#2C6D2B") // Synth (Green, tone down more)
+        else -> Pair("Unknown", "#7A7A7A") // Default case (Tone down gray)
+    }
+}

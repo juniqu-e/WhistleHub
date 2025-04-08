@@ -1,6 +1,7 @@
 package com.whistlehub.workstation.view.component.record
 
 import android.Manifest
+import android.app.Dialog
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -109,6 +110,7 @@ fun RecordingPanel(viewModel: WorkStationViewModel) {
             Button(
                 onClick = {
                     viewModel.addRecordedLayer(filename)
+                    viewModel.toggleAddLayerDialog(false)
                 }, enabled = filename.isNotBlank()
             ) {
                 Text("레이어로 등록")

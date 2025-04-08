@@ -47,6 +47,7 @@ import com.whistlehub.workstation.data.LayerAudioInfo
 import com.whistlehub.workstation.data.PatternBlock
 import com.whistlehub.workstation.data.ToastData
 import com.whistlehub.workstation.data.UploadMetadata
+import com.whistlehub.workstation.data.getCategoryAndColorHex
 import com.whistlehub.workstation.data.toAudioInfo
 import com.whistlehub.workstation.di.AudioLayerPlayer
 import com.whistlehub.workstation.di.WorkStationBottomBarProvider
@@ -87,6 +88,8 @@ class WorkStationViewModel @Inject constructor(
     val layersOfSearchTrack: State<ApiResponse<WorkstationResponse.ImportTrackResponse>?> get() = _layersOfSearchTrack;
     private val _isPlaying = mutableStateOf(false)
     val isPlaying: State<Boolean> get() = _isPlaying
+    private val _showAddLayerDialog = mutableStateOf(false)
+    val showAddLayerDialog: State<Boolean> get() = _showAddLayerDialog
     private val _showUploadSheet = mutableStateOf(false)
     val showUploadSheet: State<Boolean> get() = _showUploadSheet
     private val _isUploading = mutableStateOf(false)
@@ -203,7 +206,6 @@ class WorkStationViewModel @Inject constructor(
                 val track = results.payload ?: return@launch
                 val layers = track.layers.map { layerRes ->
                     val s3Url = layerRes.soundUrl
-
                     Log.d("Search", "S3 Url : $s3Url")
                     Log.d("Search", "layer : $layerRes")
                     val fileName = "layer_${UUID.randomUUID()}.wav"
@@ -214,6 +216,7 @@ class WorkStationViewModel @Inject constructor(
                         bpm = 120
                     )
                     val bars = layerRes.bars
+                    val (category, colorHex) = getCategoryAndColorHex(layerRes.instrumentType)
                     val barsPattern: List<PatternBlock> = if (!bars.isNullOrEmpty()) {
                         bars.map { start ->
                             PatternBlock(start = start, length = 4)
@@ -233,11 +236,11 @@ class WorkStationViewModel @Inject constructor(
                     }
 
                     Layer(
-                        name = layerRes.name,
+                        name = track.title,
                         description = track.title,
-                        category = layerRes.instrumentType.toString(),
+                        category = category,
                         instrumentType = layerRes.instrumentType,
-                        colorHex = "#BDBDBD",
+                        colorHex = colorHex,
                         length = length.toInt(),
                         wavPath = localFile.absolutePath,
                         patternBlocks = barsPattern
@@ -314,8 +317,6 @@ class WorkStationViewModel @Inject constructor(
                 val barsJsonString = bars.joinToString(prefix = "[", postfix = "]") { block ->
                     block.joinToString(prefix = "[", postfix = "]", separator = ",")
                 }
-
-                Log.d("Bars", barsJsonString.toString())
                 val requestBodyMap = hashMapOf(
                     "title" to createRequestBody(fileName), //
                     "description" to createRequestBody(metadata.description),
@@ -373,7 +374,9 @@ class WorkStationViewModel @Inject constructor(
                 }
             }
             _isUploading.value = false
-            ToastData("믹스를 서버 저장에 성공하였습니다.", Icons.Default.CheckCircle, Color(0xFF4CAF50))
+            onResult(
+                ToastData("믹스를 서버 저장에 성공하였습니다.", Icons.Default.CheckCircle, Color(0xFF4CAF50))
+            )
         }
     }
 
@@ -415,6 +418,10 @@ class WorkStationViewModel @Inject constructor(
 
     fun toggleUploadSheet(show: Boolean) {
         _showUploadSheet.value = show
+    }
+
+    fun toggleAddLayerDialog(show: Boolean) {
+        _showAddLayerDialog.value = show
     }
 
     fun RequestBody.peekContent(): String {
