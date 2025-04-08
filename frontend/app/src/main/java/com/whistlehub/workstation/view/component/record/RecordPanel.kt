@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Dialog
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -58,7 +59,10 @@ fun RecordingPanel(viewModel: WorkStationViewModel) {
     Column(
         Modifier
             .padding(16.dp)
-            .verticalScroll(verticalScroll)
+            .verticalScroll(verticalScroll),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+
     ) {
         CustomToast(
             toastData = toastState.value,
@@ -69,6 +73,8 @@ fun RecordingPanel(viewModel: WorkStationViewModel) {
         if (countdown > 0) {
             Text("녹음 시작까지 ${countdown}초...", fontSize = 20.sp)
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         when {
             isRecording -> {
@@ -111,6 +117,7 @@ fun RecordingPanel(viewModel: WorkStationViewModel) {
                 onClick = {
                     viewModel.addRecordedLayer(filename)
                     viewModel.toggleAddLayerDialog(false)
+                    viewModel.recordFileReset()
                 }, enabled = filename.isNotBlank()
             ) {
                 Text("레이어로 등록")

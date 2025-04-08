@@ -216,6 +216,7 @@ class WorkStationViewModel @Inject constructor(
                         durationMs = duration,
                         bpm = 120
                     )
+                    val bpm = layerRes.bpm ? : 
                     val bars = layerRes.bars
                     val (category, colorHex) = getCategoryAndColorHex(layerRes.instrumentType)
                     val barsPattern: List<PatternBlock> = if (!bars.isNullOrEmpty()) {
@@ -244,7 +245,8 @@ class WorkStationViewModel @Inject constructor(
                         colorHex = colorHex,
                         length = length.toInt(),
                         wavPath = localFile.absolutePath,
-                        patternBlocks = barsPattern
+                        patternBlocks = barsPattern,
+                        bpm =
                     )
                 }
 
@@ -402,8 +404,8 @@ class WorkStationViewModel @Inject constructor(
         return roundUpToNearestPowerOfTwo(calculatedLength).toFloat()
     }
 
-    private fun getAudioLayerInfos(): List<LayerAudioInfo> {
-        return tracks.value.map { it.toAudioInfo() }
+    private fun getAudioLayerInfos(projectBpm: Float = 120f): List<LayerAudioInfo> {
+        return tracks.value.map { it.toAudioInfo(projectBpm) }
     }
 
     private fun getMaxUsedBars(layers: List<Layer>): Int {
@@ -426,6 +428,10 @@ class WorkStationViewModel @Inject constructor(
         _showAddLayerDialog.value = show
     }
 
+    fun recordFileReset(){
+        recordedFile = null
+    }
+
     fun RequestBody.peekContent(): String {
         val buffer = okio.Buffer()
         this.writeTo(buffer)
@@ -443,7 +449,6 @@ class WorkStationViewModel @Inject constructor(
 
     //재생 끝나고 Oboe에서 상태 콜백 받는 함수
     override fun onPlaybackFinished() {
-        Log.d("Playback", "🎉 재생이 완료되었습니다!")
         Handler(Looper.getMainLooper()).post {
             stopAudioEngine()
             _isPlaying.value = false
@@ -587,11 +592,13 @@ class WorkStationViewModel @Inject constructor(
                 durationMs = duration,
                 bpm = 120
             )
+            val (category, colorHex) = getCategoryAndColorHex(0)
             val layer = Layer(
                 id = 0,
                 name = name,
                 description = "녹음",
-                category = "RECORDED",
+                category = category,
+                colorHex = colorHex,
                 instrumentType = 0,
                 length = length.toInt(),
                 patternBlocks = emptyList(),

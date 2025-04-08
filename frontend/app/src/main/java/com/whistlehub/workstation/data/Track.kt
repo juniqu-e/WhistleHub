@@ -10,6 +10,8 @@ data class Layer(
     val length: Int,
     val patternBlocks: List<PatternBlock> = emptyList(),
     val wavPath: String = "",
+    val bpm : Float? = null,
+    val volume : Float = 1.0f,
 ) {
     val beatPattern: List<Boolean>
         get() = MutableList(64) { false }.apply {
@@ -29,11 +31,16 @@ data class Track(
     val layers: List<Layer> = emptyList()
 )
 
-fun Layer.toAudioInfo(): LayerAudioInfo {
+fun Layer.toAudioInfo(projectBpm: Float): LayerAudioInfo {
+    val originalBpm = this.bpm ?: projectBpm
+    val playbackRate = projectBpm / originalBpm
+
     return LayerAudioInfo(
         id = this.id,
         wavPath = this.wavPath,
-        patternBlocks = this.patternBlocks
+        patternBlocks = this.patternBlocks,
+        volume = this.volume,
+        playbackRate = playbackRate
     )
 }
 
