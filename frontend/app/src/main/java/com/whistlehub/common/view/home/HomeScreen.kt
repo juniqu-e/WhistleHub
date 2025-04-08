@@ -26,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -56,6 +57,7 @@ import com.whistlehub.R
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.common.view.component.CommonAppBar
+import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.common.view.track.NewTrackCard
@@ -91,6 +93,8 @@ fun HomeScreen(
     var selectedFollowing by remember { mutableStateOf<TrackResponse.MemberInfo?>(null) }
     // 팔로잉 팬믹스 추천
     var fanmix by remember { mutableStateOf<List<TrackEssential>>(emptyList()) }
+    // 공식 계정 트랙
+    var officialList by remember { mutableStateOf<List<TrackEssential>>(emptyList()) }
 
     LaunchedEffect(Unit) {
         newList = trackPlayViewModel.getFollowRecentTracks() // 최근 올라온 트랙(임시) 가져오기
@@ -141,21 +145,31 @@ fun HomeScreen(
                             modifier = Modifier.weight(1f)
                         )
                     }
-                    if (newList.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(100.dp)
-                                .padding(10.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("최근 올라온 트랙이 없습니다.")
-                        }
-                        return@item
-                    }
                 }
                 // 자동 슬라이딩 카드
                 Column {
+                    if (newList.isEmpty()) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Official 채널을 팔로우하고 최신 트랙을 확인해보세요!",
+                                style = Typography.titleMedium,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Icon(
+                                Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                                contentDescription = "Go to Official Channel",
+                                tint = CustomColors().CommonIconColor,
+                                modifier = Modifier.clickable {
+                                    navController.navigate(Screen.Profile.route + "/1")
+                                }
+                            )
+                        }
+                    }
                     BoxWithConstraints (
                         modifier = Modifier
                             .fillMaxWidth()
@@ -173,14 +187,20 @@ fun HomeScreen(
                                     currentIndex = nextIndex
                                     scrollState.animateScrollTo((nextIndex * totalPxPerCard).toInt())
                                 }
+                            } else {
+                                officialList = trackPlayViewModel.getMemberTracks(1)  // 오피셜 계정의 최신 목록 가져오기
                             }
                         }
                         Row(
                             modifier = Modifier
-                                .horizontalScroll(scrollState),
+                                .horizontalScroll(scrollState, enabled = false),
                             horizontalArrangement = Arrangement.spacedBy(spacingDp)
                         ) {
-                            newList.forEach { track ->
+                            var targetlist by remember { mutableStateOf(newList) }
+                            if (newList.isEmpty()) {
+                                targetlist = officialList
+                            }
+                            targetlist.forEach { track ->
                                 var getTrackData by remember {
                                     mutableStateOf<TrackResponse.GetTrackDetailResponse?>(
                                         null
@@ -246,7 +266,7 @@ fun HomeScreen(
                                 .padding(10.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("정보를 가져올 수 없습니다.")
+                            Text("최근 들은 곡이 없습니다. 새로운 곡을 들어보세요!")
                         }
                         return@item
                     }
@@ -368,15 +388,27 @@ fun HomeScreen(
                             }
                         )
                     }
-                    if (notListenedList.isEmpty()) {
-                        Box(
+                    if (newList.isEmpty()) {
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(100.dp)
+                                .aspectRatio(1.618f)
                                 .padding(10.dp),
-                            contentAlignment = Alignment.Center
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp, alignment = Alignment.CenterHorizontally)
                         ) {
-                            Text("정보를 가져올 수 없습니다.")
+                            Text(
+                                "모든 트랙을 다 들어봤나요? 직접 트랙을 만들어보는 건 어때요?",
+                                style = Typography.titleMedium
+                            )
+                            Icon(
+                                Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                                contentDescription = "Go to Official Channel",
+                                tint = CustomColors().CommonIconColor,
+                                modifier = Modifier.clickable {
+                                    navController.navigate(Screen.DAW.route)
+                                }
+                            )
                         }
                         return@item
                     }
@@ -402,7 +434,10 @@ fun HomeScreen(
                             contentDescription = "Profile Image",
                             modifier = Modifier
                                 .size(40.dp)
-                                .clip(RoundedCornerShape(5.dp)),
+                                .clip(RoundedCornerShape(5.dp))
+                                .clickable {
+                                    navController.navigate(Screen.Profile.route + "/${selectedFollowing?.memberId}")
+                                },
                             error = painterResource(R.drawable.default_profile),
                             contentScale = ContentScale.Crop
                         )
@@ -422,19 +457,21 @@ fun HomeScreen(
                                 color = CustomColors().CommonTextColor,
                             )
                         }
-                        Text(
-                            text = "더보기",
-                            style = Typography.bodyMedium,
-                            color = CustomColors().CommonSubTextColor,
-                            modifier = Modifier.clickable {
-                                coroutineScope.launch {
-                                    if (fanmix.size < 4) {
-                                        return@launch
+                        if (fanmix.size > 3) {
+                            Text(
+                                text = "더보기",
+                                style = Typography.bodyMedium,
+                                color = CustomColors().CommonSubTextColor,
+                                modifier = Modifier.clickable {
+                                    coroutineScope.launch {
+                                        if (fanmix.size < 4) {
+                                            return@launch
+                                        }
+                                        showFanmixSheet = true
                                     }
-                                    showFanmixSheet = true
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
                     if (fanmix.isEmpty()) {
                         Box(
@@ -444,7 +481,13 @@ fun HomeScreen(
                                 .padding(10.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("정보를 가져올 수 없습니다.")
+                            Text(
+                                text = if (selectedFollowing?.memberId == null || selectedFollowing?.memberId == 0) {
+                                    "팔로우 중인 활동 유저가 없습니다."
+                                } else {
+                                    "${selectedFollowing?.nickname}님의 팬믹스\n" + "정보를 가져올 수 없습니다."
+                                }
+                            )
                         }
                         return@item
                     }
