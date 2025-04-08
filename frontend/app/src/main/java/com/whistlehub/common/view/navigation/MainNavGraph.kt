@@ -13,6 +13,7 @@ import androidx.navigation.navArgument
 import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.common.view.AppScaffold
 import com.whistlehub.common.view.login.LoginScreen
+import com.whistlehub.common.view.login.LoginSplashScreen
 import com.whistlehub.common.view.signup.SelectTagsScreen
 import com.whistlehub.common.view.signup.SignUpScreen
 import com.whistlehub.common.viewmodel.SignUpViewModel
@@ -37,9 +38,12 @@ fun MainNavGraph(
 
     NavHost(
         navController = navController,
-        startDestination = "login",
+        startDestination = "splash",
         modifier = modifier
     ) {
+        composable("splash") {
+            LoginSplashScreen(navController)
+        }
         //유저 인증(로그인)
         composable("login") {
             LoginScreen(
