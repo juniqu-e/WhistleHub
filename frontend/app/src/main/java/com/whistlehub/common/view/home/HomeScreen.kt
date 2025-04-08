@@ -95,6 +95,8 @@ fun HomeScreen(
     var fanmix by remember { mutableStateOf<List<TrackEssential>>(emptyList()) }
     // 공식 계정 트랙
     var officialList by remember { mutableStateOf<List<TrackEssential>>(emptyList()) }
+    // 타겟 트랙
+    var targetTrack by remember { mutableStateOf<TrackEssential?>(null) }
 
     LaunchedEffect(Unit) {
         newList = trackPlayViewModel.getFollowRecentTracks() // 최근 올라온 트랙(임시) 가져오기
@@ -285,6 +287,7 @@ fun HomeScreen(
                                         .fillMaxWidth()
                                         .clickable {
                                             coroutineScope.launch {
+                                                targetTrack = track
                                                 similarList =
                                                     trackPlayViewModel.getSimilarTrackList(track.trackId)
                                                 if (similarList.isEmpty()) {
@@ -514,6 +517,39 @@ fun HomeScreen(
                 containerColor = CustomColors().CommonBackgroundColor,
                 content = {
                     LazyColumn {
+                        item {
+                            Column(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                AsyncImage(
+                                    model = targetTrack?.imageUrl,
+                                    contentDescription = "Playlist Cover",
+                                    modifier = Modifier
+                                        .size(150.dp)
+                                        .clip(RoundedCornerShape(12.dp)),
+                                    contentScale = ContentScale.Crop,
+                                    error = painterResource(id = R.drawable.default_track)
+                                )
+                                Spacer(Modifier.height(10.dp))
+                                Text(
+                                    "similar with",
+                                    style = Typography.bodyMedium,
+                                    color = CustomColors().CommonSubTitleColor,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(Modifier.height(5.dp))
+                                Text(
+                                    targetTrack?.title!!,
+                                    style = Typography.titleLarge,
+                                    color = CustomColors().CommonTextColor
+                                )
+                                Spacer(Modifier.height(10.dp))
+                            }
+                        }
                         items(similarList.size) { index ->
                             val track = similarList[index]
                             TrackItemRow(
@@ -535,6 +571,42 @@ fun HomeScreen(
                 containerColor = CustomColors().CommonBackgroundColor,
                 content = {
                     LazyColumn {
+                        item {
+                            Column(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 24.dp)
+                                    .clickable {
+                                        navController.navigate(Screen.Profile.route + "/${selectedFollowing?.memberId}")
+                                    },
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                AsyncImage(
+                                    model = selectedFollowing?.profileImage,
+                                    contentDescription = "Playlist Cover",
+                                    modifier = Modifier
+                                        .size(150.dp)
+                                        .clip(RoundedCornerShape(12.dp)),
+                                    contentScale = ContentScale.Crop,
+                                    error = painterResource(id = R.drawable.default_profile)
+                                )
+                                Spacer(Modifier.height(10.dp))
+                                Text(
+                                    "FanMix for follower",
+                                    style = Typography.bodyMedium,
+                                    color = CustomColors().CommonSubTitleColor,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(Modifier.height(5.dp))
+                                Text(
+                                    selectedFollowing?.nickname!!,
+                                    style = Typography.titleLarge,
+                                    color = CustomColors().CommonTextColor
+                                )
+                                Spacer(Modifier.height(10.dp))
+                            }
+                        }
                         items(fanmix.size) { index ->
                             val track = fanmix[index]
                             TrackItemRow(
