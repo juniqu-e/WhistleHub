@@ -11,11 +11,15 @@ import android.media.MediaRecorder
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -41,6 +45,7 @@ import com.whistlehub.workstation.data.BottomBarActions
 import com.whistlehub.workstation.data.Layer
 import com.whistlehub.workstation.data.LayerAudioInfo
 import com.whistlehub.workstation.data.PatternBlock
+import com.whistlehub.workstation.data.ToastData
 import com.whistlehub.workstation.data.UploadMetadata
 import com.whistlehub.workstation.data.toAudioInfo
 import com.whistlehub.workstation.di.AudioLayerPlayer
@@ -86,10 +91,8 @@ class WorkStationViewModel @Inject constructor(
     val showUploadSheet: State<Boolean> get() = _showUploadSheet
     private val _isUploading = mutableStateOf(false)
     val isUploading: State<Boolean> get() = _isUploading
-
     private val _tagList = MutableStateFlow<List<AuthResponse.TagResponse>>(emptyList())
     val tagList: StateFlow<List<AuthResponse.TagResponse>> get() = _tagList
-
     private val _tagPairs = MutableStateFlow<List<Pair<Int, String>>>(emptyList())
     val tagPairs: StateFlow<List<Pair<Int, String>>> get() = _tagPairs
 
@@ -118,6 +121,17 @@ class WorkStationViewModel @Inject constructor(
     fun deleteLayer(layer: Layer) {
         _tracks.value = _tracks.value.filter { it.id != layer.id }
         Log.d("Play", _tracks.value.toString())
+    }
+
+    fun resetLayer(layer: Layer) {
+        _tracks.value = _tracks.value.map {
+            if (it.id == layer.id) {
+                it.copy(
+                    length = layer.length,
+                    patternBlocks = emptyList()
+                )
+            } else it
+        }
     }
 
     private fun isOverlapping(newBlock: PatternBlock, existing: PatternBlock): Boolean {
@@ -199,11 +213,24 @@ class WorkStationViewModel @Inject constructor(
                         durationMs = duration,
                         bpm = 120
                     )
-                    val barsPattern = layerRes.bars?.map { start ->
-                        PatternBlock(start = start, length = length.toInt())
-                    } ?: emptyList()
-
-                    Log.d("Pattern", barsPattern.toString())
+                    val bars = layerRes.bars
+                    val barsPattern: List<PatternBlock> = if (!bars.isNullOrEmpty()) {
+                        bars.map { start ->
+                            PatternBlock(start = start, length = 4)
+                        }
+                    } else {
+//                        val interval = 4
+//                        val defaultStarts = (0 until 64 step interval)
+//                        defaultStarts.map { start ->
+//                            PatternBlock(
+//                                start = start,
+//                                length = 4
+//                            )
+//                        }
+                        listOf(
+                            PatternBlock(start = 0, length = 4)
+                        )
+                    }
 
                     Layer(
                         name = layerRes.name,
@@ -228,8 +255,14 @@ class WorkStationViewModel @Inject constructor(
         }
     }
 
-    fun onPlayClicked() {
+    fun onPlayClicked(onResult: (Boolean) -> Unit = {}) {
         val infos = getAudioLayerInfos();
+        // 마디 정보 없는 레이어 체크
+        val invalidLayer = tracks.value.find { it.patternBlocks.isEmpty() }
+        if (invalidLayer != null) {
+            onResult(false)
+            return
+        }
         val maxUsedBars = getMaxUsedBars(tracks.value)
         if (_isPlaying.value) {
             stopAudioEngine()
@@ -239,9 +272,14 @@ class WorkStationViewModel @Inject constructor(
             startAudioEngine()
         }
         _isPlaying.value = !_isPlaying.value
+        onResult(true)
     }
 
-    fun onUpload(context: Context, metadata: UploadMetadata, onResult: (Boolean) -> Unit = {}) {
+    fun onUpload(context: Context, metadata: UploadMetadata, onResult: (ToastData) -> Unit = {}) {
+        if (metadata.title.isBlank() || metadata.description.isBlank() || metadata.tags.isEmpty()) {
+            onResult(ToastData("제목, 설명, 태그를 모두 입력해주세요.", Icons.Default.Error, Color(0xFFF44336)))
+            return
+        }
         val fileName = metadata.title
         val safeFileName = if (fileName.endsWith(".wav")) fileName else "$fileName.wav"
         val mix = File(context.filesDir, safeFileName)
@@ -261,7 +299,7 @@ class WorkStationViewModel @Inject constructor(
 
             if (!success) {
                 _isUploading.value = false
-                onResult(false)
+                onResult(ToastData("음원 합성에 실패하였습니다.", Icons.Default.Error, Color(0xFFF44336)))
                 return@launch
             } else {
                 //MultiPart
@@ -324,12 +362,18 @@ class WorkStationViewModel @Inject constructor(
 
                 if (response.code != "SU") {
                     _isUploading.value = false
-                    onResult(false)
+                    onResult(
+                        ToastData(
+                            "믹스를 서버 저장에 실패하였습니다.",
+                            Icons.Default.Error,
+                            Color(0xFFF44336)
+                        )
+                    )
                     return@launch
                 }
             }
             _isUploading.value = false
-            onResult(true)
+            ToastData("믹스를 서버 저장에 성공하였습니다.", Icons.Default.CheckCircle, Color(0xFF4CAF50))
         }
     }
 
@@ -396,7 +440,6 @@ class WorkStationViewModel @Inject constructor(
             _isPlaying.value = false
         }
     }
-
 
     fun startCountdownAndRecord(context: Context, file: File, onComplete: (File) -> Unit) {
         isRecordingPending = true
@@ -530,13 +573,18 @@ class WorkStationViewModel @Inject constructor(
 
     fun addRecordedLayer(name: String) {
         recordedFile?.let { file ->
+            val duration = getWavDurationMs(file)
+            val length = getBarsFromDuration(
+                durationMs = duration,
+                bpm = 120
+            )
             val layer = Layer(
                 id = 0,
                 name = name,
-                description = "사용자 녹음",
+                description = "녹음",
                 category = "RECORDED",
                 instrumentType = 0,
-                length = 4,
+                length = length.toInt(),
                 patternBlocks = emptyList(),
                 wavPath = file.absolutePath
             )

@@ -208,8 +208,9 @@ class TrackService @Inject constructor(
 
     // 팔로우한 사람 중 한 명 조회
     suspend fun getFollowingMember(
+        size: Int
     ): ApiResponse<TrackResponse.MemberInfo> {
-        return tokenRefresh.execute { trackApi.getFollowingMember() }
+        return tokenRefresh.execute { trackApi.getFollowingMember(size) }
     }
 
     // 특정 회원을 팔로우한 사람들이 좋아하는 트랙 리스트 조회
