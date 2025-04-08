@@ -189,8 +189,10 @@ public class DiscoveryController {
      * @return 팔로우한 회원의 트랙 리스트
      */
     @GetMapping("/fanmix/following")
-    public ApiResponse<?> getRandomFollowingMember() {
-        MemberInfo result = discoveryService.getRandomFollowingMember();
+    public ApiResponse<?> getRandomFollowingMember(@RequestParam(value = "size", required = true)
+                                                       @Min(value = 0)
+                                                       Integer size) {
+        MemberInfo result = discoveryService.getRandomFollowingMember(size);
         return new ApiResponse.builder<MemberInfo>()
                 .payload(result)
                 .build();

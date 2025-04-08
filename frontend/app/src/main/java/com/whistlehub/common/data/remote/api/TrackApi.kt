@@ -180,6 +180,7 @@ interface TrackApi {
     // 팔로우한 사람 중 한 명 조회
     @GET("discovery/fanmix/following")
     suspend fun getFollowingMember(
+        @Query("size") size: Int
     ): Response<ApiResponse<TrackResponse.MemberInfo>>
 
     // 특정 회원을 팔로우한 사람들이 좋아하는 트랙 리스트
