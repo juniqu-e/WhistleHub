@@ -14,6 +14,7 @@ fun TrackListColumn(
     workStationViewModel: WorkStationViewModel,
     navController: NavHostController,
     needViewMore: Boolean = false,
+    needImportButton: Boolean = false,
 ) {
     if (trackList.isEmpty()) {
         return
@@ -25,7 +26,8 @@ fun TrackListColumn(
                 track,
                 workStationViewModel = workStationViewModel,
                 navController = navController,
-                needMoreView = needViewMore
+                needMoreView = needViewMore,
+                needImportButton = needImportButton
             )
         }
     }

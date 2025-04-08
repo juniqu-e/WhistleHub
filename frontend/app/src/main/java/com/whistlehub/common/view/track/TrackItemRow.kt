@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Input
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.rounded.MoreVert
@@ -29,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -36,7 +38,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.whistlehub.R
+import com.whistlehub.common.data.remote.dto.request.WorkstationRequest
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
+import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.data.TrackEssential
@@ -55,8 +59,10 @@ fun TrackItemRow(
     workStationViewModel: WorkStationViewModel,
     navController: NavHostController,
     needMoreView: Boolean = false,
+    needImportButton: Boolean = false,
 ) {
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
     val isPlaying by trackPlayViewModel.isPlaying.collectAsState(initial = false)
     val user by trackPlayViewModel.user.collectAsState()
@@ -158,6 +164,25 @@ fun TrackItemRow(
                 Icon(
                     Icons.Rounded.MoreVert,
                     contentDescription = "More",
+                    tint = CustomColors().CommonIconColor
+                )
+            }
+        }
+        if (needImportButton) {
+            IconButton(
+                onClick = {
+                    coroutineScope.launch {
+                        workStationViewModel.addLayerFromSearchTrack(
+                            request = WorkstationRequest.ImportTrackRequest(trackId = track.trackId),
+                            context = context
+                        )
+                        navController.navigate(Screen.DAW.route)
+                    }
+                }
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Rounded.Input,
+                    contentDescription = "Import",
                     tint = CustomColors().CommonIconColor
                 )
             }
