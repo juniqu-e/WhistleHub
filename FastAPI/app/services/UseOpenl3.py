@@ -133,6 +133,7 @@ class OpenL3Service:
                 input_repr="mel256",
                 content_type="music",
                 embedding_size=self.embedding_dim,
+                hop_size=1
             )
             
             # 평균 임베딩 계산
