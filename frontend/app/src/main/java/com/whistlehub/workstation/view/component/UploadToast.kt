@@ -37,7 +37,7 @@ fun CustomToast(
 
         Box(
             modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.TopCenter
+            contentAlignment = position
         ) {
             Card(
                 shape = RoundedCornerShape(16.dp),

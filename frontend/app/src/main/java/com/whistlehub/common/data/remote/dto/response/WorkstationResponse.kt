@@ -29,6 +29,6 @@ sealed class WorkstationResponse {
         val name: String,
         val instrumentType: Int,
         val soundUrl: String,
-        val bars: List<Int>
+        val bars: List<Int>?
     )
 }

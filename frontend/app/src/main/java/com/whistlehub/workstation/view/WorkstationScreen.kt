@@ -88,25 +88,36 @@ fun WorkStationScreen(
     val tagPairs by viewModel.tagPairs.collectAsState()
     val bottomBarActions = viewModel.bottomBarActions.copy(
         onPlayedClicked = {
-            viewModel.onPlayClicked()
+            viewModel.onPlayClicked() { success ->
+                if (!success) {
+                    toastState.value =
+                        ToastData("마디가 설정되지 않는 레이어가 있습니다.", Icons.Default.Error, Color(0xFFF44336))
+                }
+            }
         },
         onAddInstrument = {
             showDialog = true
         },
-        onUploadTrackConfirm = { metadata ->
-            viewModel.onUpload(context, metadata) { success ->
-                toastState.value = if (success) {
-                    ToastData("믹스 저장 성공", Icons.Default.CheckCircle, Color(0xFF4CAF50))
-                } else {
-                    ToastData("믹스 저장 실패", Icons.Default.Error, Color(0xFFF44336))
-                }
-            }
-        }
+//        onUploadTrackConfirm = { metadata ->
+//            viewModel.onUpload(context, metadata) { success ->
+//                toastState.value = if (success) {
+//                    ToastData("믹스 저장 성공", Icons.Default.CheckCircle, Color(0xFF4CAF50))
+//                } else {
+//                    ToastData("믹스 저장 실패", Icons.Default.Error, Color(0xFFF44336))
+//                }
+//            }
+//        }
     )
 
     LaunchedEffect(Unit) {
         viewModel.getTagList()
     }
+
+    CustomToast(
+        toastData = toastState.value,
+        onDismiss = { toastState.value = null },
+        position = Alignment.Center
+    )
 
     Column(
         modifier = Modifier
@@ -114,11 +125,6 @@ fun WorkStationScreen(
             .padding(paddingValues)
 //            .background(Color(0xFF9090C0))
     ) {
-        CustomToast(
-            toastData = toastState.value,
-            onDismiss = { toastState.value = null },
-            position = Alignment.Center
-        )
         //좌측 악기
         LayerPanel(
             tracks = tracks,
@@ -131,6 +137,7 @@ fun WorkStationScreen(
                 viewModel.deleteLayer(it)
             },
             onResetLayer = {
+                viewModel.resetLayer(it)
             },
             onBeatAdjustment = { layer ->
                 selectedLayerId.value = layer.id
@@ -159,7 +166,6 @@ fun WorkStationScreen(
             )
         }
     }
-
     val selectedLayer = tracks.firstOrNull { it.id == selectedLayerId.value }
     selectedLayer?.let { layer ->
         ModalBottomSheet(
@@ -189,12 +195,8 @@ fun WorkStationScreen(
             onDismiss = { viewModel.toggleUploadSheet(false) },
             onUploadClicked = { metadata ->
                 viewModel.toggleUploadSheet(false)
-                viewModel.onUpload(context, metadata) { success ->
-                    toastState.value = if (success) {
-                        ToastData("믹스 저장 성공", Icons.Default.CheckCircle, Color(0xFF4CAF50))
-                    } else {
-                        ToastData("믹스 저장 실패", Icons.Default.Error, Color(0xFFF44336))
-                    }
+                viewModel.onUpload(context, metadata) { toast ->
+                    toastState.value = toast
                 }
             },
             tagList = tagPairs
@@ -245,8 +247,6 @@ fun LayerPanel(
             )
             Spacer(modifier = Modifier.heightIn(8.dp))
         }
-
-
         // + 버튼
 //        Box(
 //            modifier = Modifier
@@ -344,7 +344,7 @@ fun LayerItem(
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("믹싱 초기화") },
+                        text = { Text("마디 초기화") },
                         onClick = {
                             menuExpanded = false
                             onReset(layer)
