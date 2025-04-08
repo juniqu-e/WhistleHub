@@ -15,7 +15,7 @@ from pymilvus import (
 )
 import config
 import utils
-
+from app.models.response.SimilarityResetResponseDto import *
 class OpenL3Service:
     def __init__(self):
         self.milvus_host=config.MILVUS_HOST
@@ -535,6 +535,60 @@ class OpenL3Service:
             import traceback
             utils.log(traceback.format_exc(), level=logging.ERROR)
             return None
+        
+    def find_similar_by_track_ids(self, trackIds, limit=5):
+        """
+        여러 트랙 ID로 유사한 곡 검색 (유사도 순으로 상위 n개 반환)
+        
+        Args:
+            trackIds: 검색 기준이 되는 트랙 ID 리스트
+            limit: 반환할 유사 곡 수 (기본값 5)
+            
+        Returns:
+            SimilarityResetResponseDto: 각 트랙 ID에 대한 유사도 점수
+        """
+        try:
+            # 컬렉션 항목 수 확인
+            count = self.collection.num_entities
+            print(f"컬렉션 항목 수: {count}")
+            
+            if count <= 1:
+                print("컬렉션에 충분한 데이터가 없습니다.")
+                return SimilarityResetResponseDto(__root__={})
+            
+            # 결과를 저장할 딕셔너리 초기화
+            result_dict = {}
+            
+            # 각 트랙 ID에 대해 유사한 트랙 검색
+            for track_id in trackIds:
+                # 개별 트랙에 대한 유사 트랙 검색
+                similar_tracks = self.find_similar_by_track_id(track_id, limit)
+                
+                # 결과가 있으면 SimilarityResetResponse 형태로 변환
+                if similar_tracks:
+                    track_results = []
+                    for track in similar_tracks:
+                        track_results.append(
+                            SimilarityResetResponse(
+                                trackId=track["track_id"],
+                                similarity=track["similarity"]
+                            )
+                        )
+                    # 문자열 키로 결과 저장 (딕셔너리 키는 문자열이어야 함)
+                    result_dict[str(track_id)] = track_results
+                else:
+                    # 결과가 없는 경우 빈 리스트 설정
+                    result_dict[str(track_id)] = []
+            
+            # SimilarityResetResponseDto 객체 생성 및 반환
+            return SimilarityResetResponseDto(root=result_dict)
+            
+        except Exception as e:
+            print(f"유사 트랙 검색 중 오류 발생: {e}")
+            import traceback
+            traceback.print_exc()
+            # 오류 발생 시 빈 결과 반환
+            return SimilarityResetResponseDto(root={})
 
 
 # 사용 예시

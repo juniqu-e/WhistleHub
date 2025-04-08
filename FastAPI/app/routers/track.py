@@ -17,6 +17,8 @@ from utils.file_util import *
 from app.services.UseOpenl3 import *
 from app.services.openl3Tasks import *
 from app.models.request.RecommendTrackRequestDto import *
+from app.models.request.SimilarityResetRequestDto import *
+from app.models.response.SimilarityResetResponseDto import *
 
 
 router = APIRouter(prefix=f"{config.API_BASE_URL}/track", tags=["audio"])
@@ -147,3 +149,28 @@ async def recommend_track(request: RecommendTrackRequest):
     except Exception as e:
         utils.log(f"추천 트랙 검색 중 오류 발생: {str(e)}", level=logging.ERROR)
         raise CustomException(ResponseType.SERVER_ERROR, f"추천 트랙 검색 중 오류 발생: {str(e)}")
+    
+@router.post(
+    "/similarity",
+    summary="트랙 유사도 재계산 API",
+    description="neo4j를 재설정하기위해 트랙 유사도를 재계산 합니다.",
+    response_model=SimilarityResetResponseDto | None,
+)
+@utils.logger()
+async def reset_similarity(request: SimilarityResetRequest):
+    """
+    트랙 유사도를 재계산하는 API입니다.
+    """
+    try:
+        utils.log(f"트랙 유사도 재계산 요청: {request}", level=logging.DEBUG)
+
+        # OpenL3Service의 find_similar_by_track_id 메서드를 사용하여 유사한 트랙 검색
+        similarity_reset_response = openl3_service.find_similar_by_track_ids(
+            trackIds=request.trackIds,
+            limit=10,
+        )
+        return similarity_reset_response
+
+    except Exception as e:
+        utils.log(f"트랙 유사도 재계산 중 오류 발생: {str(e)}", level=logging.ERROR)
+        raise CustomException(ResponseType.SERVER_ERROR, f"트랙 유사도 재계산 중 오류 발생: {str(e)}")
