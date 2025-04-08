@@ -1,5 +1,6 @@
 package com.ssafy.backend.graph.service;
 
+import com.ssafy.backend.graph.repository.MemberNodeRepository;
 import com.ssafy.backend.graph.repository.TrackNodeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -20,6 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RecommendationService {
     final private TrackNodeRepository trackNodeRepository;
+    final private MemberNodeRepository memberNodeRepository;
 
     public List<Integer> getRecommendTrackIds(int memberId, int tagId, int trackCount) {
         return trackNodeRepository.getRecommendTrackIds(memberId, tagId, trackCount);
@@ -31,6 +33,10 @@ public class RecommendationService {
 
     public List<Integer> getMemberFanMix(int memberId, int trackCount) {
         return trackNodeRepository.getMemberFanMix(memberId, trackCount);
+    }
+
+    public Integer getFanmixMemberId(int memberId, int size) {
+        return memberNodeRepository.getFanmixMember(memberId, size);
     }
 }
 
