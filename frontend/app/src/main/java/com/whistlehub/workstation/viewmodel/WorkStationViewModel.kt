@@ -48,6 +48,7 @@ import com.whistlehub.workstation.data.PatternBlock
 import com.whistlehub.workstation.data.ToastData
 import com.whistlehub.workstation.data.UploadMetadata
 import com.whistlehub.workstation.data.getCategoryAndColorHex
+import com.whistlehub.workstation.data.roundUpToNearestPowerOfTwo
 import com.whistlehub.workstation.data.toAudioInfo
 import com.whistlehub.workstation.di.AudioLayerPlayer
 import com.whistlehub.workstation.di.WorkStationBottomBarProvider
@@ -219,7 +220,7 @@ class WorkStationViewModel @Inject constructor(
                     val (category, colorHex) = getCategoryAndColorHex(layerRes.instrumentType)
                     val barsPattern: List<PatternBlock> = if (!bars.isNullOrEmpty()) {
                         bars.map { start ->
-                            PatternBlock(start = start, length = 4)
+                            PatternBlock(start = start, length = length.toInt())
                         }
                     } else {
 //                        val interval = 4
@@ -231,7 +232,7 @@ class WorkStationViewModel @Inject constructor(
 //                            )
 //                        }
                         listOf(
-                            PatternBlock(start = 0, length = 4)
+                            PatternBlock(start = 0, length = length.toInt())
                         )
                     }
 
@@ -397,7 +398,8 @@ class WorkStationViewModel @Inject constructor(
     private fun getBarsFromDuration(durationMs: Long, bpm: Int): Float {
         val beatDurationMs = 60000f / bpm
         val barDurationMs = beatDurationMs * 4
-        return durationMs / barDurationMs
+        val calculatedLength = durationMs / barDurationMs
+        return roundUpToNearestPowerOfTwo(calculatedLength).toFloat()
     }
 
     private fun getAudioLayerInfos(): List<LayerAudioInfo> {

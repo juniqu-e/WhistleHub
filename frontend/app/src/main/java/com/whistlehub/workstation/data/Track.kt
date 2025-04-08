@@ -53,3 +53,13 @@ fun getCategoryAndColorHex(instrumentType: Int): Pair<String, String> {
         else -> Pair("Unknown", "#7A7A7A") // Default case (Tone down gray)
     }
 }
+
+fun roundUpToNearestPowerOfTwo(value: Float): Int {
+    // 1, 2, 4, 8 등으로 올림
+    return when {
+        value <= 1 -> 1
+        value <= 2 -> 2
+        value <= 4 -> 4
+        else -> 8
+    }
+}
