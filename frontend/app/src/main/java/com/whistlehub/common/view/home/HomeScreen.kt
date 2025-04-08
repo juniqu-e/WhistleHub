@@ -391,7 +391,7 @@ fun HomeScreen(
                             }
                         )
                     }
-                    if (newList.isEmpty()) {
+                    if (notListenedList.isEmpty()) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
