@@ -424,6 +424,7 @@ fun HomeScreen(
 
             // 팔로잉 팬믹스 추천
             item {
+                if (fanmix.isEmpty()) return@item
                 Column {
                     Row(
                         modifier = Modifier
@@ -475,24 +476,6 @@ fun HomeScreen(
                                 }
                             )
                         }
-                    }
-                    if (fanmix.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(100.dp)
-                                .padding(10.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = if (selectedFollowing?.memberId == null || selectedFollowing?.memberId == 0) {
-                                    "팔로우 중인 활동 유저가 없습니다."
-                                } else {
-                                    "${selectedFollowing?.nickname}님의 팬믹스\n" + "정보를 가져올 수 없습니다."
-                                }
-                            )
-                        }
-                        return@item
                     }
                     TrackListRow(trackList = fanmix,
                         workStationViewModel = workStationViewModel,
