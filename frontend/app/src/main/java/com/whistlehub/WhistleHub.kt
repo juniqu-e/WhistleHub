@@ -14,6 +14,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.data.repository.TrackService
+import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.playlist.data.TrackEssential
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
@@ -44,6 +45,8 @@ class WhistleHub : Application() {
     // 트랙 재생을 위한 trackService 주입
     @Inject
     lateinit var trackService: TrackService
+    @Inject
+    lateinit var logoutManager: LogoutManager
 
     // 앱 라이프사이클 상태 추적
     private var appInBackground = false
@@ -87,6 +90,19 @@ class WhistleHub : Application() {
                         if (exoPlayer.duration != C.TIME_UNSET) exoPlayer.duration else 0L
                 }
                 delay(100)
+            }
+        }
+        // 로그아웃시 재생목록 초기화, 음악 정지, 현재 트랙 제거
+        CoroutineScope(Dispatchers.Main).launch {
+            logoutManager.logoutEventFlow.collect {
+                clearTrackList()
+                isPlaying.value = false
+                currentTrack.value = null
+                playerPosition.value = 0L
+                trackDuration.value = 0L
+                exoPlayer.stop()
+                exoPlayer.clearMediaItems()
+                Log.d("WhistleHub", "Logout detected: player state fully cleared.")
             }
         }
     }
