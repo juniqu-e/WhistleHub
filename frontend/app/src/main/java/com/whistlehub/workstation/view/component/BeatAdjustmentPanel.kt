@@ -50,7 +50,7 @@ fun BeatAdjustmentPanel(
     onAutoRepeatApply: (startBeat: Int, interval: Int) -> Unit,
 ) {
     var startBeat by remember { mutableFloatStateOf(0f) }
-    var interval by remember { mutableFloatStateOf(4f) }
+    var interval by remember { mutableFloatStateOf(1f) }
     // 화면 가운데 정렬 + 너비 제한
     Box(
         modifier = Modifier
@@ -93,6 +93,13 @@ fun BeatAdjustmentPanel(
 //                onValueChange = { startBeat = it },
 //                valueRange = 0f..59f
 //            )
+            RepeatBarSelector(
+                label = "반복 간격",
+                value = interval,
+                onValueChange = { interval = it },
+                accentColor = Color(android.graphics.Color.parseColor(layer.colorHex))
+            )
+
             BeatSlider(
                 label = "시작 마디",
                 value = startBeat,

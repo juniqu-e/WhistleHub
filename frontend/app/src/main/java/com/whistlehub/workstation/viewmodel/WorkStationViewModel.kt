@@ -608,9 +608,13 @@ class WorkStationViewModel @Inject constructor(
             while (isRecording && recorder?.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
                 val read = recorder?.read(buffer, 0, buffer.size) ?: break
                 if (read > 0) {
-                    Log.d("Record", "read: $read / buffer.first: ${buffer[0]}")
                     pcmStream.write(buffer, 0, read)
                 }
+            }
+
+            val remaining = recorder?.read(buffer, 0, buffer.size) ?: 0
+            if (remaining > 0) {
+                pcmStream.write(buffer, 0, remaining)
             }
 
             recorder?.stop()
@@ -634,6 +638,9 @@ class WorkStationViewModel @Inject constructor(
 
     fun stopRecording() {
         isRecording = false
+        viewModelScope.launch {
+            delay(200) // 버퍼 마무리용 여유 시간
+        }
     }
 
     fun playRecording(file: File) {
