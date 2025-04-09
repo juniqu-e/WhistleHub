@@ -4,6 +4,9 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
+import androidx.annotation.OptIn
+import androidx.media3.common.util.Log
+import androidx.media3.common.util.UnstableApi
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import dagger.Module
@@ -37,19 +40,48 @@ object AppModule {
      * @param context 애플리케이션 컨텍스트를 주입받아 SharedPreferences를 초기화합니다.
      * @return 암호화된 SharedPreferences 인스턴스를 반환합니다.
      */
+    @OptIn(UnstableApi::class)
     @Provides
     @Singleton
     fun provideSharedPreferences(@ApplicationContext context: Context): SharedPreferences {
-        val masterKeyBuilder = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
+        return try {
+            val masterKeyBuilder = MasterKey.Builder(context)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
 
-        return EncryptedSharedPreferences.create(
-            context,
-            "WhistleHub",
-            masterKeyBuilder,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
+            EncryptedSharedPreferences.create(
+                context,
+                "WhistleHub",
+                masterKeyBuilder,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (e: Exception) {
+            // 암호화 관련 에러 발생 시 로그 출력
+            Log.e("AppModule", "암호화된 SharedPreferences 접근 오류: ${e.message}")
+
+            // 손상된 SharedPreferences 파일 내용 삭제
+            context.getSharedPreferences("WhistleHub", Context.MODE_PRIVATE).edit().clear().apply()
+
+            // 새로운 MasterKey로 다시 시도
+            try {
+                val masterKeyBuilder = MasterKey.Builder(context)
+                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                    .build()
+
+                EncryptedSharedPreferences.create(
+                    context,
+                    "WhistleHub",
+                    masterKeyBuilder,
+                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                )
+            } catch (fallbackException: Exception) {
+                // 그래도 실패하면 일반 SharedPreferences로 대체
+                Log.e("AppModule", "암호화 실패 → 일반 SharedPreferences로 대체: ${fallbackException.message}")
+                context.getSharedPreferences("WhistleHub_Unencrypted", Context.MODE_PRIVATE)
+            }
+        }
     }
+
 }

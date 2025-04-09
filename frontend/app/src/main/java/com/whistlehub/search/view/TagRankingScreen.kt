@@ -65,7 +65,8 @@ fun TagRankingScreen(
                 title = "#$tagName",
                 navController = navController,
                 logoutManager = logoutManager,
-                coroutineScope = coroutineScope
+                coroutineScope = coroutineScope,
+                showBackButton = true
             )
         }
     ) { innerPadding ->

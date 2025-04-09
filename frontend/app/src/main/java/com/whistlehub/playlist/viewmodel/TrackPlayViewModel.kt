@@ -172,7 +172,7 @@ class TrackPlayViewModel @Inject constructor(
     }
 
     // 팔로우한 사람 한 명
-    suspend fun getFollowingMember(size: Int = 10): TrackResponse.MemberInfo {
+    suspend fun getFollowingMember(size: Int = 3): TrackResponse.MemberInfo {
         try {
             val response = trackService.getFollowingMember(size)
             if (response.code == "SU") {
