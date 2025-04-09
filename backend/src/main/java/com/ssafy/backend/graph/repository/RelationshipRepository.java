@@ -31,6 +31,6 @@ public interface RelationshipRepository extends Neo4jRepository<TrackNode, Integ
     @Query("MATCH (m:Member{id: $memberId})-[p:PREFER]->(t:Tag) order by p.weight desc return t.id")
     List<Integer> findPreferTagsByMemberId(@Param("memberId") Integer memberId);
 
-    @Query("MATCH ()-[r:SIMILAR]->() DELETE r")
-    void deleteAllSimilarRelationships();
+    @Query("MATCH ()-[r:SIMILAR]->() DELETE r RETURN count(r)")
+    int deleteAllSimilarRelationships();
 }
