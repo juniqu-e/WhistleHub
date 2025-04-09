@@ -5,6 +5,7 @@ import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.track.dto.request.*;
 import com.ssafy.backend.track.service.TrackCommentService;
 import com.ssafy.backend.track.service.TrackService;
+import com.ssafy.backend.workstation.service.WorkstationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -29,6 +30,7 @@ public class TrackController {
     private final TrackService trackService;
     private final TrackCommentService trackCommentService;
     private final AuthService authService;
+    private final WorkstationService workstationService;
 
 
     @GetMapping()
@@ -56,6 +58,7 @@ public class TrackController {
     @DeleteMapping()
     public ApiResponse<?> deleteTrack(int trackId) {
         trackService.deleteTrack(trackId);
+        workstationService.deleteTrackRequestToFastApi(trackId);
         return new ApiResponse.builder<Object>()
                 .payload(null)
                 .build();

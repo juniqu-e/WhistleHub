@@ -50,4 +50,12 @@ class WorkstationService @Inject constructor(
             )
         }
     }
+
+    suspend fun importRecommendTrack(
+        request: WorkstationRequest.ImportRecommendTrackRequest
+    ): ApiResponse<WorkstationResponse.ImportTrackResponse> {
+        return tokenRefresh.execute {
+            workstationApi.importRecommendTrack(request)
+        }
+    }
 }

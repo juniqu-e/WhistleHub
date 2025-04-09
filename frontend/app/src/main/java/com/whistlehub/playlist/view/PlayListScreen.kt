@@ -56,15 +56,25 @@ import coil3.compose.AsyncImage
 import com.whistlehub.R
 import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.common.view.component.CommonAppBar
+import com.whistlehub.common.view.component.CustomAlertDialog
 import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Pretendard
 import com.whistlehub.common.view.theme.Typography
-import com.whistlehub.playlist.view.component.CreatePlaylist
+import com.whistlehub.playlist.view.component.CreatePlaylistDialog
 import com.whistlehub.playlist.viewmodel.PlaylistViewModel
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
 
+/**
+ * 플레이리스트 화면 컴포넌트
+ * 사용자의 플레이리스트 목록을 표시하고 생성, 수정, 삭제 기능을 제공합니다.
+ *
+ * @param paddingValues 하단 내비게이션 패딩
+ * @param logoutManager 로그아웃 관리자
+ * @param navController 네비게이션 컨트롤러
+ * @param playlistViewModel 플레이리스트 뷰 모델
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayListScreen(
@@ -76,13 +86,18 @@ fun PlayListScreen(
     val coroutineScope = rememberCoroutineScope()
     val customColors = CustomColors()
 
+    // 상태 관리
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
     var showDeletePlaylistDialog by remember { mutableStateOf(false) }
+    var showSuccessDialog by remember { mutableStateOf(false) }
+    var successMessage by remember { mutableStateOf("") }
     var selectedPlaylistId by remember { mutableIntStateOf(0) }
+    var isLoading by remember { mutableStateOf(false) }
 
-    // 드롭다운 메뉴
+    // 드롭다운 메뉴 상태
     var expandedMenuPlaylistId by remember { mutableIntStateOf(-1) }
 
+    // 초기 데이터 로드
     LaunchedEffect(Unit) {
         playlistViewModel.getPlaylists()
     }
@@ -196,7 +211,6 @@ fun PlayListScreen(
                                     text = { Text("수정", color = customColors.Grey50) },
                                     onClick = {
                                         expandedMenuPlaylistId = -1
-                                        navController.navigate(Screen.PlayListTrackList.route + "/${playlist.playlistId}")
                                         navController.navigate(Screen.PlayListEdit.route + "/${playlist.playlistId}")
                                     },
                                     leadingIcon = {
@@ -246,7 +260,7 @@ fun PlayListScreen(
                 )
             ) {
                 Text(
-                    "Create Playlist",
+                    "플레이리스트 생성하기",
                     style = buttonTextStyle
                 )
             }
@@ -256,11 +270,16 @@ fun PlayListScreen(
         }
     }
 
-    // CreatePlaylist Dialog
-    var playlistTitle by remember { mutableStateOf("") }
-    var playlistDescription by remember { mutableStateOf("") }
-    var playlistImage by remember { mutableStateOf<MultipartBody.Part?>(null) }
+    // 성공 알림 다이얼로그
+    CustomAlertDialog(
+        showDialog = showSuccessDialog,
+        title = "플레이리스트 생성 완료",
+        message = successMessage,
+        onDismiss = { showSuccessDialog = false },
+        onConfirm = { showSuccessDialog = false }
+    )
 
+    // 플레이리스트 생성 다이얼로그
     if (showCreatePlaylistDialog) {
         AlertDialog(
             onDismissRequest = { showCreatePlaylistDialog = false },
@@ -272,53 +291,42 @@ fun PlayListScreen(
                 )
             },
             text = {
-                CreatePlaylist(
-                    onInputTitle = { playlistTitle = it },
-                    onInputDescription = { playlistDescription = it },
-                    onInputImage = {
-                        playlistImage = it
+                CreatePlaylistDialog(
+                    onDismiss = { showCreatePlaylistDialog = false },
+                    onCreatePlaylist = { title, description, image ->
+                        isLoading = true
+                        coroutineScope.launch {
+                            try {
+                                playlistViewModel.createPlaylist(
+                                    name = title,
+                                    description = description,
+                                    image = image
+                                )
+                                successMessage = "플레이리스트가 성공적으로 생성되었습니다."
+                                showCreatePlaylistDialog = false
+                                showSuccessDialog = true
+                                isLoading = false
+                            } catch (e: Exception) {
+                                isLoading = false
+                                // Handle error
+                            }
+                        }
                     }
                 )
             },
+            confirmButton = { /* Empty because buttons are handled in the dialog itself */ },
+            dismissButton = { /* Empty because buttons are handled in the dialog itself */ },
+            containerColor = customColors.Grey800,
             modifier = Modifier
-                .fillMaxWidth()
-                .background(customColors.CommonSubBackgroundColor),
-            confirmButton = {
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            playlistViewModel.createPlaylist(
-                                name = playlistTitle,
-                                description = playlistDescription,
-                                image = playlistImage
-                            )
-                            showCreatePlaylistDialog = false
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = customColors.CommonButtonColor,
-                        contentColor = customColors.CommonTextColor,
-                    )
-                ) {
-                    Text("생성", style = Typography.bodyLarge)
-                }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    onClick = { showCreatePlaylistDialog = false },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = customColors.CommonTextColor,
-                    ),
-                    border = BorderStroke(1.dp, customColors.CommonOutLineColor),
-                ) {
-                    Text("취소", style = Typography.bodyLarge)
-                }
-            }
+                .fillMaxWidth(0.95f)  // 95% of screen width
+                .padding(8.dp),
+            properties = androidx.compose.ui.window.DialogProperties(
+                usePlatformDefaultWidth = false  // Disable platform default width constraint
+            )
         )
     }
 
-    // Delete Confirmation Dialog
+    // 플레이리스트 삭제 확인 다이얼로그
     if (showDeletePlaylistDialog) {
         AlertDialog(
             onDismissRequest = { showDeletePlaylistDialog = false },

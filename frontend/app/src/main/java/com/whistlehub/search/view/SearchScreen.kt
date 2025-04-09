@@ -209,7 +209,7 @@ fun SearchScreen(
                                         trackPlayViewModel = trackPlayViewModel,
                                         workStationViewModel = workStationViewModel,
                                         navController = navController,
-                                        needMoreView = true,
+                                        needImportButton = true
                                     )
                                 }
                             }

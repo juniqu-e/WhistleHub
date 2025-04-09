@@ -80,13 +80,13 @@ fun CustomAlertDialog(
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = customColors.Mint500 // 민트 색상 버튼
+                            containerColor = customColors.CommonButtonColor // 민트 색상 버튼
                         )
                     ) {
                         Text(
                             text = confirmButtonText,
                             style = Typography.titleMedium,
-                            color = customColors.Grey950 // 버튼 텍스트 색상
+                            color = customColors.CommonTextColor // 버튼 텍스트 색상
                         )
                     }
                 }

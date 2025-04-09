@@ -98,8 +98,7 @@ public class WorkstationService {
         // 1-4. 그래프 추가
         // 1-4-1. Track 노드 생성 및 태그 연결
         dataCollectingService.createTrack(t.getId(), Arrays.stream(trackUploadRequestDto.getTags()).toList());
-        // 1-4-2. FastAPI로 음원 보내기
-        uploadAndFindSimilar(trackUploadRequestDto.getTrackSoundFile().getResource(), t.getId(), trackUploadRequestDto.getInstrumentType(), 10);
+
 
         // 2. 레이어 목록 저장
         int layerSize = trackUploadRequestDto.getLayerName().length;
@@ -125,8 +124,9 @@ public class WorkstationService {
                     .layerFile(lf).build();
             // 2-2. 레이어 정보 insert
             layerRepository.save(layer);
-
         }
+        // 저장 완료 후 FastAPI로 음원 보내기
+        uploadAndFindSimilar(trackUploadRequestDto.getTrackSoundFile().getResource(), t.getId(), trackUploadRequestDto.getInstrumentType(), 10);
         return t.getId();
     }
 
@@ -329,5 +329,16 @@ public class WorkstationService {
         return list.stream()
                 .map(String::valueOf)
                 .collect(Collectors.joining(","));
+    }
+
+    public void deleteTrackRequestToFastApi(int trackId) {
+        WebClient fastAPIClient = WebClient.builder().baseUrl(FASTAPI_HOST).build();
+        fastAPIClient.get()
+                .uri("/api/FastAPI/track/delete/{trackId}", trackId)
+                .retrieve()
+                .bodyToMono(Void.class)
+                .doOnSuccess(unused -> log.info("backend->fastapi delete 요청 성공"))
+                .doOnError(error -> log.error("backend->fastapi delete 요청 실패: {}", error.getMessage()))
+                .subscribe();
     }
 }

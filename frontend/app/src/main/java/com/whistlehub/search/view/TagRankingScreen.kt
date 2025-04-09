@@ -161,7 +161,7 @@ fun TagRankingScreen(
                         trackPlayViewModel = trackPlayViewModel,
                         workStationViewModel = workStationViewModel,
                         navController = navController,
-                        needMoreView = true
+                        needImportButton = true
                     )
                 }
             }
@@ -208,7 +208,7 @@ fun TagRankingScreen(
                         ),
                         workStationViewModel = workStationViewModel,
                         navController = navController,
-                        needMoreView = true
+                        needImportButton = true
                     )
                 }
             }

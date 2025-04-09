@@ -1,6 +1,11 @@
 package com.whistlehub.workstation.data
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Recommend
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 
 enum class InstrumentType(
     val label: String,
@@ -19,8 +24,10 @@ enum class InstrumentType(
 enum class LayerButtonType(
     val label: String,
     val hexColor: Color,
-    val typeNumber: Int
+    val typeNumber: Int,
+    val iconStyle: ImageVector
 ) {
-    RECORD("RECORD", Color(0xFFFF8585), 44),
-    SEARCH("SEARCH", Color(0xFF80CBC4), 99),
+    RECORD("RECORD", Color(0xFFFF8585), 44, Icons.Filled.Mic),
+    SEARCH("BROWSE", Color(0xFF80CBC4), 99, Icons.Filled.Search),
+    RECOMMEND("RECOMMEND", Color(0xFF11A212), 1129, Icons.Filled.Recommend),
 }

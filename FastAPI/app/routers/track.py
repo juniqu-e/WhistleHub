@@ -174,3 +174,28 @@ async def reset_similarity(request: SimilarityResetRequest):
     except Exception as e:
         utils.log(f"트랙 유사도 재계산 중 오류 발생: {str(e)}", level=logging.ERROR)
         raise CustomException(ResponseType.SERVER_ERROR, f"트랙 유사도 재계산 중 오류 발생: {str(e)}")
+
+@router.get(
+    "/delete/"+"{track_id}",
+    summary="트랙 삭제 API",
+    description="트랙을 삭제합니다.",
+    response_model=ApiResponse[dict],
+)
+@utils.logger()
+async def delete_track(
+    track_id: int = Path(..., description="삭제할 트랙의 ID")
+):
+    """
+    주어진 track_id에 해당하는 트랙을 삭제합니다.
+    """
+    try:
+        utils.log(f"트랙 삭제 요청: {track_id}", level=logging.DEBUG)
+
+        # OpenL3Service의 delete_track 메서드를 사용하여 트랙 삭제
+        openl3_service.delete_track(track_id=track_id)
+
+        return ApiResponse(payload={"message": "트랙 삭제 완료", "trackId": track_id})
+
+    except Exception as e:
+        utils.log(f"트랙 삭제 중 오류 발생: {str(e)}", level=logging.ERROR)
+        raise CustomException(ResponseType.SERVER_ERROR, f"트랙 삭제 중 오류 발생: {str(e)}")
