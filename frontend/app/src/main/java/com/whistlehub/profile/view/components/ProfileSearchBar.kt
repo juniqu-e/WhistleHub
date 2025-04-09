@@ -128,7 +128,7 @@ fun ProfileSearchBar(
                 .onFocusChanged { state ->
                     isFocused = state.isFocused
                 },
-            placeholder = { Text("유저 검색", style = Typography.bodyMedium) },
+            placeholder = { Text("Search User", style = Typography.bodyMedium) },
             leadingIcon = {
                 Icon(
                     Icons.Default.Search,

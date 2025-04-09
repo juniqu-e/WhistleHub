@@ -1,6 +1,5 @@
 package com.whistlehub.profile.view.components
 
-import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,16 +16,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
@@ -34,27 +28,14 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.PlaylistAdd
-import androidx.compose.material.icons.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Report
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -70,7 +51,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -78,12 +58,17 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.whistlehub.common.data.remote.dto.request.WorkstationRequest
+import com.whistlehub.common.data.remote.dto.response.PlaylistResponse
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
-import com.whistlehub.common.util.uriToMultipartBodyPart
-import com.whistlehub.common.view.component.ImageUpload
+import com.whistlehub.common.view.component.CustomAlertDialog
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
+import com.whistlehub.playlist.view.component.CreatePlaylistDialog
 import com.whistlehub.playlist.viewmodel.PlaylistViewModel
+import com.whistlehub.profile.view.dialogs.AddToPlaylistDialog
+import com.whistlehub.profile.view.dialogs.DeleteTrackDialog
+import com.whistlehub.profile.view.dialogs.EditTrackDialog
+import com.whistlehub.profile.view.dialogs.ReportTrackDialog
 import com.whistlehub.profile.viewmodel.ProfileTrackDetailViewModel
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 import kotlinx.coroutines.launch
@@ -102,7 +87,6 @@ fun ProfileTrackDetailSheet(
 ) {
     val customColors = CustomColors()
     val coroutineScope = rememberCoroutineScope()
-    val scrollState = rememberScrollState()
     val context = LocalContext.current
 
     // States
@@ -114,26 +98,17 @@ fun ProfileTrackDetailSheet(
     val isDeleteLoading by viewModel.isDeleteLoading.collectAsState(initial = false)
     val deleteSuccess by viewModel.deleteSuccess.collectAsState(initial = false)
 
-    // Track Edit Dialog state
+    // Dialog visibility states
     var showEditDialog by remember { mutableStateOf(false) }
-    var editedTitle by remember { mutableStateOf(track.title) }
-    var editedDescription by remember { mutableStateOf(track.description ?: "") }
-    var editedVisibility by remember { mutableStateOf(true) } // Default to public
-
-    // Track Delete Confirmation Dialog state
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-
-    // Report Dialog state
     var showReportDialog by remember { mutableStateOf(false) }
-
-    // Add to Playlist Dialog state
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
-    var userPlaylists by remember { mutableStateOf<List<com.whistlehub.common.data.remote.dto.response.PlaylistResponse.GetMemberPlaylistsResponse>>(emptyList()) }
-
-    // Create Playlist Dialog state
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
-    var newPlaylistName by remember { mutableStateOf("") }
-    var newPlaylistDescription by remember { mutableStateOf("") }
+    var showSuccessDialog by remember { mutableStateOf(false) }
+    var successMessage by remember { mutableStateOf("") }
+
+    // Playlist data
+    var userPlaylists by remember { mutableStateOf<List<PlaylistResponse.GetMemberPlaylistsResponse>>(emptyList()) }
 
     // Load initial data
     LaunchedEffect(Unit) {
@@ -151,7 +126,6 @@ fun ProfileTrackDetailSheet(
     // Handle success/error states
     LaunchedEffect(updateSuccess) {
         if (updateSuccess) {
-            // Handle update success
             viewModel.resetUpdateStatus()
             showEditDialog = false
         }
@@ -159,7 +133,6 @@ fun ProfileTrackDetailSheet(
 
     LaunchedEffect(deleteSuccess) {
         if (deleteSuccess) {
-            // Handle delete success
             viewModel.resetDeleteStatus()
             onDismiss()
         }
@@ -172,11 +145,11 @@ fun ProfileTrackDetailSheet(
         containerColor = customColors.Grey900,
         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
     ) {
+        // FIXED: Removed verticalScroll modifier here, as ModalBottomSheet handles scrolling
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
-                .verticalScroll(scrollState)
         ) {
             // Track Information
             Row(
@@ -212,7 +185,6 @@ fun ProfileTrackDetailSheet(
                     )
                 }
 
-
                 // Track Details
                 Column(
                     modifier = Modifier
@@ -229,7 +201,7 @@ fun ProfileTrackDetailSheet(
                     Text(
                         text = track.artist?.nickname ?: "Unknown Artist",
                         style = Typography.bodyLarge,
-                        color = customColors.CommonSubTextColor,
+                        color = customColors.CommonSubTitleColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -256,7 +228,7 @@ fun ProfileTrackDetailSheet(
             Text(
                 text = "Description",
                 style = Typography.titleMedium,
-                color = customColors.CommonSubTitleColor,
+                color = customColors.Grey200,
                 modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
             )
             Text(
@@ -271,7 +243,7 @@ fun ProfileTrackDetailSheet(
                 Text(
                     text = "Tags",
                     style = Typography.titleMedium,
-                    color = customColors.CommonSubTitleColor,
+                    color = customColors.Grey200,
                     modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
                 )
 
@@ -324,14 +296,14 @@ fun ProfileTrackDetailSheet(
                         Text(
                             text = likeCount.toString(),
                             style = Typography.bodyLarge,
-                            color = customColors.CommonTextColor
+                            color = customColors.Grey200
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Likes",
                         style = Typography.bodySmall,
-                        color = customColors.CommonTextColor
+                        color = customColors.Grey400
                     )
                 }
 
@@ -343,13 +315,13 @@ fun ProfileTrackDetailSheet(
                     Text(
                         text = track.viewCount.toString(),
                         style = Typography.bodyLarge,
-                        color = customColors.CommonTextColor
+                        color = customColors.Grey200
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Views",
                         style = Typography.bodySmall,
-                        color = customColors.CommonTextColor
+                        color = customColors.Grey400
                     )
                 }
 
@@ -361,13 +333,13 @@ fun ProfileTrackDetailSheet(
                     Text(
                         text = track.importCount.toString(),
                         style = Typography.bodyLarge,
-                        color = customColors.CommonTextColor
+                        color = customColors.Grey200
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Imports",
                         style = Typography.bodySmall,
-                        color = customColors.CommonTextColor
+                        color = customColors.Grey400
                     )
                 }
             }
@@ -385,13 +357,13 @@ fun ProfileTrackDetailSheet(
             // Actions for both own and other profiles
             ActionItem(
                 icon = Icons.Default.PlaylistAdd,
-                title = "Add to Playlist",
+                title = "플레이리스트에 추가",
                 onClick = { showAddToPlaylistDialog = true }
             )
 
             ActionItem(
                 icon = Icons.Default.Download,
-                title = "Import to My Track",
+                title = "내 트랙으로 가져오기",
                 onClick = {
                     coroutineScope.launch {
                         workStationViewModel.addLayerFromSearchTrack(
@@ -413,13 +385,13 @@ fun ProfileTrackDetailSheet(
             if (isOwnProfile) {
                 ActionItem(
                     icon = Icons.Default.Edit,
-                    title = "Edit Track Info",
+                    title = "트랙 수정",
                     onClick = { showEditDialog = true }
                 )
 
                 ActionItem(
                     icon = Icons.Default.Delete,
-                    title = "Delete Track",
+                    title = "트랙 삭제",
                     textColor = customColors.Error700,
                     onClick = { showDeleteConfirmDialog = true }
                 )
@@ -427,7 +399,7 @@ fun ProfileTrackDetailSheet(
                 // Actions specific to other user's profile
                 ActionItem(
                     icon = Icons.Default.Report,
-                    title = "Report",
+                    title = "트랙 신고하기",
                     textColor = customColors.Error700,
                     onClick = { showReportDialog = true }
                 )
@@ -448,487 +420,113 @@ fun ProfileTrackDetailSheet(
         }
     }
 
-    // Edit Track Dialog
-    if (showEditDialog) {
-        var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-        val context = LocalContext.current
-
-        Dialog(onDismissRequest = { showEditDialog = false }) {
+    // Create Playlist Dialog - FIXED: Moved this to the top of the dialogs
+    if (showCreatePlaylistDialog) {
+        Dialog(onDismissRequest = { showCreatePlaylistDialog = false }) {
             Surface(
                 shape = RoundedCornerShape(16.dp),
                 color = customColors.Grey900
             ) {
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth()
-                ) {
-                    // Header
-                    Text(
-                        "Edit Track",
-                        style = Typography.titleLarge,
-                        color = customColors.Grey50,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-
-                    // Content
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        // Use the existing ImageUpload composable
-                        ImageUpload(
-                            onChangeImage = { uri ->
-                                selectedImageUri = uri
-                            },
-                            originImageUri = null,
-                            canDelete = true
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Title field
-                        OutlinedTextField(
-                            value = editedTitle,
-                            onValueChange = { editedTitle = it },
-                            label = { Text("Title", color = customColors.Grey300) },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = customColors.CommonFocusColor,
-                                unfocusedBorderColor = customColors.Grey700,
-                                focusedTextColor = customColors.Grey50,
-                                unfocusedTextColor = customColors.Grey50
-                            ),
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions.Default.copy(
-                                imeAction = ImeAction.Next
+                CreatePlaylistDialog(
+                    onDismiss = { showCreatePlaylistDialog = false },
+                    onCreatePlaylist = { title, description, image ->
+                        coroutineScope.launch {
+                            // Create playlist with track already added
+                            playlistViewModel.createPlaylist(
+                                name = title,
+                                description = description,
+                                trackIds = listOf(track.trackId),
+                                image = image
                             )
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Description field
-                        OutlinedTextField(
-                            value = editedDescription,
-                            onValueChange = { editedDescription = it },
-                            label = { Text("Description", color = customColors.Grey300) },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = customColors.CommonFocusColor,
-                                unfocusedBorderColor = customColors.Grey700,
-                                focusedTextColor = customColors.Grey50,
-                                unfocusedTextColor = customColors.Grey50
-                            ),
-                            modifier = Modifier.fillMaxWidth(),
-                            minLines = 3
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Visibility toggle
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = "Visibility: ",
-                                style = Typography.bodyLarge,
-                                color = customColors.Grey200
-                            )
-                            Switch(
-                                checked = editedVisibility,
-                                onCheckedChange = { editedVisibility = it },
-                                thumbContent = {
-                                    Icon(
-                                        imageVector = if (editedVisibility) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = customColors.CommonFocusColor,
-                                    checkedTrackColor = customColors.CommonButtonColor,
-                                    uncheckedThumbColor = customColors.Grey700,
-                                    uncheckedTrackColor = customColors.Grey900,
-                                )
-                            )
-                            Text(
-                                text = if (editedVisibility) "Public" else "Private",
-                                style = Typography.bodyMedium,
-                                color = customColors.Grey300,
-                                modifier = Modifier.padding(start = 8.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        // Buttons
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            TextButton(
-                                onClick = { showEditDialog = false },
-                                colors = ButtonDefaults.textButtonColors(
-                                    contentColor = customColors.Grey300
-                                )
-                            ) {
-                                Text("Cancel")
-                            }
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            Button(
-                                onClick = {
-                                    coroutineScope.launch {
-                                        val imageMultipart = selectedImageUri?.let { uri ->
-                                            // Use the ImageUploader utility to convert Uri to MultipartBody.Part
-                                            uriToMultipartBodyPart(context, uri)
-                                        }
-
-                                        // Update the track info with optional image
-                                        viewModel.updateTrackInfo(
-                                            trackId = track.trackId,
-                                            title = editedTitle,
-                                            description = editedDescription,
-                                            visibility = editedVisibility,
-                                            image = imageMultipart // Pass the image part if it exists
-                                        )
-                                    }
-                                },
-                                enabled = !isUpdateLoading,
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = customColors.CommonButtonColor,
-                                    contentColor = customColors.CommonTextColor
-                                )
-                            ) {
-                                if (isUpdateLoading) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(20.dp),
-                                        color = customColors.CommonTextColor,
-                                        strokeWidth = 2.dp
-                                    )
-                                } else {
-                                    Text("Save")
-                                }
-                            }
+                            showCreatePlaylistDialog = false
+                            successMessage = "플레이리스트가 생성되었고 트랙이 추가되었습니다."
+                            showSuccessDialog = true
                         }
                     }
-                }
+                )
             }
         }
     }
 
+    // Edit Track Dialog
+    if (showEditDialog) {
+        EditTrackDialog(
+            track = track,
+            isLoading = isUpdateLoading,
+            onDismiss = { showEditDialog = false },
+            onSave = { title, description, visibility, image ->
+                coroutineScope.launch {
+                    viewModel.updateTrackInfo(
+                        trackId = track.trackId,
+                        title = title,
+                        description = description,
+                        visibility = visibility,
+                        image = image
+                    )
+                }
+            }
+        )
+    }
+
     // Delete Confirmation Dialog
     if (showDeleteConfirmDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirmDialog = false },
-            title = { Text("Delete Track", color = customColors.Error700) },
-            text = {
-                Text(
-                    "Are you sure you want to delete this track? This action cannot be undone.",
-                    color = customColors.Grey200
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            viewModel.deleteTrack(track.trackId)
-                        }
-                    },
-                    enabled = !isDeleteLoading,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = customColors.Error700,
-                        contentColor = customColors.Grey50
-                    )
-                ) {
-                    if (isDeleteLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = customColors.Grey50,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Text("Delete")
-                    }
+        DeleteTrackDialog(
+            isLoading = isDeleteLoading,
+            onDismiss = { showDeleteConfirmDialog = false },
+            onConfirm = {
+                coroutineScope.launch {
+                    viewModel.deleteTrack(track.trackId)
                 }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showDeleteConfirmDialog = false },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = customColors.Grey300
-                    )
-                ) {
-                    Text("Cancel")
-                }
-            },
-            containerColor = customColors.Grey900,
-            shape = RoundedCornerShape(16.dp)
+            }
         )
     }
 
     // Report Dialog
     if (showReportDialog) {
-        AlertDialog(
-            onDismissRequest = { showReportDialog = false },
-            title = { Text("Report Track", color = customColors.Error700) },
-            text = {
-                Column {
-                    Text(
-                        "Please select a reason for reporting this track:",
-                        color = customColors.Grey200
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    // Simple placeholder for report options
-                    OutlinedTextField(
-                        value = "",
-                        onValueChange = { },
-                        placeholder = { Text("Enter your reason", color = customColors.Grey400) },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = customColors.CommonFocusColor,
-                            unfocusedBorderColor = customColors.Grey700,
-                            focusedTextColor = customColors.Grey50,
-                            unfocusedTextColor = customColors.Grey50
-                        ),
-                        modifier = Modifier.fillMaxWidth(),
-                        minLines = 3
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        // Handle report submission
-                        showReportDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = customColors.Error700,
-                        contentColor = customColors.Grey50
-                    )
-                ) {
-                    Text("Submit Report")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showReportDialog = false },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = customColors.Grey300
-                    )
-                ) {
-                    Text("Cancel")
-                }
-            },
-            containerColor = customColors.Grey900,
-            shape = RoundedCornerShape(16.dp)
+        ReportTrackDialog(
+            onDismiss = { showReportDialog = false },
+            onSubmit = { reason ->
+                // Handle report submission
+                showReportDialog = false
+                // You can implement actual report submission logic here
+            }
         )
     }
 
     // Add to Playlist Dialog
     if (showAddToPlaylistDialog) {
-        Dialog(onDismissRequest = { showAddToPlaylistDialog = false }) {
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = customColors.Grey900
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth()
-                ) {
-                    // 헤더 부분에 제목과 X 아이콘 추가
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Add to Playlist",
-                            style = Typography.titleLarge,
-                            color = customColors.Grey50
-                        )
-
-                        IconButton(
-                            onClick = { showAddToPlaylistDialog = false },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Close",
-                                tint = customColors.Grey300
-                            )
-                        }
-                    }
-
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    if (userPlaylists.isEmpty()) {
-                        Text(
-                            text = "플레이리스트가 존재하지 않습니다.",
-                            style = Typography.bodyMedium,
-                            color = customColors.Grey300
-                        )
-                    } else {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            userPlaylists.forEach { playlist ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .clickable {
-                                            coroutineScope.launch {
-                                                playlistViewModel.addTrackToPlaylist(
-                                                    playlist.playlistId,
-                                                    track.trackId
-                                                )
-                                                showAddToPlaylistDialog = false
-                                            }
-                                        }
-                                        .padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    // Playlist image or placeholder
-                                    Box(
-                                        modifier = Modifier
-                                            .size(48.dp)
-                                            .clip(RoundedCornerShape(4.dp))
-                                            .background(customColors.Grey700),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        if (playlist.imageUrl != null) {
-                                            AsyncImage(
-                                                model = playlist.imageUrl,
-                                                contentDescription = playlist.name,
-                                                modifier = Modifier.fillMaxSize(),
-                                                contentScale = ContentScale.Crop
-                                            )
-                                        } else {
-                                            Icon(
-                                                imageVector = Icons.Default.PlaylistPlay,
-                                                contentDescription = null,
-                                                tint = customColors.Grey500
-                                            )
-                                        }
-                                    }
-
-                                    Spacer(modifier = Modifier.width(12.dp))
-
-                                    Text(
-                                        text = playlist.name,
-                                        style = Typography.bodyLarge,
-                                        color = customColors.Grey50,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Create new playlist button
-                    Button(
-                        onClick = {
-                            showAddToPlaylistDialog = false
-                            showCreatePlaylistDialog = true
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = customColors.CommonButtonColor,
-                            contentColor = customColors.CommonTextColor
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AddCircle,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("플레이리스트 생성")
-                    }
+        AddToPlaylistDialog(
+            playlists = userPlaylists,
+            onDismiss = { showAddToPlaylistDialog = false },
+            onPlaylistSelect = { playlistId ->
+                coroutineScope.launch {
+                    playlistViewModel.addTrackToPlaylist(playlistId, track.trackId)
+                    showAddToPlaylistDialog = false
+                    successMessage = "플레이리스트에 추가되었습니다."
+                    showSuccessDialog = true
                 }
+            },
+            onCreatePlaylistClick = {
+                showAddToPlaylistDialog = false
+                showCreatePlaylistDialog = true
             }
-        }
+        )
     }
 
-    // Create Playlist Dialog
-    if (showCreatePlaylistDialog) {
-        AlertDialog(
-            onDismissRequest = { showCreatePlaylistDialog = false },
-            title = { Text("Create New Playlist", color = customColors.Grey50) },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = newPlaylistName,
-                        onValueChange = { newPlaylistName = it },
-                        label = { Text("Playlist Name", color = customColors.Grey300) },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = customColors.CommonFocusColor,
-                            unfocusedBorderColor = customColors.Grey700,
-                            focusedTextColor = customColors.Grey50,
-                            unfocusedTextColor = customColors.Grey50
-                        ),
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        value = newPlaylistDescription,
-                        onValueChange = { newPlaylistDescription = it },
-                        label = { Text("Description (Optional)", color = customColors.Grey300) },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = customColors.CommonFocusColor,
-                            unfocusedBorderColor = customColors.Grey700,
-                            focusedTextColor = customColors.Grey50,
-                            unfocusedTextColor = customColors.Grey50
-                        ),
-                        modifier = Modifier.fillMaxWidth(),
-                        minLines = 2
-                    )
-                }
+    // Success Alert Dialog
+    if (showSuccessDialog) {
+        CustomAlertDialog(
+            showDialog = true,
+            title = "성공",
+            message = successMessage,
+            onDismiss = {
+                showSuccessDialog = false
+                onDismiss() // Close the bottom sheet after confirmation
             },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            // Create playlist with track already added
-                            playlistViewModel.createPlaylist(
-                                name = newPlaylistName,
-                                description = newPlaylistDescription,
-                                trackIds = listOf(track.trackId)
-                            )
-                            showCreatePlaylistDialog = false
-                        }
-                    },
-                    enabled = newPlaylistName.isNotEmpty(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = customColors.CommonButtonColor,
-                        contentColor = customColors.CommonTextColor
-                    )
-                ) {
-                    Text("Create")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showCreatePlaylistDialog = false },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = customColors.Grey300
-                    )
-                ) {
-                    Text("Cancel")
-                }
-            },
-            containerColor = customColors.Grey900,
-            shape = RoundedCornerShape(16.dp)
+            onConfirm = {
+                showSuccessDialog = false
+                onDismiss() // Close the bottom sheet after confirmation
+            }
         )
     }
 }
