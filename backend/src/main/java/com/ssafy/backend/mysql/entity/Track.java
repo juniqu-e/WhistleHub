@@ -59,4 +59,10 @@ public class Track extends Common{
     @Column(name = "view_count", nullable = false)
     private Integer viewCount;
 
+    @Column(name = "\"key\"", nullable = true)
+    private String key;
+
+    @Column(name = "bpm", nullable = true)
+    private int bpm;
+
 }

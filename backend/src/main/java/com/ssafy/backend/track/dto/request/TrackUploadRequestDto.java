@@ -29,6 +29,13 @@ public class TrackUploadRequestDto {
     String[] layerName;
     @NotBlank
     int[] instrumentType;
+
+    int bpm;
+    String key;
+
+    // 문자열로 받아서 처리
+    private String barsJson;
+
     MultipartFile trackSoundFile;
     MultipartFile[] layerSoundFiles; //
     MultipartFile trackImg;
