@@ -98,6 +98,13 @@ fun EditTrackDialog(
                                 modifier = Modifier.fillMaxWidth(),
                                 contentScale = ContentScale.Crop
                             )
+                        } else if (track.imageUrl != null) {  // 추가
+                            AsyncImage(
+                                model = track.imageUrl,
+                                contentDescription = "기존 트랙 이미지",
+                                modifier = Modifier.fillMaxWidth(),
+                                contentScale = ContentScale.Crop
+                            )
                         } else {
                             Icon(
                                 imageVector = Icons.Default.MusicNote,
