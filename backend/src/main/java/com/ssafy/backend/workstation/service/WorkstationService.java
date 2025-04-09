@@ -68,6 +68,8 @@ public class WorkstationService {
                 .imageUrl(trackUploadRequestDto.getTrackImg() != null ? s3Service.uploadFile(trackUploadRequestDto.getTrackImg(), S3Service.IMAGE) : null)
                 // 1-2. 트랙 음성 업로드
                 .soundUrl(s3Service.uploadFile(trackUploadRequestDto.getTrackSoundFile(), S3Service.MUSIC))
+                .key(trackUploadRequestDto.getKey())
+                .bpm(trackUploadRequestDto.getBpm())
                 .build();
         // 1-3. 트랙 insert
         Track t = trackRepository.save(track);
@@ -145,6 +147,8 @@ public class WorkstationService {
                 .layers(new ArrayList<>())
                 .imageUrl(track.getImageUrl())
                 .soundUrl(track.getSoundUrl())
+                .key(track.getKey())
+                .bpm(track.getBpm())
                 .build();
 
         for (Layer layer : layers) {

@@ -356,6 +356,8 @@ public class MemberService {
                     .nickname(member.getNickname())
                     .duration(track.getDuration())
                     .imageUrl(track.getImageUrl())
+                    .key(track.getKey())
+                    .bpm(track.getBpm())
                     .build();
 
             trackInfoList.add(trackInfo);
@@ -403,6 +405,8 @@ public class MemberService {
                     .nickname(member.getNickname())
                     .duration(track.getDuration())
                     .imageUrl(track.getImageUrl())
+                    .key(track.getKey())
+                    .bpm(track.getBpm())
                     .build();
 
             trackInfoList.add(trackInfo);

@@ -15,5 +15,7 @@ public class TrackImportResponseDto {
     String title;
     String imageUrl;
     String soundUrl;
+    String key;
+    int bpm;
     List<LayerImportResponseDto> layers;
 }

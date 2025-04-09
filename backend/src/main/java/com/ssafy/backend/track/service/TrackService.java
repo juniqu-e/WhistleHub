@@ -160,6 +160,8 @@ public class TrackService {
                 .duration(track.getDuration())
                 .description(track.getDescription())
                 .imageUrl(track.getImageUrl())
+                .bpm(track.getBpm())
+                .key(track.getKey())
                 .artist(ArtistInfoDto.builder().memberId(track.getMember().getId()).nickname(track.getMember().getNickname()).profileImage(track.getMember().getProfileImage()).build())
                 .isLiked(isLike)
                 .createdAt(track.getCreatedAt())

@@ -263,6 +263,8 @@ public class DiscoveryService {
                     .nickname(track.getMember().getNickname())
                     .imageUrl(track.getImageUrl())
                     .duration(track.getDuration())
+                    .key(track.getKey())
+                    .bpm(track.getBpm())
                     .build();
 
             resultList.add(trackInfo);
