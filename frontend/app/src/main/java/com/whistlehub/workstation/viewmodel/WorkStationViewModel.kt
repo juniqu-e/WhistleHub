@@ -617,8 +617,32 @@ class WorkStationViewModel @Inject constructor(
                 pcmStream.write(buffer, 0, remaining)
             }
 
-            recorder?.stop()
-            recorder?.release()
+            // ensure remaining buffer read
+            recorder?.let { safeRecorder ->
+                val remaining = safeRecorder.read(buffer, 0, buffer.size)
+                if (remaining > 0) {
+                    try {
+                        pcmStream.write(buffer, 0, remaining)
+                    } catch (e: Exception) {
+                        Log.e("Record", "Remaining buffer write 실패: ${e.message}")
+                        return@launch
+                    }
+                }
+            }
+
+            try {
+                recorder?.stop()
+            } catch (e: Exception) {
+                Log.e("Record", "recorder stop 실패: ${e.message}")
+                return@launch
+            }
+
+            try {
+                recorder?.release()
+            } catch (e: Exception) {
+                Log.e("Record", "recorder release 실패: ${e.message}")
+                return@launch
+            }
             recorder = null
             isRecording = false
             val channels = 1
@@ -639,7 +663,7 @@ class WorkStationViewModel @Inject constructor(
     fun stopRecording() {
         isRecording = false
         viewModelScope.launch {
-            delay(200) // 버퍼 마무리용 여유 시간
+            delay(200)
         }
     }
 
@@ -710,7 +734,9 @@ class WorkStationViewModel @Inject constructor(
                 colorHex = colorHex,
                 instrumentType = 0,
                 length = length.toInt(),
-                patternBlocks = emptyList(),
+                patternBlocks = listOf(
+                    PatternBlock(start = 0, length = length.toInt())
+                ),
                 wavPath = file.absolutePath
             )
             addLayer(layer)
