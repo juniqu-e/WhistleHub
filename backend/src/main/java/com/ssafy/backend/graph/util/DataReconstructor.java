@@ -51,8 +51,11 @@ public class DataReconstructor {
             List<Integer> nodeIds = nodes.stream().map(TrackNode::getId).toList();
             log.info("처리할 트랙 노드 수: {}", nodeIds.size());
 
+            Map<String, List<Integer>> request = new HashMap<>();
+            request.put("trackIds", nodeIds);
+
             // 2. FAST API REQUEST
-            Map<String, List<Map<String, Object>>> similarities = requestSimilarityData(nodeIds);
+            Map<String, List<Map<String, Object>>> similarities = requestSimilarityData(request);
             if (similarities == null || similarities.isEmpty()) {
                 log.warn("유사성 데이터를 받아오지 못했습니다.");
                 return;
@@ -74,11 +77,11 @@ public class DataReconstructor {
 
     }
 
-    private Map<String, List<Map<String, Object>>> requestSimilarityData(List<Integer> nodeIds) {
+    private Map<String, List<Map<String, Object>>> requestSimilarityData(Map<String, List<Integer>> nodeIds) {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<List<Integer>> requestEntity = new HttpEntity<>(nodeIds, headers);
+            HttpEntity<Map<String, List<Integer>>> requestEntity = new HttpEntity<>(nodeIds, headers);
 
             RestTemplate restTemplate = new RestTemplate();
             ResponseEntity<Map<String, List<Map<String, Object>>>> response = restTemplate.exchange(
