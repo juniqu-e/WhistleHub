@@ -322,7 +322,7 @@ fun PlaylistEditScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(2.dp),
-                            color = customColors.Mint500,
+                            color = customColors.CommonButtonColor,
                             thickness = 2.dp
                         )
                     }
@@ -462,7 +462,7 @@ fun PlaylistEditScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(2.dp),
-                            color = customColors.Mint500,
+                            color = customColors.CommonButtonColor,
                             thickness = 2.dp
                         )
                     }
@@ -509,7 +509,7 @@ fun PlaylistEditScreen(
             ) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(64.dp),
-                    color = customColors.Mint500,
+                    color = customColors.CommonButtonColor,
                     strokeWidth = 6.dp
                 )
                 Spacer(modifier = Modifier.height(16.dp))
