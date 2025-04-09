@@ -727,7 +727,7 @@ class WorkStationViewModel @Inject constructor(
             val (category, colorHex) = getCategoryAndColorHex(0)
             val layer = Layer(
                 id = 0,
-                typeId = 0,
+                typeId = 1,
                 name = name,
                 description = "녹음",
                 category = category,
