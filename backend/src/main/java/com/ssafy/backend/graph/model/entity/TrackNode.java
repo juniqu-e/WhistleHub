@@ -29,5 +29,7 @@ import lombok.NoArgsConstructor;
 public class TrackNode {
     @Id
     private Integer id;
+
+    private Boolean enabled;
 }
 

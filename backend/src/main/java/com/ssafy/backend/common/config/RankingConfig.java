@@ -29,9 +29,4 @@ public class RankingConfig {
             rankingService.doUpdateAllRanking();
         };
     }
-
-    @Scheduled(cron = "0 0 0 * * *")
-    public void updateWeeklyPopRanking() {
-        rankingService.doUpdateAllRanking();
-    }
 }
