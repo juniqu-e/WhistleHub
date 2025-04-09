@@ -51,6 +51,11 @@ sealed class WorkstationRequest {
     data class ImportTrackRequest(
         val trackId: Int,
     )
+
+    // 트랙 AI 추천 임포트
+    data class ImportRecommendTrackRequest(
+        val layerIds: List<Int>
+    )
 //    data class ImportTrackRequest(
 //        val trackId: Int,
 //        val layerIds: List<Int>

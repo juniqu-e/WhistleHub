@@ -1,6 +1,7 @@
 package com.whistlehub.workstation.view.component
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.fadeIn
@@ -20,10 +21,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -31,6 +34,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,17 +44,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
+import com.whistlehub.common.data.remote.dto.request.WorkstationRequest
 import com.whistlehub.common.util.rawWavList
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.workstation.data.InstrumentType
 import com.whistlehub.workstation.data.Layer
 import com.whistlehub.workstation.data.LayerButtonType
+import com.whistlehub.workstation.data.rememberToastState
 import com.whistlehub.workstation.view.component.record.RecordingPanel
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 import java.io.File
@@ -66,6 +73,9 @@ fun AddLayerDialog(
     navController: NavController,
 ) {
     val customColor = CustomColors()
+    val context = LocalContext.current
+    val tracks by viewModel.tracks.collectAsState()
+    val toastState = rememberToastState()
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -111,18 +121,26 @@ fun AddLayerDialog(
                                 modifier = Modifier.padding(16.dp),
                                 verticalArrangement = Arrangement.Center
                             ) {
+                                val entries = LayerButtonType.entries
+                                val isOdd = entries.size % 2 != 0
                                 LazyVerticalGrid(
                                     columns = GridCells.Fixed(2),
-                                    modifier = Modifier
-                                        .height(150.dp),
                                     verticalArrangement = Arrangement.Center,
                                     content = {
-                                        items(LayerButtonType.entries) { type ->
+                                        itemsIndexed(
+                                            items = entries,
+                                            span = { index, _ ->
+                                                if (isOdd && index == entries.lastIndex) GridItemSpan(
+                                                    2
+                                                ) else GridItemSpan(1)
+                                            }
+                                        ) { _, type ->
                                             Button(
                                                 onClick = { selectedType = type },
                                                 modifier = Modifier
                                                     .padding(8.dp)
                                                     .height(140.dp)
+                                                    .fillMaxWidth()
                                                     .clip(RoundedCornerShape(20.dp))
                                                     .background(
                                                         brush = Brush.linearGradient(
@@ -155,7 +173,7 @@ fun AddLayerDialog(
                                                     verticalArrangement = Arrangement.Center
                                                 ) {
                                                     Icon(
-                                                        imageVector = type.IconStyle,
+                                                        imageVector = type.iconStyle,
                                                         contentDescription = type.label,
                                                         tint = customColor.CommonLabelColor,
                                                         modifier = Modifier.size(32.dp)
@@ -170,7 +188,8 @@ fun AddLayerDialog(
                                                 }
                                             }
                                         }
-                                    })
+                                    }
+                                )
                             }
                         }
 
@@ -185,6 +204,26 @@ fun AddLayerDialog(
                             RecordingPanel(
                                 viewModel = viewModel,
                             )
+                        }
+
+                        LayerButtonType.RECOMMEND -> {
+                            // 현재 레이어의 ID들
+                            val existingLayerIds = tracks.map { it.typeId }
+                            Log.d("Recommend", existingLayerIds.toString())
+                            if (existingLayerIds.isEmpty()) {
+                                // 레이어 없으면 아무것도 하지 않고 종료
+                                viewModel.showToast(
+                                    "1개 이상의 레이어가 있어야 추천이 가능합니다.",
+                                    Icons.Default.Error,
+                                    Color(0xFFF44336)
+                                )
+                                onDismiss()
+                            } else {
+                                val request =
+                                    WorkstationRequest.ImportRecommendTrackRequest(existingLayerIds)
+                                viewModel.addLayerFromRecommendTrack(request, context)
+                                onDismiss()
+                            }
                         }
                     }
                 }

@@ -1,8 +1,5 @@
 package com.whistlehub.common.data.remote.dto.response
 
-import com.google.gson.JsonObject
-import com.whistlehub.workstation.data.InstrumentType
-
 /**
 ---------------------------
 워크스테이션 관련 API 응답 DTO
@@ -29,6 +26,7 @@ sealed class WorkstationResponse {
         val name: String,
         val instrumentType: Int,
         val soundUrl: String,
-        val bars: List<Int>?
+        val bars: List<Int>?,
+        val bpm: Int?
     )
 }

@@ -2,6 +2,7 @@ package com.whistlehub.workstation.data
 
 data class Layer(
     val id: Int = 0,
+    val typeId: Int,
     val name: String,
     val description: String = "",
     val category: String = "",  // 예: "DRUM", "BASS", "OTHERS"
@@ -10,8 +11,8 @@ data class Layer(
     val length: Int,
     val patternBlocks: List<PatternBlock> = emptyList(),
     val wavPath: String = "",
-    val bpm : Float? = null,
-    val volume : Float = 1.0f,
+    val bpm: Float? = null,
+    val volume: Float = 1.0f,
 ) {
     val beatPattern: List<Boolean>
         get() = MutableList(64) { false }.apply {
@@ -43,7 +44,6 @@ fun Layer.toAudioInfo(projectBpm: Float): LayerAudioInfo {
         playbackRate = playbackRate
     )
 }
-
 
 // Define a function to map instrumentType to category and colorHex
 fun getCategoryAndColorHex(instrumentType: Int): Pair<String, String> {

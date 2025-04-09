@@ -42,6 +42,12 @@ interface WorkstationApi {
     suspend fun importTrack(
         @Query("trackId") trackId: Int,
     ): Response<ApiResponse<WorkstationResponse.ImportTrackResponse>>
+
+    // AI 추천 트랙 임포트
+    @POST("workstation/ai/recommend")
+    suspend fun importRecommendTrack(
+        @Body layerIds: WorkstationRequest.ImportRecommendTrackRequest
+    ): Response<ApiResponse<WorkstationResponse.ImportTrackResponse>>
     // 트랙 임포트
 //    @GET("workstation/import")
 //    suspend fun importTrack(

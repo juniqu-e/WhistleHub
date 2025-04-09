@@ -5,5 +5,5 @@ data class LayerAudioInfo(
     val wavPath: String,
     val patternBlocks: List<PatternBlock>,
     val volume: Float,
-    val playbackRate : Float,
+    val playbackRate: Float,
 )

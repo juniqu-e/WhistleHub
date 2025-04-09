@@ -1,7 +1,6 @@
 package com.whistlehub.workstation.view.component.record
 
 import android.Manifest
-import android.app.Dialog
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +16,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,8 +27,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.whistlehub.workstation.data.ToastData
-import com.whistlehub.workstation.data.rememberToastState
 import com.whistlehub.workstation.view.component.CustomToast
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 import java.io.File
@@ -41,7 +39,7 @@ fun RecordingPanel(viewModel: WorkStationViewModel) {
     val isRecording = viewModel.isRecording
     val isRecordingPending = viewModel.isRecordingPending
     val countdown = viewModel.countdown
-    val toastState = rememberToastState()
+    val toastState by viewModel.toastMessage.collectAsState()
     val verticalScroll = rememberScrollState()
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -52,7 +50,11 @@ fun RecordingPanel(viewModel: WorkStationViewModel) {
                 viewModel.playRecording(it)
             }
         } else {
-            toastState.value = ToastData("녹음 권한이 필요합니다.", Icons.Default.Error, Color(0xFFF44336))
+            viewModel.showToast(
+                message = "녹음 권한이 필요합니다.",
+                icon = Icons.Default.Error,
+                color = Color(0xFFF44336)
+            )
         }
     }
 
@@ -62,11 +64,10 @@ fun RecordingPanel(viewModel: WorkStationViewModel) {
             .verticalScroll(verticalScroll),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
-
     ) {
         CustomToast(
-            toastData = toastState.value,
-            onDismiss = { toastState.value = null },
+            toastData = toastState,
+            onDismiss = { viewModel.clearToast() },
             position = Alignment.Center
         )
 

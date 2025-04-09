@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -50,6 +49,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
@@ -62,8 +63,8 @@ import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.workstation.data.Layer
 import com.whistlehub.workstation.data.ToastData
-import com.whistlehub.workstation.data.rememberToastState
 import com.whistlehub.workstation.view.component.AddLayerDialog
+import com.whistlehub.workstation.view.component.BPMIndicator
 import com.whistlehub.workstation.view.component.BeatAdjustmentPanel
 import com.whistlehub.workstation.view.component.CustomToast
 import com.whistlehub.workstation.view.component.MixProgressBar
@@ -79,22 +80,27 @@ fun WorkStationScreen(
 ) {
     val context = LocalContext.current
     val activity = LocalActivity.current as? Activity
+    val customColors = CustomColors()
     val tracks by viewModel.tracks.collectAsState()
     val verticalScrollState = rememberScrollState()
     val selectedLayerId = remember { mutableStateOf<Int?>(null) }
     var showDialog by remember { mutableStateOf(false) }
-    val toastState = rememberToastState()
+    val toastState by viewModel.toastMessage.collectAsState()
     val isPlaying by viewModel.isPlaying
     val showUploadSheet by viewModel.showUploadSheet
     val showAddLayerDialog by viewModel.showAddLayerDialog
     val isUploading by viewModel.isUploading
+    val projectBpm by viewModel.projectBpm
     val tagPairs by viewModel.tagPairs.collectAsState()
     val bottomBarActions = viewModel.bottomBarActions.copy(
         onPlayedClicked = {
             viewModel.onPlayClicked() { success ->
                 if (!success) {
-                    toastState.value =
-                        ToastData("마디가 설정되지 않는 레이어가 있습니다.", Icons.Default.Error, Color(0xFFF44336))
+                    viewModel.showToast(
+                        message = "마디가 설정되지 않는 레이어가 있습니다.",
+                        icon = Icons.Default.Error,
+                        color = Color(0xFFF44336)
+                    )
                 }
             }
         },
@@ -117,18 +123,18 @@ fun WorkStationScreen(
     }
 
     CustomToast(
-        toastData = toastState.value,
-        onDismiss = { toastState.value = null },
+        toastData = toastState,
+        onDismiss = { viewModel.clearToast() },
         position = Alignment.Center
     )
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(paddingValues)
-//            .background(Color(0xFF9090C0))
+            .padding(paddingValues),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        //좌측 악기
         LayerPanel(
             tracks = tracks,
             verticalScrollState = verticalScrollState,
@@ -146,6 +152,22 @@ fun WorkStationScreen(
                 selectedLayerId.value = layer.id
             },
         )
+
+        Spacer(modifier = Modifier.height(16.dp))
+        // BPM 다이얼
+        BPMIndicator(
+            modifier = Modifier.size(180.dp),
+            initialValue = projectBpm.toInt(),
+            minValue = 90,
+            maxValue = 200,
+            primaryColor = Color.LightGray,
+            secondaryColor = Color.DarkGray,
+            onPositionChange = { newBpm ->
+                viewModel.setProjectBpm(newBpm.toFloat())
+            }
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         if (showAddLayerDialog) {
             AddLayerDialog(
@@ -211,9 +233,7 @@ fun WorkStationScreen(
             onDismiss = { viewModel.toggleUploadSheet(false) },
             onUploadClicked = { metadata ->
                 viewModel.toggleUploadSheet(false)
-                viewModel.onUpload(context, metadata) { toast ->
-                    toastState.value = toast
-                }
+                viewModel.onUpload(context, metadata)
             },
             tagList = tagPairs
         )
@@ -293,45 +313,61 @@ fun LayerItem(
 ) {
     val customColors = CustomColors()
     var menuExpanded by remember { mutableStateOf(false) }
+    val glassColor = try {
+        Color(android.graphics.Color.parseColor(layer.colorHex)).copy(alpha = 0.3f)
+    } catch (e: Exception) {
+        Color(0xFFBDBDBD).copy(alpha = 0.7f) // fallback color
+    }
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp),
+            .padding(horizontal = 8.dp)
+            .shadow(10.dp, RoundedCornerShape(20.dp)),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Box(
-            modifier = Modifier
-                .background(
-                    customColors.CommonSubBackgroundColor.copy(0.3f),
-                    RoundedCornerShape(12.dp)
-                )
-                .border(
-                    2.dp,
-                    Color(android.graphics.Color.parseColor(layer.colorHex)),
-                    RoundedCornerShape(12.dp)
-                )
-                .size(80.dp)
-                .padding(12.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(text = layer.name, color = Color.Black, fontSize = 14.sp)
-        }
+//        Box(
+//            modifier = Modifier
+//                .background(
+//                    glassColor,
+//                    RoundedCornerShape(12.dp)
+//                )
+//                .border(
+//                    2.dp,
+//                    glassColor,
+//                    RoundedCornerShape(12.dp)
+//                )
+//                .size(80.dp)
+//                .padding(12.dp),
+//            contentAlignment = Alignment.Center
+//        ) {
+//            Text(text = layer.name, color = Color.Black, fontSize = 14.sp)
+//        }
 
-        Spacer(modifier = Modifier.width(4.dp))
+//        Spacer(modifier = Modifier.width(4.dp))
         Row(
             modifier = Modifier
                 .weight(1f)
                 .height(200.dp)
+                .clip(RoundedCornerShape(20.dp))
                 .background(
-                    customColors.CommonSubBackgroundColor.copy(0.3f),
-                    RoundedCornerShape(12.dp)
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            glassColor,
+                            Color.White.copy(alpha = 0.09f)
+                        )
+                    )
                 )
                 .border(
-                    2.dp,
-                    Color(android.graphics.Color.parseColor(layer.colorHex)),
-                    RoundedCornerShape(12.dp)
+                    width = 2.dp,
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.7f),
+                            glassColor,
+                        )
+                    ),
+                    shape = RoundedCornerShape(20.dp)
                 )
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,

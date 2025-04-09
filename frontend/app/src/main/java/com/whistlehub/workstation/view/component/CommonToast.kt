@@ -34,7 +34,7 @@ fun CustomToast(
     val customColors = CustomColors()
     if (toastData != null) {
         LaunchedEffect(toastData) {
-            delay(3000)
+            delay(1500)
             onDismiss()
         }
 
