@@ -45,7 +45,8 @@ fun RecordingPanel(viewModel: WorkStationViewModel) {
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            val file = File(context.filesDir, "temp_recorded.wav")
+            val fileName = "recording_${System.currentTimeMillis()}.wav"
+            val file = File(context.filesDir, fileName)
             viewModel.startCountdownAndRecord(context, file) {
                 viewModel.playRecording(it)
             }
@@ -117,8 +118,8 @@ fun RecordingPanel(viewModel: WorkStationViewModel) {
             Button(
                 onClick = {
                     viewModel.addRecordedLayer(filename)
-                    viewModel.toggleAddLayerDialog(false)
                     viewModel.recordFileReset()
+                    viewModel.toggleAddLayerDialog(false)
                 }, enabled = filename.isNotBlank()
             ) {
                 Text("레이어로 등록")
