@@ -3,6 +3,7 @@ package com.ssafy.backend.member.service;
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.error.exception.*;
 import com.ssafy.backend.common.service.S3Service;
+import com.ssafy.backend.graph.service.NodeService;
 import com.ssafy.backend.graph.service.RelationshipService;
 import com.ssafy.backend.member.model.common.MemberInfo;
 import com.ssafy.backend.member.model.request.RequestFollowRequestDto;
@@ -51,6 +52,7 @@ public class MemberService {
     private final TrackRepository trackRepository;
     private final LikeRepository likeRepository;
     private final RelationshipService relationshipService;
+    private final NodeService nodeService;
 
     /**
      * 회원 정보 조회
@@ -104,6 +106,7 @@ public class MemberService {
         member.setEnabled(false);
 
         memberRepository.save(member);
+        nodeService.deleteMemberNode(member.getId());
     }
 
     /**

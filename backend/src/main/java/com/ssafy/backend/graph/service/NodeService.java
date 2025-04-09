@@ -24,6 +24,7 @@ public class NodeService {
     public void createTrackNode(Integer id) {
         TrackNode trackNode = new TrackNode();
         trackNode.setId(id);
+        trackNode.setEnabled(true);
         trackNodeRepository.save(trackNode);
     }
 
@@ -38,12 +39,16 @@ public class NodeService {
     public void createMemberNode(Integer id) {
         MemberNode memberNode = new MemberNode();
         memberNode.setId(id);
+        memberNode.setEnabled(true);
         memberNodeRepository.save(memberNode);
     }
 
     @Transactional
     public void deleteTrackNode(Integer id) {
-        trackNodeRepository.deleteById(id);
+        trackNodeRepository.findById(id).ifPresent(trackNode -> {
+            trackNode.setEnabled(false);
+            trackNodeRepository.save(trackNode);
+        });
     }
 
     @Transactional
@@ -53,7 +58,10 @@ public class NodeService {
 
     @Transactional
     public void deleteMemberNode(Integer id) {
-        memberNodeRepository.deleteById(id);
+        memberNodeRepository.findById(id).ifPresent(memberNode -> {
+            memberNode.setEnabled(false);
+            memberNodeRepository.save(memberNode);
+        });
     }
 
     public Optional<TrackNode> findTrackNodeById(Integer id) {
