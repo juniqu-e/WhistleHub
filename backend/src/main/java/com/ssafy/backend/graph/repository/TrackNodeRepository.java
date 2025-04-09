@@ -51,17 +51,20 @@ public interface TrackNodeRepository extends Neo4jRepository<TrackNode, Integer>
 
     @Query("""
             MATCH (t:Track)-[similar:SIMILAR]->(other:Track)
-            WHERE t.id = $trackId
+            WHERE t.id = $trackId AND t.enabled = true AND other.enabled = true
             ORDER BY similar.similarity DESC
             RETURN other.id
             """)
     List<Integer> getSimilarTrackIds(@Param("trackId") Integer trackId);
 
     @Query("""
-            MATCH (follower:Member)-[:FOLLOW]->(:Member{id: $memberId})
-            MATCH(follower)-[like:LIKE]->(t:Track)
-            return t.id
-            ORDER BY like.weight DESC
+            MATCH (follower:Member)-[:FOLLOW]->(m:Member {id: $memberId})
+            WHERE follower.enabled = true AND m.enabled = true
+            MATCH (follower)-[like:LIKE]->(t:Track)
+            WHERE t.enabled = true
+            WITH t, max(like.weight) AS maxWeight
+            RETURN t.id AS trackId
+            ORDER BY maxWeight DESC
             LIMIT $limit
             """)
     List<Integer> getMemberFanMix(@Param("memberId") Integer memberId, @Param("limit") Integer limit);

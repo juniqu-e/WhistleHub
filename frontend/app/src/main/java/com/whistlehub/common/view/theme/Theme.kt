@@ -27,7 +27,7 @@ private val LightColorScheme = lightColorScheme(
     */
 )
 private val CustomDarkColorScheme = darkColorScheme(
-    primary = CustomColors().Mint500,
+    primary = CustomColors().Grey500,
     secondary = CustomColors().Grey300,
     tertiary = CustomColors().Error500,
     error = CustomColors().Error700,

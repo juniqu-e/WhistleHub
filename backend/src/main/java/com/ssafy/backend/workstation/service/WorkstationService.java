@@ -58,6 +58,7 @@ public class WorkstationService {
         // 트랜젝션
         Member member = new Member();
         member.setId(m.getId());
+
         // 1. 트랙 생성
         Track track = Track.builder()
                 .title(trackUploadRequestDto.getTitle()).description(trackUploadRequestDto.getDescription())
@@ -102,14 +103,22 @@ public class WorkstationService {
 
         // 2. 레이어 목록 저장
         int layerSize = trackUploadRequestDto.getLayerName().length;
+
         for (int i = 0; i < layerSize; i++) {
             // 2-1. 음성 업로드
             LayerFile layerFile = new LayerFile();
             layerFile.setSoundUrl(s3Service.uploadFile(trackUploadRequestDto.getLayerSoundFiles()[i], S3Service.MUSIC));
             LayerFile lf = layerFileRepository.save(layerFile);
+            String list = null;
+            if(trackUploadRequestDto.getBars() != null && trackUploadRequestDto.getBars().length > 0) {
+                list = listToStr(Arrays.stream(trackUploadRequestDto.getBars()[i])
+                        .boxed()
+                        .toList());
+            }
 
             Layer layer = Layer.builder()
                     .name(trackUploadRequestDto.getLayerName()[i])
+                    .bars(list)
                     .instrumentType(trackUploadRequestDto.getInstrumentType()[i])
                     .blocked(false)
                     .track(t)
@@ -143,9 +152,16 @@ public class WorkstationService {
                 .build();
 
         for (Layer layer : layers) {
+            List<Integer> bars;
+            if(layer.getBars() == null || layer.getBars().isEmpty()){
+                bars = null;
+            } else {
+                bars = strToList(layer.getBars());
+            }
             trackImportResponseDto.getLayers().add(LayerImportResponseDto.builder()
                     .layerId(layer.getId())
                     .trackId(track.getId())
+                    .bars(bars)
                     .name(layer.getName())
                     .instrumentType(layer.getInstrumentType())
                     .soundUrl(layer.getLayerFile().getSoundUrl())
@@ -291,5 +307,27 @@ public class WorkstationService {
         track.setLayers(filteredLayers);
 
         return track;
+    }
+
+    /**
+     * String -> List
+     * @param str ',' 로 Split 처리
+     * @return List:Integer
+     */
+    private List<Integer> strToList(String str) {
+        return Arrays.stream(str.split(","))
+                .map(Integer::parseInt)
+                .toList();
+    }
+
+    /**
+     * List -> String
+     * @param list 마디 정보 list
+     * @return ','로 구분된 문자열 반환
+     */
+    private String listToStr(List<Integer> list) {
+        return list.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
     }
 }

@@ -83,6 +83,7 @@ dependencies {
 
     implementation(libs.androidx.media3.ui)
     implementation(libs.lifecycle.viewmodel.compose)
+    implementation (libs.androidx.foundation)
 
     implementation(libs.hilt.android)
     implementation(libs.androidx.hilt.navigation.compose)

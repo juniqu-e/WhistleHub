@@ -11,12 +11,10 @@ import com.ssafy.backend.graph.model.entity.TagNode;
 import com.ssafy.backend.graph.service.RecommendationService;
 import com.ssafy.backend.graph.service.RelationshipService;
 import com.ssafy.backend.member.model.common.MemberInfo;
-import com.ssafy.backend.mysql.entity.ListenRecord;
-import com.ssafy.backend.mysql.entity.Member;
-import com.ssafy.backend.mysql.entity.Tag;
-import com.ssafy.backend.mysql.entity.Track;
+import com.ssafy.backend.mysql.entity.*;
 import com.ssafy.backend.mysql.repository.*;
 import com.ssafy.backend.playlist.dto.TrackInfo;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -46,6 +44,7 @@ public class DiscoveryService {
     private final RelationshipService relationshipService;
     private final AuthService authService;
     private final TagRepository tagRepository;
+    private final TrackTagRepository trackTagRepository;
     private final RecommendationService recommendationService;
     private final TrackRepository trackRepository;
     private final RankingService rankingService;
@@ -62,7 +61,7 @@ public class DiscoveryService {
      */
     public List<TrackInfo> getTagRanking(int tagId, String period, PageRequest pageRequest) {
         List<Integer> likeRankingByTag = rankingService.getTagRanking(tagId, period, pageRequest);
-        return getTrackInfoList(trackRepository.findAllById(likeRankingByTag));
+        return getTrackInfoList(findTrackByIds(likeRankingByTag));
     }
 
     /**
@@ -124,26 +123,26 @@ public class DiscoveryService {
         // 태그 노드가 존재하지 않는 경우
         // 주간 랭킹, 월간랭킹에서 추천 트랙을 가져온다.
         if (trackIds.isEmpty() || trackIds.size() < size) {
-            trackIds.addAll(
-                    rankingService.getTagRanking(
-                            tagId,
-                            "WEEK",
-                            PageRequest.of(0, size - trackIds.size())
-                    )
+            List<Integer> weeklyRanking = rankingService.getTagRanking(
+                    tagId,
+                    "WEEK",
+                    PageRequest.of(0, size - trackIds.size())
             );
+            weeklyRanking.removeAll(trackIds);
+            trackIds.addAll(weeklyRanking);
         }
 
         if (trackIds.isEmpty() || trackIds.size() < size) {
-            trackIds.addAll(
-                    rankingService.getTagRanking(
-                            tagId,
-                            "MONTH",
-                            PageRequest.of(0, size - trackIds.size())
-                    )
+            List<Integer> monthlyRanking = rankingService.getTagRanking(
+                    tagId,
+                    "MONTH",
+                    PageRequest.of(0, size - trackIds.size())
             );
+            monthlyRanking.removeAll(trackIds);
+            trackIds.addAll(monthlyRanking);
         }
 
-        return getTrackInfoList(trackRepository.findAllById(trackIds));
+        return getTrackInfoList(findTrackByIds(trackIds));
     }
 
     /**
@@ -154,13 +153,21 @@ public class DiscoveryService {
      */
     public List<TrackInfo> getRecentTrack(int size) {
         Member member = authService.getMember();
-        List<ListenRecord> listenRecordList = listenRecoredRepository.findByMemberId(member.getId(), PageRequest.of(0, size, Sort.by(Sort.Direction.DESC, "createdAt")));
-        List<Track> trackList = new ArrayList<>();
-        for (ListenRecord listenRecord : listenRecordList) {
-            trackList.add(listenRecord.getTrack());
-        }
+        List<Integer> trackIds = listenRecoredRepository.findByMemberId(member.getId(), size);
 
-        return getTrackInfoList(trackList);
+        return getTrackInfoList(findTrackByIds(trackIds));
+    }
+
+    /**
+     * <pre>팔로잉 멤버들 중 최근 발매된 트랙 조회</pre>
+     * @param size 최근 발매된 트랙 갯수
+     * @return 팔로잉 멤버들 중 최근 발매된 트랙 리스트
+     */
+    public List<TrackInfo> getRecentReleasedTrack(int size){
+        Member member = authService.getMember();
+        List<Integer> trackIds = followRepository.findRecentTrackIdsByFromMemberId(member.getId(), size);
+
+        return getTrackInfoList(findTrackByIds(trackIds));
     }
 
     /**
@@ -178,9 +185,8 @@ public class DiscoveryService {
                 });
 
         List<Integer> similarTrackIds = recommendationService.getSimilarTrackIds(track.getId());
-        List<Track> similarTracks = trackRepository.findAllById(similarTrackIds);
 
-        return getTrackInfoList(similarTracks);
+        return getTrackInfoList(findTrackByIds(similarTrackIds));
     }
 
     /**
@@ -196,14 +202,14 @@ public class DiscoveryService {
         return getTrackInfoList(trackList);
     }
 
-    public MemberInfo getRandomFollowingMember(){
+    public MemberInfo getRandomFollowingMember(int size){
         Member member = authService.getMember();
         if(followRepository.countByFromMemberId(member.getId()) == 0){
             log.warn("No following members found for member id: {}", member.getId());
             return null;
         }
 
-        Integer randomFollowing =  followRepository.findRandomFollowing(member.getId());
+        Integer randomFollowing =  recommendationService.getFanmixMemberId(member.getId(), size);
         if(randomFollowing == null){
             log.warn("No random following member found for member id: {}", member.getId());
             return null;
@@ -224,9 +230,21 @@ public class DiscoveryService {
 
     public List<TrackInfo> getMemberFanMix(int memberId, int size) {
         List<Integer> trackIds = recommendationService.getMemberFanMix(memberId, size);
-        List<Track> trackList = trackRepository.findAllById(trackIds);
 
-        return getTrackInfoList(trackList);
+        return getTrackInfoList(findTrackByIds(trackIds));
+    }
+
+    private List<Track> findTrackByIds(List<Integer> trackIds) {
+        List<Track> trackList = new ArrayList<>();
+        for (Integer trackId : trackIds) {
+            Track track = trackRepository.findById(trackId)
+                    .orElseThrow(() -> {
+                        log.warn("Track not found with id: {}", trackId);
+                        return new NotFoundTrackException();
+                    });
+            trackList.add(track);
+        }
+        return trackList;
     }
 
     /**
@@ -253,5 +271,14 @@ public class DiscoveryService {
         }
 
         return resultList;
+    }
+
+    public List<TrackInfo> getRecentTrackByTag(int tagId, int size) {
+        List<TrackTag> trackTagList = trackTagRepository.findByTagId(tagId, PageRequest.of(0, size, Sort.by(Sort.Order.desc("createdAt"))));
+        List<Integer> trackIds = new ArrayList<>();
+        for (TrackTag trackTag : trackTagList) {
+            trackIds.add(trackTag.getTrack().getId());
+        }
+        return getTrackInfoList(findTrackByIds(trackIds));
     }
 }

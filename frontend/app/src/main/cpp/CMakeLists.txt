@@ -30,6 +30,7 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         whistlehub.cpp
         WhistleHubAudioEngine.cpp
         WavLoader.cpp
+        WavMixer.cpp
         DrumSynth.cpp)
 
 # Find the Oboe package

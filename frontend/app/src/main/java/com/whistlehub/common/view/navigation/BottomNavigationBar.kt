@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -17,6 +18,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.whistlehub.common.view.theme.CustomColors
+import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.view.MiniPlayerBar
 import com.whistlehub.playlist.viewmodel.PlayerViewState
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
@@ -57,8 +59,10 @@ fun BottomNavigationBar(
             containerColor = CustomColors().Grey950.copy(alpha = 0.95f),
         ) {
             navigationList.forEachIndexed { index, screen ->
+                val isSelected = isRouteMatching(currentRoute, screen)
                 NavigationBarItem(
-                    selected = selectedNavigationIndex.intValue == index,
+                    selected = isSelected,
+//                    selected = selectedNavigationIndex.intValue == index,
                     onClick = {
                         trackPlayViewModel.setPlayerViewState(PlayerViewState.PLAYING)
                         selectedNavigationIndex.intValue = index
@@ -75,13 +79,29 @@ fun BottomNavigationBar(
                     label = {
                         Text(
                             screen.title,
-                            color = if (index == selectedNavigationIndex.intValue)
-                                Color.White
-                            else Color.Gray
+                            color = if (isSelected) Color.White else Color.Gray,
+                            style = Typography.labelLarge
                         )
-                    }
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color.White,
+                        unselectedIconColor = Color.Gray,
+                        selectedTextColor = Color.White,
+                        unselectedTextColor = Color.Gray,
+                        indicatorColor = Color.White.copy(alpha = 0.7f)
+                    )
                 )
             }
         }
+    }
+}
+
+fun isRouteMatching(currentRoute: String?, screen: Screen): Boolean {
+    return when (screen) {
+        Screen.Profile -> currentRoute?.startsWith("profile/") == true
+        Screen.Search -> currentRoute?.startsWith("search") == true
+                || currentRoute?.startsWith("tag_ranking/") == true
+
+        else -> currentRoute == screen.route
     }
 }

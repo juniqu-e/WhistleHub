@@ -2,6 +2,7 @@ package com.whistlehub.common.data.remote.api
 
 import com.whistlehub.common.data.remote.dto.request.TrackRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
+import com.whistlehub.common.data.remote.dto.response.AuthResponse
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -71,16 +72,19 @@ interface TrackApi {
     suspend fun playLayer(
         @Query("layerId") layerId: String
     ): Response<ApiResponse<TrackResponse.TrackLayerPlay>>
+
     // 트랙 좋아요
     @POST("track/like")
     suspend fun likeTrack(
         @Body request: TrackRequest.LikeTrackRequest
     ): Response<ApiResponse<Unit>>
+
     // 트랙 좋아요 취소
     @DELETE("track/like")
     suspend fun unlikeTrack(
         @Query("trackId") trackId: String
     ): Response<ApiResponse<Unit>>
+
     // 트랙 댓글 조회
     @GET("track/comment")
     suspend fun getTrackComments(
@@ -131,5 +135,71 @@ interface TrackApi {
     suspend fun uploadTrackImage(
         @Part("trackId") trackId: RequestBody,
         @Part image: MultipartBody.Part
-    ): Response<ApiResponse<Unit>>
+    ): Response<ApiResponse<String>>
+
+
+    // 태그 추천
+    @GET("discovery/tag")
+    suspend fun getTagRecommendation(
+    ): Response<ApiResponse<List<AuthResponse.TagResponse>>>
+
+    // 태그 랭킹
+    @GET("discovery/tag/ranking")
+    suspend fun getTagRanking(
+        @Query("tagId") tagId: Int,
+        @Query("period") period: String,
+        @Query("page") page: Int,
+        @Query("size") size: Int,
+    ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
+
+    //태그별 추천 트랙
+    @GET("discovery/tag/recommend")
+    suspend fun getTagRecommendTrack(
+        @Query("tagId") tagId: Int,
+        @Query("size") size: Int
+    ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
+
+    // 최근 들은 트랙 조회
+    @GET("discovery/recent")
+    suspend fun getRecentTracks(
+        @Query("size") size: Int
+    ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
+
+    // 특정 트랙과 비슷한 트랙 리스트 조회
+    @GET("discovery/similar")
+    suspend fun getSimilarTracks(
+        @Query("trackId") trackId: Int
+    ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
+
+    // 한 번도 들어본 적 없는 트랙
+    @GET("discovery/never")
+    suspend fun getNeverTracks(
+        @Query("size") size: Int
+    ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
+
+    // 팔로우한 사람 중 한 명 조회
+    @GET("discovery/fanmix/following")
+    suspend fun getFollowingMember(
+        @Query("size") size: Int
+    ): Response<ApiResponse<TrackResponse.MemberInfo>>
+
+    // 특정 회원을 팔로우한 사람들이 좋아하는 트랙 리스트
+    @GET("discovery/fanmix")
+    suspend fun getFanMixTracks(
+        @Query("memberId") memberId: Int,
+        @Query("size") size: Int
+    ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
+
+    // 팔로우한 사람의 최신 트랙 조회
+    @GET("discovery/recent/following")
+    suspend fun getFollowingRecentTracks(
+        @Query("size") size: Int
+    ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
+
+    // 태그별 최신 트랙 조회
+    @GET("discovery/recent/tag")
+    suspend fun getTagRecentTracks(
+        @Query("tagId") tagId: Int,
+        @Query("size") size: Int
+    ): Response<ApiResponse<List<TrackResponse.SearchTrack>>>
 }

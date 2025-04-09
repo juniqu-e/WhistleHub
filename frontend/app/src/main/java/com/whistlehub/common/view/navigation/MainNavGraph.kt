@@ -13,10 +13,13 @@ import androidx.navigation.navArgument
 import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.common.view.AppScaffold
 import com.whistlehub.common.view.login.LoginScreen
+import com.whistlehub.common.view.login.LoginSplashScreen
 import com.whistlehub.common.view.signup.SelectTagsScreen
 import com.whistlehub.common.view.signup.SignUpScreen
 import com.whistlehub.common.viewmodel.SignUpViewModel
+import com.whistlehub.search.viewmodel.SearchViewModel
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
+import com.whistlehub.common.view.passwordreset.PasswordResetScreen
 
 /**
  * 앱의 전체 네비게이션 구조를 처리하는 메인 네비게이션 그래프
@@ -35,9 +38,12 @@ fun MainNavGraph(
 
     NavHost(
         navController = navController,
-        startDestination = "login",
+        startDestination = "splash",
         modifier = modifier
     ) {
+        composable("splash") {
+            LoginSplashScreen(navController)
+        }
         //유저 인증(로그인)
         composable("login") {
             LoginScreen(
@@ -50,6 +56,12 @@ fun MainNavGraph(
                 onSignUpClick = {
                     // 회원가입 화면으로 이동
                     navController.navigate("signup") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                },
+                onForgotPasswordClick = {
+                    // 비밀번호 초기화 화면으로 이동
+                    navController.navigate("passwordreset") {
                         popUpTo("login") { inclusive = true }
                     }
                 },
@@ -69,7 +81,31 @@ fun MainNavGraph(
                     navController.navigate("login") {
                         popUpTo("signup") { inclusive = true }
                     }
-                }
+                },
+                onForgotPasswordClick = {
+                    // 비밀번호 초기화 화면으로 이동
+                    navController.navigate("passwordreset") {
+                        popUpTo("signup") { inclusive = true }
+                    }
+                },
+            )
+        }
+        // 비밀번호 초기화 화면
+        composable("passwordreset") {
+            PasswordResetScreen(
+                onLoginClick = {
+                    // 로그인 화면으로 이동
+                    navController.navigate("login") {
+                        popUpTo("passwordreset") { inclusive = true }
+                    }
+                },
+                onSignUpClick = {
+                    // 회원가입 화면으로 이동
+                    navController.navigate("signup") {
+                        popUpTo("passwordreset") { inclusive = true }
+                    }
+                },
+                navController = navController
             )
         }
 
@@ -132,6 +168,7 @@ fun MainScreenWithBottomNav(
 ) {
     val newNavController = rememberNavController()
     val workStationViewModel: WorkStationViewModel = hiltViewModel()
+    val searchViewModel: SearchViewModel = hiltViewModel()
     // 새로운 내부 네비게이션 컨트롤러 생성
     LaunchedEffect(key1 = logoutManager.logoutEventFlow) {
         logoutManager.logoutEventFlow.collect {
@@ -151,7 +188,8 @@ fun MainScreenWithBottomNav(
             navController = newNavController,
             logoutManager = logoutManager,
             paddingValues = paddingValues,
-            workStationViewModel = workStationViewModel
+            workStationViewModel = workStationViewModel,
+            searchViewModel = searchViewModel,
         )
     }
 }

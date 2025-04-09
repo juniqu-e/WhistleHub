@@ -8,6 +8,7 @@ import com.ssafy.backend.common.service.S3Service;
 import com.ssafy.backend.common.util.S3FileKeyExtractor;
 import com.ssafy.backend.graph.model.entity.type.WeightType;
 import com.ssafy.backend.graph.service.DataCollectingService;
+import com.ssafy.backend.graph.service.NodeService;
 import com.ssafy.backend.mysql.entity.*;
 import com.ssafy.backend.mysql.repository.*;
 import com.ssafy.backend.track.dto.request.TrackImageUploadRequestDto;
@@ -52,6 +53,7 @@ public class TrackService {
     private final S3Service s3Service;
 
     private final AuthService authService;
+    private final NodeService nodeService;
 
 
     /**
@@ -206,9 +208,9 @@ public class TrackService {
         String existingFileUrl = track.getImageUrl();
         String updatedFileUrl;
         if (existingFileUrl == null) {
-            updatedFileUrl = s3Service.uploadFile(trackImageUploadRequestDto.getTrackImg(), S3Service.MUSIC);
+            updatedFileUrl = s3Service.uploadFile(trackImageUploadRequestDto.getTrackImg(), S3Service.IMAGE);
         } else {
-            updatedFileUrl = s3Service.updateFile(existingFileUrl, trackImageUploadRequestDto.getTrackImg(), S3Service.MUSIC);
+            updatedFileUrl = s3Service.updateFile(existingFileUrl, trackImageUploadRequestDto.getTrackImg(), S3Service.IMAGE);
         }
         // 변경된 이미지 반영
         track.setImageUrl(updatedFileUrl);
@@ -241,6 +243,8 @@ public class TrackService {
         // soft delete
         track.setEnabled(false);
         trackRepository.save(track);
+
+        nodeService.deleteTrackNode(trackId);
     }
 
     /**

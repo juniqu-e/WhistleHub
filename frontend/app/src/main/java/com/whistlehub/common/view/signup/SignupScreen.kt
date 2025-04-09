@@ -43,6 +43,7 @@ import kotlinx.coroutines.launch
 fun SignUpScreen(
     onNext: (String, String, String, String, Char, String) -> Unit = { _, _, _, _, _, _ -> },
     onLoginClick: () -> Unit = {},
+    onForgotPasswordClick: () -> Unit = {},
     viewModel: SignUpViewModel = hiltViewModel()
 ) {
     // 입력 상태 변수들: rememberSaveable 사용하여 저장
@@ -84,6 +85,8 @@ fun SignUpScreen(
     var isPasswordConfirmFocused by remember { mutableStateOf(false) }
     var isEmailFocused by remember { mutableStateOf(false) }
     var isNicknameFocused by remember { mutableStateOf(false) }
+    var isVerificationCodeFocused by remember { mutableStateOf(false) }
+
 
     val colors = CustomColors()
     val textFieldStyle = Typography.bodyMedium.copy(color = colors.Grey50)
@@ -179,13 +182,14 @@ fun SignUpScreen(
                     verticalArrangement = Arrangement.SpaceBetween,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // 로고 영역
-                    Text(
-                        text = "Whistle Hub Logo",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = Color.White,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                    // 최상단: 로고
+                    Image(
+                        painter = painterResource(id = R.drawable.whistlehub_mainlogo),
+                        contentDescription = "Logo",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(150.dp)
+                            .padding(bottom = 20.dp),
                     )
                     Spacer(modifier = Modifier.height(40.dp))
                     // 입력 폼 영역
@@ -287,7 +291,7 @@ fun SignUpScreen(
                                     }
                                 },
                                 enabled = emailVerificationState !is EmailVerificationState.Sending,
-                                colors = ButtonDefaults.buttonColors(containerColor = colors.Mint500),
+                                colors = ButtonDefaults.buttonColors(containerColor = colors.CommonButtonColor),
                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                                 shape = RoundedCornerShape(5.dp),
                                 modifier = Modifier.wrapContentWidth().height(32.dp)
@@ -296,7 +300,7 @@ fun SignUpScreen(
                                     Text(
                                         text = "로딩중...",
                                         style = Typography.labelLarge.copy(
-                                            color = colors.Grey950,
+                                            color = colors.CommonTextColor,
                                             fontWeight = FontWeight.Bold
                                         )
                                     )
@@ -304,7 +308,7 @@ fun SignUpScreen(
                                     Text(
                                         text = "이메일 인증",
                                         style = Typography.labelLarge.copy(
-                                            color = colors.Grey950,
+                                            color = colors.CommonTextColor,
                                             fontWeight = FontWeight.Bold
                                         )
                                     )
@@ -327,8 +331,8 @@ fun SignUpScreen(
                                     labelStyle = labelStyle,
                                     textStyle = textFieldStyle,
                                     placeholderStyle = placeholderStyle,
-                                    isFocused = false,
-                                    onFocusChange = {},
+                                    isFocused = isVerificationCodeFocused,
+                                    onFocusChange = { isVerificationCodeFocused = it },
                                     errorMessage = verificationCodeError,
                                     modifier = Modifier.weight(1f)
                                 )
@@ -337,7 +341,7 @@ fun SignUpScreen(
                                     onClick = {
                                         viewModel.validateEmailCode(email, verificationCode)
                                     },
-                                    colors = ButtonDefaults.buttonColors(containerColor = colors.Mint500),
+                                    colors = ButtonDefaults.buttonColors(containerColor = colors.CommonButtonColor),
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                                     shape = RoundedCornerShape(5.dp),
                                     modifier = Modifier.wrapContentWidth().height(32.dp)
@@ -345,7 +349,7 @@ fun SignUpScreen(
                                     Text(
                                         text = "코드 확인",
                                         style = Typography.labelLarge.copy(
-                                            color = colors.Grey950,
+                                            color = colors.CommonTextColor,
                                             fontWeight = FontWeight.Bold
                                         )
                                     )
@@ -434,12 +438,13 @@ fun SignUpScreen(
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = colors.Mint500),
+                            colors = ButtonDefaults.buttonColors(containerColor = colors.CommonButtonColor),
                             shape = MaterialTheme.shapes.medium
                         ) {
                             Text(
                                 text = "다음",
                                 style = buttonTextStyle,
+                                color = colors.CommonTextColor,
                                 modifier = Modifier.padding(vertical = 4.dp)
                             )
                         }
@@ -455,8 +460,8 @@ fun SignUpScreen(
                             Spacer(modifier = Modifier.width(20.dp))
                             Text(text = "|", color = colors.Grey50)
                             Spacer(modifier = Modifier.width(20.dp))
-                            TextButton(onClick = { /* 추가 옵션 처리 */ }) {
-                                Text(text = "비밀번호 찾기", color = colors.Grey50)
+                            TextButton(onClick =  onForgotPasswordClick ) {
+                                Text(text = "비밀번호 초기화", color = colors.Grey50)
                             }
                         }
                     }

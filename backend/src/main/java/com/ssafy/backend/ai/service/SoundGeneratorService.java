@@ -178,7 +178,7 @@ public class SoundGeneratorService {
     /**
      * WAV 파일 길이 조정
      */
-    private File adjustWavFileDuration(File wavFile, int requestedDurationSeconds) throws Exception {
+    private File adjustWavFileDuration(File wavFile, double requestedDurationSeconds) throws Exception {
         // 현재 WAV 파일의 길이 확인
         AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(wavFile);
         AudioFormat format = audioInputStream.getFormat();

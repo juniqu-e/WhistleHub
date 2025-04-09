@@ -9,6 +9,7 @@ import com.ssafy.backend.auth.model.request.ValidateEmailRequestDto;
 import com.ssafy.backend.auth.model.response.RefreshResponseDto;
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.ApiResponse;
+import com.ssafy.backend.graph.util.DataReconstructor;
 import jakarta.websocket.server.PathParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -175,6 +176,14 @@ public class AuthController {
 
         return new ApiResponse.builder<>()
                 .payload(result)
+                .build();
+    }
+
+    private final DataReconstructor dataReconstructor;
+    @GetMapping("/reconstruct")
+    public ApiResponse<?> getReconstruct() {
+        dataReconstructor.reconstruct();
+        return new ApiResponse.builder<>()
                 .build();
     }
 }

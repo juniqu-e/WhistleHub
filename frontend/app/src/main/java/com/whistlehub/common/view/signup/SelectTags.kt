@@ -147,14 +147,14 @@ fun SelectTagsScreen(
                                         )
                                     },
                                     colors = filterChipColors(
-                                        selectedContainerColor = colors.Mint500,
+                                        selectedContainerColor = colors.CommonFocusColor,
                                         containerColor = Color.DarkGray
                                     ),
                                     border = FilterChipDefaults.filterChipBorder(
                                         enabled = true,
                                         selected = selectedTags.contains(tag.id),
                                         borderColor = if (selectedTags.contains(tag.id))
-                                            colors.Mint500
+                                            colors.CommonFocusColor
                                         else
                                             Color.Gray,
                                         borderWidth = 1.dp
@@ -185,12 +185,12 @@ fun SelectTagsScreen(
                             .height(48.dp),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isStartEnabled) colors.Mint500 else Color.Gray
+                            containerColor = if (isStartEnabled) colors.CommonFocusColor else colors.CommonButtonColor
                         )
                     ) {
                         Text(
                             text = "시작하기",
-                            style = Typography.titleMedium.copy(color = Color.Black)
+                            style = Typography.titleMedium.copy(if (isStartEnabled) colors.Grey950 else colors.CommonTextColor)
                         )
                     }
                 }

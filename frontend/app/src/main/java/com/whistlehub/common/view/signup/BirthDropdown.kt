@@ -179,7 +179,7 @@ fun BirthDropdownField(
                         Icon(
                             imageVector = if (expanded) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
                             contentDescription = null,
-                            tint = colors.Mint500
+                            tint = colors.CommonFocusColor
                         )
                     }
                     Box(
@@ -187,7 +187,7 @@ fun BirthDropdownField(
                             .fillMaxWidth()
                             .align(Alignment.BottomStart)
                             .height(1.dp)
-                            .background(if (isFocused) colors.Mint500 else colors.Grey50)
+                            .background(if (isFocused) colors.CommonFocusColor else colors.Grey50)
                     )
                 }
             }

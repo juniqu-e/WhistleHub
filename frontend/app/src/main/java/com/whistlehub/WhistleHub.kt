@@ -14,12 +14,14 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.data.repository.TrackService
+import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.playlist.data.TrackEssential
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
@@ -37,10 +39,14 @@ class WhistleHub : Application() {
     val playerPosition = MutableStateFlow(0L)
     val trackDuration = MutableStateFlow(0L)
     val playerTrackList = MutableStateFlow<List<TrackEssential>>(emptyList())
+    val isLooping = MutableStateFlow(false)
+    val isShuffle = MutableStateFlow(false)
 
     // 트랙 재생을 위한 trackService 주입
     @Inject
     lateinit var trackService: TrackService
+    @Inject
+    lateinit var logoutManager: LogoutManager
 
     // 앱 라이프사이클 상태 추적
     private var appInBackground = false
@@ -77,11 +83,26 @@ class WhistleHub : Application() {
 
         // 플레이어 포지션 업데이트 코루틴 시작
         CoroutineScope(Dispatchers.Main).launch {
-            while (true) {
-                playerPosition.value = exoPlayer.currentPosition
-                trackDuration.value =
-                    if (exoPlayer.duration != C.TIME_UNSET) exoPlayer.duration else 0L
-                delay(1000)
+            while (isActive) {
+                if (exoPlayer.isPlaying) {
+                    playerPosition.value = exoPlayer.currentPosition
+                    trackDuration.value =
+                        if (exoPlayer.duration != C.TIME_UNSET) exoPlayer.duration else 0L
+                }
+                delay(100)
+            }
+        }
+        // 로그아웃시 재생목록 초기화, 음악 정지, 현재 트랙 제거
+        CoroutineScope(Dispatchers.Main).launch {
+            logoutManager.logoutEventFlow.collect {
+                clearTrackList()
+                isPlaying.value = false
+                currentTrack.value = null
+                playerPosition.value = 0L
+                trackDuration.value = 0L
+                exoPlayer.stop()
+                exoPlayer.clearMediaItems()
+                Log.d("WhistleHub", "Logout detected: player state fully cleared.")
             }
         }
     }
@@ -122,7 +143,7 @@ class WhistleHub : Application() {
     }
 
     // ExoPlayer를 위한 다양한 메서드들
-    suspend fun playTrack(trackId: Int) : Boolean {
+    suspend fun playTrack(trackId: Int): Boolean {
         try {
             val trackResponse = trackService.getTrackDetail(trackId.toString())  // 트랙 정보 가져오기
             val trackData = trackService.playTrack(trackId.toString())
@@ -149,7 +170,7 @@ class WhistleHub : Application() {
                     playerTrackList.value += TrackEssential(
                         trackId = track!!.trackId,
                         title = track.title,
-                        artist = track.artist?.nickname ?: "Unknown Artist",
+                        artist = track.artist.nickname,
                         imageUrl = track.imageUrl
                     )  // 현재 재생 목록 맨 뒤에 트랙 추가
                 }
@@ -195,12 +216,37 @@ class WhistleHub : Application() {
     suspend fun nextTrack() {
         val currentIndex =
             playerTrackList.value.indexOfFirst { it.trackId == currentTrack.value?.trackId }
-        if (currentIndex != -1 && currentIndex < playerTrackList.value.size - 1) {
-            playTrack(playerTrackList.value[currentIndex + 1].trackId)
+        if (isShuffle.value) {
+            // 셔플 모드면 랜덤 트랙으로 이동
+            val randomIndex = (playerTrackList.value.indices).random()
+            val randomTrackId = playerTrackList.value[randomIndex].trackId
+
+            // 현재 트랙이랑 중복되면 한 번 더 뽑기 (선택사항)
+            if (playerTrackList.value.size > 1 && playerTrackList.value[randomIndex].trackId == currentTrack.value?.trackId) {
+                val otherIndex = (playerTrackList.value.indices - currentIndex).random()
+                playTrack(playerTrackList.value[otherIndex].trackId)
+            } else {
+                playTrack(randomTrackId)
+            }
         } else {
-//            stopTrack() // 마지막 곡이면 정지
-            playTrack(playerTrackList.value[0].trackId) // 마지막 곡이면 첫 곡으로 돌아감
+            // 일반 재생 로직
+            if (currentIndex != -1 && currentIndex < playerTrackList.value.size - 1) {
+                playTrack(playerTrackList.value[currentIndex + 1].trackId)
+            } else {
+                playTrack(playerTrackList.value[0].trackId)
+            }
         }
+    }
+
+    fun toggleLooping() {
+        isLooping.value = !isLooping.value
+        exoPlayer.repeatMode =
+            if (isLooping.value) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
+    }
+
+    fun toggleShuffle() {
+        isShuffle.value = !isShuffle.value
+        exoPlayer.shuffleModeEnabled = isShuffle.value
     }
 
     fun setTrackList(tracks: List<TrackEssential>) {
@@ -209,6 +255,11 @@ class WhistleHub : Application() {
 
     fun setCurrentTrack(track: TrackResponse.GetTrackDetailResponse) {
         currentTrack.value = track
+    }
+
+    fun clearTrackList() {
+        // 로그아웃 시 호출 필요
+        playerTrackList.value = emptyList()
     }
 
     fun byteArrayToUri(context: Context, byteArray: ByteArray): Uri? {

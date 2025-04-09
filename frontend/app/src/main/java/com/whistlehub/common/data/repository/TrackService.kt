@@ -3,6 +3,7 @@ package com.whistlehub.common.data.repository
 import com.whistlehub.common.data.remote.api.TrackApi
 import com.whistlehub.common.data.remote.dto.request.TrackRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
+import com.whistlehub.common.data.remote.dto.response.AuthResponse
 import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.util.TokenRefresh
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -124,6 +125,7 @@ class TrackService @Inject constructor(
     ): ApiResponse<Unit> {
         return tokenRefresh.execute { trackApi.deleteTrackComment(commentId) }
     }
+
     // 트랙 검색
 //    suspend fun searchTracks(
 //        request: TrackRequest.SearchTrackRequest
@@ -154,11 +156,83 @@ class TrackService @Inject constructor(
     suspend fun uploadTrackImage(
         trackId: Int,
         image: MultipartBody.Part
-    ): ApiResponse<Unit> {
+    ): ApiResponse<String> {
         val trackIdBody: RequestBody =
             trackId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
         return tokenRefresh.execute { trackApi.uploadTrackImage(trackIdBody, image) }
     }
 
-    companion object
+    // 태그 추천 조회
+    suspend fun getTagRecommendation(): ApiResponse<List<AuthResponse.TagResponse>> {
+        return tokenRefresh.execute { trackApi.getTagRecommendation() }
+    }
+
+    // 태그별 랭킹 조회
+    suspend fun getTagRanking(
+        tagId: Int,
+        period: String,
+        page: Int,
+        size: Int
+    ): ApiResponse<List<TrackResponse.SearchTrack>> {
+        return tokenRefresh.execute { trackApi.getTagRanking(tagId, period, page, size) }
+    }
+
+    // 태그별 추천 트랙 조회
+    suspend fun getTagRecommendTrack(
+        tagId: Int,
+        size: Int
+    ): ApiResponse<List<TrackResponse.SearchTrack>> {
+        return tokenRefresh.execute { trackApi.getTagRecommendTrack(tagId, size) }
+    }
+
+    // 최근 들은 트랙 조회
+    suspend fun getRecentTracks(
+        size: Int
+    ): ApiResponse<List<TrackResponse.SearchTrack>> {
+        return tokenRefresh.execute { trackApi.getRecentTracks(size) }
+    }
+
+    // 특정 트랙과 비슷한 트랙 리스트 조회
+    suspend fun getSimilarTracks(
+        trackId: Int
+    ): ApiResponse<List<TrackResponse.SearchTrack>> {
+        return tokenRefresh.execute { trackApi.getSimilarTracks(trackId) }
+    }
+
+    // 한 번도 듣지 않은 트랙 조회
+    suspend fun getNeverTracks(
+        size: Int
+    ): ApiResponse<List<TrackResponse.SearchTrack>> {
+        return tokenRefresh.execute { trackApi.getNeverTracks(size) }
+    }
+
+    // 팔로우한 사람 중 한 명 조회
+    suspend fun getFollowingMember(
+        size: Int
+    ): ApiResponse<TrackResponse.MemberInfo> {
+        return tokenRefresh.execute { trackApi.getFollowingMember(size) }
+    }
+
+    // 특정 회원을 팔로우한 사람들이 좋아하는 트랙 리스트 조회
+    suspend fun getFanMixTracks(
+        memberId: Int,
+        size: Int
+    ): ApiResponse<List<TrackResponse.SearchTrack>> {
+        return tokenRefresh.execute { trackApi.getFanMixTracks(memberId, size) }
+    }
+
+    // 팔로우한 사람의 최신 트랙 조회
+    suspend fun getFollowingRecentTracks(
+        size: Int
+    ): ApiResponse<List<TrackResponse.SearchTrack>> {
+        return tokenRefresh.execute { trackApi.getFollowingRecentTracks(size) }
+    }
+
+    // 태그별 최신 트랙 조회
+    suspend fun getTagRecentTracks(
+        tagId: Int,
+        size: Int
+    ): ApiResponse<List<TrackResponse.SearchTrack>> {
+        return tokenRefresh.execute { trackApi.getTagRecentTracks(tagId, size) }
+    }
 }

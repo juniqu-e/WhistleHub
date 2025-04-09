@@ -1,6 +1,7 @@
 #include <jni.h>
 #include "WhistleHubAudioEngine.h"
 #include "WavLoader.h"
+#include "dr_wav.h"
 #include <android/log.h>
 
 #define LOG_TAG "whistlehub"
@@ -9,6 +10,14 @@
 
 //전역 오디오 엔진 인스턴스
 static WhistleHubAudioEngine engine;
+jobject g_callback = nullptr;
+JavaVM* g_vm = nullptr;
+
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
+    g_vm = vm;
+    return JNI_VERSION_1_6;
+}
+
 
 extern "C"
 JNIEXPORT jint JNICALL
@@ -73,13 +82,47 @@ Java_com_whistlehub_common_util_AudioEngineBridge_stopAudioEngine(JNIEnv *env, j
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_whistlehub_common_util_AudioEngineBridge_sendLayerInfoToNative(JNIEnv *env, jobject thiz,
-                                                                        jobject layer_info) {
-    // TODO: implement sendLayerInfoToNative()
+Java_com_whistlehub_common_util_AudioEngineBridge_setLayers(JNIEnv *env, jobject thiz, jobject layers, jint maxUsedBars) {
+    std::vector<LayerAudioInfo> parsed = engine.parseLayerList(env, layers);
+    engine.setLayers(parsed, static_cast<float>(maxUsedBars));
 }
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_com_whistlehub_common_util_AudioEngineBridge_renderMixToWav(JNIEnv* env, jobject, jstring jPath, jint totalFrames) {
+    const char* path = env->GetStringUTFChars(jPath, nullptr);
+    bool result = engine.renderToFile(path, totalFrames);
+    env->ReleaseStringUTFChars(jPath, path);
+    return result;
+}
+
+extern "C"
+JNIEXPORT jfloat JNICALL
+Java_com_whistlehub_common_util_AudioEngineBridge_getWavDurationSeconds(
+        JNIEnv *env,
+        jobject /* this */,
+        jstring path) {
+
+    const char *cPath = env->GetStringUTFChars(path, nullptr);
+
+    drwav wav;
+    float duration = -1.0f;
+
+    if (drwav_init_file(&wav, cPath, nullptr)) {
+        duration = wav.totalPCMFrameCount / static_cast<float>(wav.sampleRate);
+        drwav_uninit(&wav);
+    }
+
+    env->ReleaseStringUTFChars(path, cPath);
+    return duration;
+}
+
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_whistlehub_common_util_AudioEngineBridge_setLayers(JNIEnv *env, jobject thiz, jobject layers) {
-    std::vector<LayerAudioInfo> parsed = engine.parseLayerList(env, layers);
-    engine.setLayers(parsed);
+Java_com_whistlehub_common_util_AudioEngineBridge_setCallback(JNIEnv *env, jobject thiz, jobject listener) {
+    if (g_callback) {
+        env->DeleteGlobalRef(g_callback);
+        g_callback = nullptr;
+    }
+    g_callback = env->NewGlobalRef(listener);
 }

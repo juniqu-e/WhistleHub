@@ -114,6 +114,48 @@ public class DiscoveryController {
                 .build();
     }
 
+    /**
+     * <pre>팔로잉 최근 발매된 음악 조회</pre>
+     * Access Token의 멤버의 팔로잉들 중 최근에 발매된 음악 리스트 반환.
+     *
+     * @param size 음악 리스트 크기
+     * @return 최근 발매된 음악 리스트
+     */
+    @GetMapping("/recent/following")
+    public ApiResponse<?> getRecentReleasedTrack(@RequestParam(value = "size", required = true)
+                                                 @Min(value = 0)
+                                                 Integer size) {
+        List<TrackInfo> result = discoveryService.getRecentReleasedTrack(size);
+        return new ApiResponse.builder<List<TrackInfo>>()
+                .payload(result)
+                .build();
+    }
+
+    /**
+     * <pre>최근 발매된 태그 음악 조회</pre>
+     * @param tagId 태그 ID
+     * @param size 음악 리스트 크기
+     * @return 최근 발매된 태그 음악 리스트
+     */
+    @GetMapping("/recent/tag")
+    public ApiResponse<?> getRecentTrackByTag(@RequestParam(value = "tagId", required = true)
+                                              @Min(value = 0)
+                                              Integer tagId,
+                                              @RequestParam(value = "size", required = true)
+                                              @Min(value = 0)
+                                              Integer size) {
+        List<TrackInfo> result = discoveryService.getRecentTrackByTag(tagId, size);
+        return new ApiResponse.builder<List<TrackInfo>>()
+                .payload(result)
+                .build();
+    }
+
+    /**
+     * <pre>비슷한 트랙 조회</pre>
+     *
+     * @param trackId 트랙 ID
+     * @return 비슷한 트랙 리스트
+     */
     @GetMapping("/similar")
     public ApiResponse<?> getSimilarTracks(@RequestParam(value = "trackId", required = true)
                                            @Min(value = 0)
@@ -124,6 +166,12 @@ public class DiscoveryController {
                 .build();
     }
 
+    /**
+     * <pre>한번도 들어보지 않은 트랙 조회</pre>
+     *
+     * @param size 조회할 트랙의 수
+     * @return 한번도 들어보지 않은 트랙 리스트
+     */
     @GetMapping("/never")
     public ApiResponse<?> getNeverListenTrack(@RequestParam(value = "size", required = true)
                                               @Min(value = 0)
@@ -134,14 +182,29 @@ public class DiscoveryController {
                 .build();
     }
 
+    /**
+     * <pre>팔로우한 회원중 랜덤한 회원 조회</pre>
+     * Access Token의 곡을 만들어 올린 팔로잉 회원 중 랜덤한 회원을 조회.
+     *
+     * @return 팔로우한 회원의 트랙 리스트
+     */
     @GetMapping("/fanmix/following")
-    public ApiResponse<?> getRandomFollowingMember() {
-        MemberInfo result = discoveryService.getRandomFollowingMember();
+    public ApiResponse<?> getRandomFollowingMember(@RequestParam(value = "size", required = true)
+                                                       @Min(value = 0)
+                                                       Integer size) {
+        MemberInfo result = discoveryService.getRandomFollowingMember(size);
         return new ApiResponse.builder<MemberInfo>()
                 .payload(result)
                 .build();
     }
 
+    /**
+     * <pre>특정 멤버의 팔로워들이 좋아하는 트랙 조회</pre>
+     *
+     * @param memberId 어떤 팔로워들이 좋아하는 트랙을 조회할 멤버 ID
+     * @param size     조회할 트랙의 수
+     * @return 특정 멤버의 팔로워들이 좋아하는 트랙 리스트
+     */
     @GetMapping("/fanmix")
     public ApiResponse<?> getMemberFanMix(@RequestParam(value = "memberId", required = true)
                                           @Min(value = 0)

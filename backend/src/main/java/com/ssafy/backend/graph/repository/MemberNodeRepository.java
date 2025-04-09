@@ -102,4 +102,13 @@ public interface MemberNodeRepository extends Neo4jRepository<MemberNode, Intege
             "DELETE r")
     void deleteFollowRelationship(@Param("followerId") Integer followerId,
                                   @Param("followingId") Integer followingId);
+
+    @Query("MATCH (:Member {id: $memberId})-[:FOLLOW]->(f:Member) " +
+            "WITH f " +
+            "MATCH (m:Member)-[:FOLLOW]->(f) " +
+            "WHERE size([(m)-[:LIKE]->(:Track) | 1]) >= $size " +
+            "ORDER BY rand() " +
+            "RETURN DISTINCT f.id "+
+            "LIMIT 1")
+    Integer getFanmixMember(@Param("memberId") Integer memberId, @Param("size") Integer size);
 }

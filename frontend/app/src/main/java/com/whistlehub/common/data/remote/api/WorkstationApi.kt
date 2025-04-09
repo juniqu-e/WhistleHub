@@ -4,12 +4,14 @@ import com.whistlehub.common.data.remote.dto.request.WorkstationRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
 import com.whistlehub.common.data.remote.dto.response.WorkstationResponse
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
+import retrofit2.http.PartMap
 import retrofit2.http.Query
 
 /**
@@ -19,9 +21,13 @@ import retrofit2.http.Query
  **/
 interface WorkstationApi {
     // 트랙 업로드
+    @Multipart
     @POST("workstation")
     suspend fun uploadTrack(
-        @Body request: WorkstationRequest.UploadTrackRequest
+        @PartMap partMap: HashMap<String, RequestBody>,
+        @Part trackImg: MultipartBody.Part?,
+        @Part layerSoundFiles: List<MultipartBody.Part>,
+        @Part trackSoundFile: MultipartBody.Part,
     ): Response<ApiResponse<Int>>
 
     // 레이어 업로드

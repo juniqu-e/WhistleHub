@@ -2,6 +2,8 @@ package com.whistlehub.profile.view
 
 import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,7 +16,6 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -31,7 +32,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.motionEventSpy
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -39,6 +42,7 @@ import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.common.view.component.CommonAppBar
 import com.whistlehub.common.view.navigation.Screen
 import com.whistlehub.common.view.theme.CustomColors
+import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
 import com.whistlehub.profile.view.components.ProfileFollowSheet
 import com.whistlehub.profile.view.components.ProfileHeader
 import com.whistlehub.profile.view.components.ProfileSearchBar
@@ -46,6 +50,7 @@ import com.whistlehub.profile.view.components.ProfileTrackDetailSheet
 import com.whistlehub.profile.view.components.TrackGridItem
 import com.whistlehub.profile.viewmodel.ProfileTrackDetailViewModel
 import com.whistlehub.profile.viewmodel.ProfileViewModel
+import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -70,6 +75,8 @@ fun ProfileScreen(
     logoutManager: LogoutManager,
     navController: NavHostController,
     viewModel: ProfileViewModel = hiltViewModel(),
+    workStationViewModel: WorkStationViewModel,
+    trackPlayViewModel: TrackPlayViewModel = hiltViewModel()
 ) {
     val customColors = CustomColors()
     val coroutineScope = rememberCoroutineScope()
@@ -86,6 +93,7 @@ fun ProfileScreen(
     val followingList by viewModel.followings.collectAsState()
     val followerCount by viewModel.followerCount.collectAsState()
     val followingCount by viewModel.followingCount.collectAsState()
+    val trackCount by viewModel.trackCount.collectAsState()
     val isFollowing by viewModel.isFollowing.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
 
@@ -112,6 +120,19 @@ fun ProfileScreen(
     var showTrackDetailSheet by remember { mutableStateOf(false) }
     val trackDetailViewModel: ProfileTrackDetailViewModel = hiltViewModel()
     val trackDetail by trackDetailViewModel.trackDetail.collectAsState()
+
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    val touchInterceptor = Modifier.pointerInput(Unit) {
+        detectTapGestures(
+            onTap = {
+                // 화면의 다른 부분 클릭 시 포커스와 키보드 숨김
+                focusManager.clearFocus()
+                keyboardController?.hide()
+            }
+        )
+    }
 
     // 화면이 처음 구성될 때 프로필 데이터를 로드합니다.
     LaunchedEffect(memberId) {
@@ -147,9 +168,10 @@ fun ProfileScreen(
 
     // Main content
     Scaffold(
+        modifier = touchInterceptor,
         topBar = {
             CommonAppBar(
-                title = "Whistle Hub",
+                title = "Profile",
                 navController = navController,
                 logoutManager = logoutManager,
                 coroutineScope = coroutineScope,
@@ -212,7 +234,7 @@ fun ProfileScreen(
                     profileText = profile?.profileText ?: "",
                     followerCount = followerCount,
                     followingCount = followingCount,
-                    trackCount = tracks.size,
+                    trackCount = trackCount,
                     showFollowButton = memberId != currentUserId,
                     isFollowing = isFollowing,
                     onFollowClick = {
@@ -250,15 +272,20 @@ fun ProfileScreen(
                         .combinedClickable(
                             onClick = {
                                 // 트랙 클릭 시 수행할 작업 (예: 재생)
-                                // TODO: 트랙 플레이어로 이동하거나 미니 플레이어 표시
+                                coroutineScope.launch {
+                                    trackPlayViewModel.playTrack(track.trackId)
+                                }
                             },
                             onLongClick = {
                                 // 트랙 길게 클릭 시 수행할 작업 (예: 상세 정보 표시)
-                                selectedTrackId = track.trackId
-                                trackDetailViewModel.loadTrackDetails(track.trackId)
-                                showTrackDetailSheet = true
+                                coroutineScope.launch {
+                                    selectedTrackId = track.trackId
+                                    trackDetailViewModel.loadTrackDetails(track.trackId)
+                                    showTrackDetailSheet = true
+                                }
                             }
-                        )
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
                     // 기존 TrackGridItem 컴포넌트 사용 (수정 없이)
                     TrackGridItem(
@@ -284,14 +311,17 @@ fun ProfileScreen(
 
         // 트랙 상세 정보 바텀 시트
         if (showTrackDetailSheet && trackDetail != null) {
+            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
             ProfileTrackDetailSheet(
                 track = trackDetail!!,
                 isOwnProfile = memberId == currentUserId,
                 onDismiss = {
                     showTrackDetailSheet = false
-                    selectedTrackId = null
                 },
-                viewModel = trackDetailViewModel
+                sheetState = sheetState,
+                viewModel = trackDetailViewModel,
+                workStationViewModel = workStationViewModel,
+                navController = navController,
             )
         }
     }

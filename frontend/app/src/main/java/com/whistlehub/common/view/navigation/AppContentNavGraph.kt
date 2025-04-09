@@ -20,9 +20,10 @@ import com.whistlehub.profile.view.ProfileChangeScreen
 import com.whistlehub.profile.view.ProfileMenuScreen
 import com.whistlehub.profile.view.ProfileScreen
 import com.whistlehub.search.view.SearchScreen
+import com.whistlehub.search.view.TagRankingScreen
+import com.whistlehub.search.viewmodel.SearchViewModel
 import com.whistlehub.workstation.view.WorkStationScreen
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
-import kotlin.math.log
 
 /**
  * 메인 앱 화면 간의 네비게이션을 처리하는 콘텐츠 네비게이션 그래프
@@ -34,6 +35,7 @@ fun AppContentNavGraph(
     paddingValues: PaddingValues,
     modifier: Modifier = Modifier,
     workStationViewModel: WorkStationViewModel,
+    searchViewModel: SearchViewModel,
 ) {
     val trackPlayViewModel = hiltViewModel<TrackPlayViewModel>()
     NavHost(
@@ -45,6 +47,7 @@ fun AppContentNavGraph(
             HomeScreen(
                 paddingValues,
                 trackPlayViewModel = trackPlayViewModel,
+                workStationViewModel = workStationViewModel,
                 navController = navController,
                 logoutManager = logoutManager
             )
@@ -53,8 +56,27 @@ fun AppContentNavGraph(
             SearchScreen(
                 paddingValues,
                 navController,
-                trackPlayViewModel
+                trackPlayViewModel,
+                searchViewModel,
+                workStationViewModel = workStationViewModel,
+                logoutManager = logoutManager
             )
+        }
+        composable(route = Screen.TagRanking.route + "/{tagId}/{tagName}") { backStackEntry ->
+            val tagId = backStackEntry.arguments?.getString("tagId")
+            val tagName = backStackEntry.arguments?.getString("tagName")
+            if (tagId != null) {
+                TagRankingScreen(
+                    tagId.toInt(),
+                    tagName.toString(),
+                    paddingValues,
+                    trackPlayViewModel,
+                    searchViewModel,
+                    workStationViewModel = workStationViewModel,
+                    navController = navController,
+                    logoutManager = logoutManager
+                )
+            }
         }
         composable(route = Screen.DAW.route) {
             WorkStationScreen(
@@ -67,6 +89,7 @@ fun AppContentNavGraph(
         composable(route = Screen.PlayList.route) {
             PlayListScreen(
                 paddingValues,
+                logoutManager = logoutManager,
                 navController
             )
         }
@@ -77,6 +100,7 @@ fun AppContentNavGraph(
                 paddingValues = paddingValues,
                 navController = navController,
                 logoutManager = logoutManager,
+                workStationViewModel = workStationViewModel
             )
         }
         // 프로필 메뉴 화면으로 이동
@@ -99,7 +123,8 @@ fun AppContentNavGraph(
             FullPlayerScreen(
                 navController = navController,
                 paddingValues = paddingValues,
-                trackPlayViewModel = trackPlayViewModel
+                trackPlayViewModel = trackPlayViewModel,
+                workStationViewModel = workStationViewModel
             )
         }
         // 플레이리스트 트랙리스트 화면
@@ -110,7 +135,9 @@ fun AppContentNavGraph(
                     paddingValues,
                     playlistId,
                     navController,
-                    trackPlayViewModel
+                    trackPlayViewModel,
+                    workStationViewModel = workStationViewModel,
+                    logoutManager = logoutManager,
                 )
             }
         }
@@ -121,7 +148,8 @@ fun AppContentNavGraph(
                 PlaylistEditScreen(
                     paddingValues,
                     playlistId.toInt(),
-                    navController
+                    navController,
+                    logoutManager = logoutManager,
                 )
             }
         }
