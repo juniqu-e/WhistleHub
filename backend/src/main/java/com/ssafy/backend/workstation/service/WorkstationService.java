@@ -257,7 +257,7 @@ public class WorkstationService {
         List<Integer> needInstrumentTypes = new ArrayList<>();
         if (!instrumentTypeSet.contains(4)) {
             needInstrumentTypes.add(4);
-        } else if (instrumentTypeSet.contains(5)) {
+        } else if (!instrumentTypeSet.contains(5)) {
             needInstrumentTypes.add(5);
         } else {
             // 4,5빼고 전부
