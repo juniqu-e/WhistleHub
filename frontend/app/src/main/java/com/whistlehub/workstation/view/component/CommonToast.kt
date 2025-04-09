@@ -1,5 +1,6 @@
 package com.whistlehub.workstation.view.component
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,7 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
+import androidx.compose.ui.zIndex
+import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.workstation.data.ToastData
 import kotlinx.coroutines.delay
 
@@ -27,8 +29,9 @@ import kotlinx.coroutines.delay
 fun CustomToast(
     toastData: ToastData?,
     onDismiss: () -> Unit,
-    position: Alignment = Alignment.TopCenter
+    position: Alignment = Alignment.TopCenter,
 ) {
+    val customColors = CustomColors()
     if (toastData != null) {
         LaunchedEffect(toastData) {
             delay(1500)
@@ -36,7 +39,10 @@ fun CustomToast(
         }
 
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .background(customColors.CommonSubBackgroundColor.copy(alpha = 0.8f))
+                .zIndex(2f),
             contentAlignment = position
         ) {
             Card(
