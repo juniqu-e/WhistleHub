@@ -11,6 +11,8 @@ services:
     build:
       context: ./FastAPI
       dockerfile: Dockerfile
+    environment:
+      TZ: Asia/Seoul
     env_file:
       - ./envs/FastAPI.env
     ports:
@@ -27,6 +29,8 @@ services:
     build:
       context: ./FastAPI
       dockerfile: Dockerfile
+    environment:
+      TZ: Asia/Seoul
     env_file:
       - ./envs/FastAPI.env
     command: celery -A app.celery_app:app worker --loglevel info --pool=solo
@@ -50,6 +54,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    environment:
+      TZ: Asia/Seoul
     env_file:
       - ./envs/backend.env
     ports:

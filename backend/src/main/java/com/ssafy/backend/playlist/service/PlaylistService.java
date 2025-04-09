@@ -143,6 +143,8 @@ public class PlaylistService {
                                     .nickname(playlistTrack.getTrack().getMember().getNickname())
                                     .duration(playlistTrack.getTrack().getDuration())
                                     .imageUrl(playlistTrack.getTrack().getImageUrl())
+                                    .key(playlistTrack.getTrack().getKey())
+                                    .bpm(playlistTrack.getTrack().getBpm())
                                     .build()
                             )
                             .build()
