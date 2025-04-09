@@ -590,7 +590,32 @@ class OpenL3Service:
             traceback.print_exc()
             # 오류 발생 시 빈 결과 반환
             return SimilarityResetResponseDto(root={})
-
+        
+    def delete_track(self, track_id):
+        """
+        주어진 track_id에 해당하는 트랙을 Milvus에서 삭제
+        
+        Args:
+            track_id: 삭제할 트랙 ID
+            
+        Returns:
+            bool: 삭제 성공 여부
+        """
+        try:
+            # 삭제 조건 설정
+            expr = f"track_id == {track_id}"
+            
+            # 삭제 수행
+            delete_result = self.collection.delete(expr=expr)
+            
+            # flush 호출하여 변경 사항 적용
+            self.collection.flush()
+            
+            print(f"트랙 ID {track_id} 삭제 완료. 삭제된 항목 수: {delete_result}")
+            return True
+        except Exception as e:
+            print(f"트랙 삭제 오류: {e}")
+            return False
 
 # 사용 예시
 if __name__ == "__main__":
