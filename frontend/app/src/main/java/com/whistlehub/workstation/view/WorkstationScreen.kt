@@ -156,7 +156,7 @@ fun WorkStationScreen(
         Spacer(modifier = Modifier.height(16.dp))
         // BPM 다이얼
         BPMIndicator(
-            modifier = Modifier.size(180.dp),
+            modifier = Modifier.size(180.dp).background(Color.Transparent),
             initialValue = projectBpm.toInt(),
             minValue = 90,
             maxValue = 200,

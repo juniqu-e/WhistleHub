@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -15,10 +16,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.whistlehub.common.view.theme.CustomColors
+import com.whistlehub.common.view.theme.Typography
 
 @Composable
 fun RepeatBarSelector(
@@ -30,14 +34,37 @@ fun RepeatBarSelector(
     accentColor: Color = Color.Cyan
 ) {
     val customColors = CustomColors()
+    val glassColor = try {
+        accentColor.copy(alpha = 0.3f)
+    } catch (e: Exception) {
+        Color(0xFFBDBDBD).copy(alpha = 0.7f) // fallback color
+    }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
         modifier = Modifier
+            .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .background(customColors.CommonSubTextColor.copy(0.4f), RoundedCornerShape(12.dp))
-            .border(2.dp, accentColor.copy(alpha = 0.7f), RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(20.dp))
+            .background(
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        glassColor,
+                        Color.White.copy(alpha = 0.09f)
+                    )
+                )
+            )
+            .border(
+                width = 2.dp,
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.7f),
+                        glassColor,
+                    )
+                ),
+                shape = RoundedCornerShape(20.dp)
+            )
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         IconButton(onClick = { if (value > min) onValueChange(value - 1) }) {
@@ -45,10 +72,10 @@ fun RepeatBarSelector(
         }
 
         Text(
-            text = "$label: $value",
+            text = "$label: ${value.toInt()}",
             modifier = Modifier.padding(horizontal = 16.dp),
             color = Color.White,
-            fontSize = 16.sp
+            style = Typography.bodyLarge
         )
 
         IconButton(onClick = { if (value < max) onValueChange(value + 1) }) {

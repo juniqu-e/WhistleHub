@@ -32,7 +32,7 @@ fun BeatGrid(
     }
 
     Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
-        for (i in 0 until 60) {
+        for (i in 0 until 64) {
             val isStart = blockMap[i] == true
             val isBlocked = blockMap.containsKey(i)
 
