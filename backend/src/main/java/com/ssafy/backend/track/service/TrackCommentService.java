@@ -66,7 +66,7 @@ public class TrackCommentService {
                     .memberInfo(MemberInfo.builder()
                             .memberId(m.getId())
                             .nickname(m.getNickname())
-                            .profileImage(m.getProfileImage())
+                            .profileImg(m.getProfileImage())
                             .build())
                     .build());
 
