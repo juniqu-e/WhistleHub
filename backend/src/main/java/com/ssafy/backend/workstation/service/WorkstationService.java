@@ -97,7 +97,7 @@ public class WorkstationService {
 
         // 널 제거
         for(Sampling sampling : samplings) {
-            if(sampling != null){
+            if(sampling.getOriginTrack() != null){
                 samplingList.add(sampling);
             }
         }
