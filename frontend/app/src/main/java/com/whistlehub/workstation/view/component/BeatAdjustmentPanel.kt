@@ -1,6 +1,7 @@
 package com.whistlehub.workstation.view.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
@@ -82,7 +85,8 @@ fun BeatAdjustmentPanel(
             Spacer(modifier = Modifier.height(8.dp))
             BeatGrid(
                 patternBlocks = layer.patternBlocks,
-                onClick = onGridClick
+                onClick = onGridClick,
+                accentColor = Color(android.graphics.Color.parseColor(layer.colorHex))
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -93,6 +97,17 @@ fun BeatAdjustmentPanel(
 //                onValueChange = { startBeat = it },
 //                valueRange = 0f..59f
 //            )
+
+            StartBarSelector(
+                label = "시작 마디",
+                value = startBeat,
+                onValueChange = { startBeat = it },
+                accentColor = Color(android.graphics.Color.parseColor(layer.colorHex))
+            )
+
+
+            Spacer(modifier = Modifier.height(12.dp))
+
             RepeatBarSelector(
                 label = "반복 간격",
                 value = interval,
@@ -100,26 +115,21 @@ fun BeatAdjustmentPanel(
                 accentColor = Color(android.graphics.Color.parseColor(layer.colorHex))
             )
 
-            BeatSlider(
-                label = "시작 마디",
-                value = startBeat,
-                onValueChange = { startBeat = it },
-                valueRange = 0f..59f,
-            )
 
-            Spacer(modifier = Modifier.height(12.dp))
-            // 간격 슬라이더
-            BeatSlider(
-                label = "반복 간격",
-                value = interval,
-                onValueChange = { interval = it },
-                valueRange = 1f..60f,
-            )
-//            Text("간격 (Interval): ${interval.toInt()}", color = Color.White)
-//            Slider(
+//            BeatSlider(
+//                label = "시작 마디",
+//                value = startBeat,
+//                onValueChange = { startBeat = it },
+//                valueRange = 0f..59f,
+//            )
+//
+//
+//            // 간격 슬라이더
+//            BeatSlider(
+//                label = "반복 간격",
 //                value = interval,
 //                onValueChange = { interval = it },
-//                valueRange = 1f..60f
+//                valueRange = 1f..60f,
 //            )
             Spacer(modifier = Modifier.height(12.dp))
             // 적용 버튼
@@ -127,7 +137,35 @@ fun BeatAdjustmentPanel(
                 onClick = {
                     onAutoRepeatApply(startBeat.toInt(), interval.toInt())
                 },
-                modifier = Modifier.align(Alignment.End)
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(
+                        brush = Brush.linearGradient(
+                            colors = listOf(
+                                Color(android.graphics.Color.parseColor(layer.colorHex)).copy(alpha = 0.3f),
+                                Color.White.copy(alpha = 0.06f)
+                            )
+                        )
+                    )
+                    .border(
+                        width = 2.dp,
+                        brush = Brush.linearGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.7f),
+                                Color(android.graphics.Color.parseColor(layer.colorHex)).copy(alpha = 0.5f)
+                            )
+                        ),
+                        shape = RoundedCornerShape(20.dp)
+                    ),
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = CustomColors().CommonButtonColor.copy(
+                        0.1f
+                    ),
+                    contentColor = CustomColors().CommonTextColor
+                )
+
             ) {
                 Text("마디 반복 적용")
             }
