@@ -1,27 +1,22 @@
 package com.ssafy.backend.discovery.service;
 
-import com.ssafy.backend.ai.service.Neo4jContentRetrieverService;
 import com.ssafy.backend.auth.model.common.TagDto;
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.error.exception.NotFoundException;
 import com.ssafy.backend.common.error.exception.NotFoundMemberException;
-import com.ssafy.backend.common.error.exception.NotFoundPageException;
 import com.ssafy.backend.common.error.exception.NotFoundTrackException;
-import com.ssafy.backend.graph.model.entity.TagNode;
 import com.ssafy.backend.graph.service.RecommendationService;
 import com.ssafy.backend.graph.service.RelationshipService;
 import com.ssafy.backend.member.model.common.MemberInfo;
 import com.ssafy.backend.mysql.entity.*;
 import com.ssafy.backend.mysql.repository.*;
 import com.ssafy.backend.playlist.dto.TrackInfo;
-import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -224,7 +219,7 @@ public class DiscoveryService {
         return MemberInfo.builder()
                 .memberId(randomFollowingMember.getId())
                 .nickname(randomFollowingMember.getNickname())
-                .profileImg(randomFollowingMember.getProfileImage())
+                .profileImage(randomFollowingMember.getProfileImage())
                 .build();
     }
 
