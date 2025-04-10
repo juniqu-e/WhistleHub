@@ -199,7 +199,7 @@ public class MemberService {
             MemberInfo memberInfo = MemberInfo.builder()
                     .memberId(member.getId())
                     .nickname(member.getNickname())
-                    .profileImg(member.getProfileImage())
+                    .profileImage(member.getProfileImage())
                     .build();
 
             memberInfoList.add(memberInfo);
@@ -234,7 +234,7 @@ public class MemberService {
             MemberInfo memberInfo = MemberInfo.builder()
                     .memberId(followerMember.getId())
                     .nickname(followerMember.getNickname())
-                    .profileImg(followerMember.getProfileImage())
+                    .profileImage(followerMember.getProfileImage())
                     .build();
 
             followerInfoList.add(memberInfo);
@@ -270,7 +270,7 @@ public class MemberService {
             MemberInfo memberInfo = MemberInfo.builder()
                     .memberId(followingMember.getId())
                     .nickname(followingMember.getNickname())
-                    .profileImg(followingMember.getProfileImage())
+                    .profileImage(followingMember.getProfileImage())
                     .build();
 
             followingInfoList.add(memberInfo);
