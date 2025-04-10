@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -56,19 +55,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.whistlehub.common.view.component.UploadProgressOverlay
 import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.workstation.data.Layer
-import com.whistlehub.workstation.data.ToastData
 import com.whistlehub.workstation.view.component.AddLayerDialog
-import com.whistlehub.workstation.view.component.BPMIndicator
 import com.whistlehub.workstation.view.component.BeatAdjustmentPanel
 import com.whistlehub.workstation.view.component.CustomToast
-import com.whistlehub.workstation.view.component.MixProgressBar
+import com.whistlehub.workstation.view.component.UploadDialog
 import com.whistlehub.workstation.view.component.UploadSheet
+import com.whistlehub.workstation.view.component.WaveformWithProgressIndicator
 import com.whistlehub.workstation.viewmodel.WorkStationViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -87,14 +84,19 @@ fun WorkStationScreen(
     var showDialog by remember { mutableStateOf(false) }
     val toastState by viewModel.toastMessage.collectAsState()
     val isPlaying by viewModel.isPlaying
+    val showUploadDialog by viewModel.showUploadDialog
     val showUploadSheet by viewModel.showUploadSheet
     val showAddLayerDialog by viewModel.showAddLayerDialog
     val isUploading by viewModel.isUploading
     val projectBpm by viewModel.projectBpm
     val tagPairs by viewModel.tagPairs.collectAsState()
+    val progress by viewModel.progress
+    val waveformPoints by viewModel.waveformPoints
     val bottomBarActions = viewModel.bottomBarActions.copy(
         onPlayedClicked = {
-            viewModel.onPlayClicked() { success ->
+            viewModel.onPlayClicked(
+                context = context
+            ) { success ->
                 if (!success) {
                     viewModel.showToast(
                         message = "마디가 설정되지 않는 레이어가 있습니다.",
@@ -155,18 +157,19 @@ fun WorkStationScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
         // BPM 다이얼
-        BPMIndicator(
-            modifier = Modifier.size(180.dp).background(Color.Transparent),
-            initialValue = projectBpm.toInt(),
-            minValue = 90,
-            maxValue = 200,
-            primaryColor = Color.LightGray,
-            secondaryColor = Color.DarkGray,
-            onPositionChange = { newBpm ->
-                viewModel.setProjectBpm(newBpm.toFloat())
-            }
-        )
-
+//        BPMIndicator(
+//            modifier = Modifier
+//                .size(180.dp)
+//                .background(Color.Transparent),
+//            initialValue = projectBpm.toInt(),
+//            minValue = 90,
+//            maxValue = 200,
+//            primaryColor = Color.LightGray,
+//            secondaryColor = Color.DarkGray,
+//            onPositionChange = { newBpm ->
+//                viewModel.setProjectBpm(newBpm.toFloat())
+//            }
+//        )
         Spacer(modifier = Modifier.height(16.dp))
 
         if (showAddLayerDialog) {
@@ -182,15 +185,22 @@ fun WorkStationScreen(
         }
 
         Spacer(modifier = Modifier.height(12.dp))
-
-        MixProgressBar(
-            progress = 0.5f,
-            modifier = Modifier.fillMaxWidth(),
-            backgroundColor = Color(0xFF1E1E1E),
-            progressColor = Color(0xFF8E2DE2),
-            height = 8.dp
+        WaveformWithProgressIndicator(
+            modifier = Modifier
+                .size(180.dp),
+            progress = progress,
+            isPlaying = isPlaying,
+            waveformPoints = waveformPoints,
+            primaryColor = Color.Magenta,
+            secondaryColor = Color.Yellow.copy(0.7f)
         )
-
+//        MixProgressBar(
+//            progress = 0.5f,
+//            modifier = Modifier.fillMaxWidth(),
+//            backgroundColor = Color(0xFF1E1E1E),
+//            progressColor = Color(0xFF8E2DE2),
+//            height = 8.dp
+//        )
         Spacer(modifier = Modifier.height(12.dp))
 
         Column(
@@ -200,7 +210,7 @@ fun WorkStationScreen(
                 actions = bottomBarActions,
                 context = context,
                 isPlaying = isPlaying,
-                showBottomSheet = showUploadSheet,
+                showUpload = showUploadDialog,
             )
         }
     }
@@ -238,6 +248,18 @@ fun WorkStationScreen(
             tagList = tagPairs
         )
     }
+
+    if (showUploadDialog) {
+        UploadDialog(
+            onDismiss = { viewModel.toggleUploadDialog(false) },
+            onUploadClicked = { metadata ->
+                viewModel.toggleUploadDialog(false)
+                viewModel.onUpload(context, metadata)
+            },
+            tagList = tagPairs
+        )
+    }
+
     UploadProgressOverlay(isLoading = isUploading)
 }
 
@@ -344,7 +366,6 @@ fun LayerItem(
 //        ) {
 //            Text(text = layer.name, color = Color.Black, fontSize = 14.sp)
 //        }
-
 //        Spacer(modifier = Modifier.width(4.dp))
         Row(
             modifier = Modifier

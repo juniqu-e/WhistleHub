@@ -39,6 +39,8 @@ public :
 
     bool renderToFile(const std::string &outputPath, int32_t totalFrames);
 
+    std::vector<float> generateWaveformData(const std::string &wavFilePath);
+
 private :
     std::shared_ptr<oboe::AudioStream> stream;  // Oboe audio stream
     int32_t currentFramePosition = 0;
