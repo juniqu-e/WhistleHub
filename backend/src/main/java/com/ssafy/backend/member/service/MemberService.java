@@ -402,7 +402,7 @@ public class MemberService {
             TrackInfo trackInfo = TrackInfo.builder()
                     .trackId(track.getId())
                     .title(track.getTitle())
-                    .nickname(member.getNickname())
+                    .nickname(track.getMember().getNickname())
                     .duration(track.getDuration())
                     .imageUrl(track.getImageUrl())
                     .key(track.getKey())

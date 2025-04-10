@@ -608,13 +608,41 @@ class WorkStationViewModel @Inject constructor(
             while (isRecording && recorder?.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
                 val read = recorder?.read(buffer, 0, buffer.size) ?: break
                 if (read > 0) {
-                    Log.d("Record", "read: $read / buffer.first: ${buffer[0]}")
                     pcmStream.write(buffer, 0, read)
                 }
             }
 
-            recorder?.stop()
-            recorder?.release()
+            val remaining = recorder?.read(buffer, 0, buffer.size) ?: 0
+            if (remaining > 0) {
+                pcmStream.write(buffer, 0, remaining)
+            }
+
+            // ensure remaining buffer read
+            recorder?.let { safeRecorder ->
+                val remaining = safeRecorder.read(buffer, 0, buffer.size)
+                if (remaining > 0) {
+                    try {
+                        pcmStream.write(buffer, 0, remaining)
+                    } catch (e: Exception) {
+                        Log.e("Record", "Remaining buffer write 실패: ${e.message}")
+                        return@launch
+                    }
+                }
+            }
+
+            try {
+                recorder?.stop()
+            } catch (e: Exception) {
+                Log.e("Record", "recorder stop 실패: ${e.message}")
+                return@launch
+            }
+
+            try {
+                recorder?.release()
+            } catch (e: Exception) {
+                Log.e("Record", "recorder release 실패: ${e.message}")
+                return@launch
+            }
             recorder = null
             isRecording = false
             val channels = 1
@@ -634,6 +662,9 @@ class WorkStationViewModel @Inject constructor(
 
     fun stopRecording() {
         isRecording = false
+        viewModelScope.launch {
+            delay(200)
+        }
     }
 
     fun playRecording(file: File) {
@@ -696,14 +727,16 @@ class WorkStationViewModel @Inject constructor(
             val (category, colorHex) = getCategoryAndColorHex(0)
             val layer = Layer(
                 id = 0,
-                typeId = 0,
+                typeId = 1,
                 name = name,
                 description = "녹음",
                 category = category,
                 colorHex = colorHex,
                 instrumentType = 0,
                 length = length.toInt(),
-                patternBlocks = emptyList(),
+                patternBlocks = listOf(
+                    PatternBlock(start = 0, length = length.toInt())
+                ),
                 wavPath = file.absolutePath
             )
             addLayer(layer)
