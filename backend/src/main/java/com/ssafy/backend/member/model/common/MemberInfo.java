@@ -19,5 +19,5 @@ import lombok.*;
 public class MemberInfo {
     int memberId;
     String nickname;
-    String profileImage;
+    String profileImg;
 }
