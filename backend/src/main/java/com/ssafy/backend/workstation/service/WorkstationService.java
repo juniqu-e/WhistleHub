@@ -92,7 +92,7 @@ public class WorkstationService {
         List<Sampling> samplings = Arrays.stream(trackUploadRequestDto.getSourceTracks())
                 .map(originTrackId -> {
                     Track originTrack = trackRepository.findById(originTrackId).orElse(null);
-                    if (originTrack != null && t != null) {
+                    if (originTrack != null) {
                         return Sampling.builder()
                                 .originTrack(originTrack)
                                 .track(t)
