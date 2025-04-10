@@ -93,7 +93,15 @@ public class WorkstationService {
                 .map(originTrackId -> Sampling.builder()
                         .originTrack(trackRepository.findById(originTrackId).orElse(null))
                         .track(t).build()).toList();
-        samplingRepository.saveAll(samplings);
+        List<Sampling> samplingList = new ArrayList<>();
+
+        // 널 제거
+        for(Sampling sampling : samplings) {
+            if(sampling != null){
+                samplingList.add(sampling);
+            }
+        }
+        samplingRepository.saveAll(samplingList);
 
         // 1-4. 그래프 추가
         // 1-4-1. Track 노드 생성 및 태그 연결
