@@ -90,18 +90,19 @@ public class WorkstationService {
         trackTagRepository.saveAll(trackTags);
         // 1-3-2. 원천 트랙 insert
         List<Sampling> samplings = Arrays.stream(trackUploadRequestDto.getSourceTracks())
-                .map(originTrackId -> Sampling.builder()
-                        .originTrack(trackRepository.findById(originTrackId).orElse(null))
-                        .track(t).build()).toList();
-        List<Sampling> samplingList = new ArrayList<>();
-
-        // 널 제거
-        for(Sampling sampling : samplings) {
-            if(sampling.getOriginTrack() != null){
-                samplingList.add(sampling);
-            }
-        }
-        samplingRepository.saveAll(samplingList);
+                .map(originTrackId -> {
+                    Track originTrack = trackRepository.findById(originTrackId).orElse(null);
+                    if (originTrack != null && t != null) {
+                        return Sampling.builder()
+                                .originTrack(originTrack)
+                                .track(t)
+                                .build();
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        samplingRepository.saveAll(samplings);
 
         // 1-4. 그래프 추가
         // 1-4-1. Track 노드 생성 및 태그 연결
