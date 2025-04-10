@@ -232,11 +232,8 @@ public class DiscoveryService {
     private List<Track> findTrackByIds(List<Integer> trackIds) {
         List<Track> trackList = new ArrayList<>();
         for (Integer trackId : trackIds) {
-            Track track = trackRepository.findById(trackId)
-                    .orElseThrow(() -> {
-                        log.warn("Track not found with id: {}", trackId);
-                        return new NotFoundTrackException();
-                    });
+            Track track = trackRepository.findById(trackId).orElse(null);
+            if(track ==null) continue;
             trackList.add(track);
         }
         return trackList;
