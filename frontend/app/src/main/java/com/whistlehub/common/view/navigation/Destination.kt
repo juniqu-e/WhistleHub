@@ -9,11 +9,11 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
-    data object Home : Screen("home", "메인", Icons.Default.Home)
-    data object Search : Screen("search", "검색", Icons.Default.Search)
-    data object DAW : Screen("daw", "작업실", Icons.Default.MusicNote)
-    data object PlayList : Screen("playlist", "내 목록", Icons.AutoMirrored.Filled.List)
-    data object Profile : Screen("profile", "프로필", Icons.Default.AccountCircle)
+    data object Home : Screen("home", "Home", Icons.Default.Home)
+    data object Search : Screen("search", "Discovery", Icons.Default.Search)
+    data object DAW : Screen("daw", "Studio", Icons.Default.MusicNote)
+    data object PlayList : Screen("playlist", "Playlist", Icons.AutoMirrored.Filled.List)
+    data object Profile : Screen("profile", "Profile", Icons.Default.AccountCircle)
     data object ProfileMenu : Screen("profile_menu", "프로필 메뉴", Icons.Default.AccountCircle)
     data object ProfileChange : Screen("profile_change", "프로필 수정", Icons.Default.AccountCircle)
     data object PasswordChange : Screen("password_change", "비밀번호 변경", Icons.Default.AccountCircle)

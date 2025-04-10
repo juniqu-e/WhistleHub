@@ -3,6 +3,8 @@
 #include "WavLoader.h"
 #include "dr_wav.h"
 #include <android/log.h>
+#include <vector>
+#include <sstream> // stringstream을 사용하여 출력
 
 #define LOG_TAG "whistlehub"
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
@@ -122,7 +124,53 @@ JNIEXPORT void JNICALL
 Java_com_whistlehub_common_util_AudioEngineBridge_setCallback(JNIEnv *env, jobject thiz, jobject listener) {
     if (g_callback) {
         env->DeleteGlobalRef(g_callback);
-        g_callback = nullptr;
     }
     g_callback = env->NewGlobalRef(listener);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_whistlehub_common_util_AudioEngineBridge_generateWaveformPoints(JNIEnv *env, jobject thiz, jstring wavFilePath) {
+    // C++에서 파일 경로를 받기
+    const char *filePath = env->GetStringUTFChars(wavFilePath, nullptr);
+
+    // WAV 파일을 읽어 파형 데이터를 생성
+    std::vector<float> waveformPoints = engine.generateWaveformData(filePath);
+
+    // 각 원소를 문자열로 변환하여 출력
+    std::stringstream ss;
+    for (size_t i = 0; i < waveformPoints.size(); ++i) {
+        ss << waveformPoints[i] << " ";
+    }
+
+    // 문자열로 변환된 파형 데이터를 로그로 출력
+    LOGE("Waveform Points: %s", ss.str().c_str());
+
+    // List<Float>로 변환하기 위해 Java의 ArrayList 생성
+    jclass listClass = env->FindClass("java/util/ArrayList");
+    jmethodID listConstructor = env->GetMethodID(listClass, "<init>", "()V");
+    jobject waveformPointsList = env->NewObject(listClass, listConstructor);
+
+    // 파형 데이터 (std::vector<float>)를 Kotlin 리스트로 변환
+    jmethodID listAddMethod = env->GetMethodID(listClass, "add", "(Ljava/lang/Object;)Z");
+    for (float point : waveformPoints) {
+        jfloat pointData = point;
+        jobject floatObj = env->NewObject(env->FindClass("java/lang/Float"), env->GetMethodID(env->FindClass("java/lang/Float"), "<init>", "(F)V"), pointData);
+        env->CallBooleanMethod(waveformPointsList, listAddMethod, floatObj);
+        env->DeleteLocalRef(floatObj);  // 로컬 참조 해제
+    }
+
+    // Kotlin의 updateWaveformPoints 메서드 호출
+    if (g_callback) {
+        jclass callbackClass = env->GetObjectClass(g_callback);  // listener 객체 (Kotlin의 ViewModel)
+        jmethodID updateWaveformPointsMethod = env->GetMethodID(callbackClass, "updateWaveformPoints", "(Ljava/util/List;)V");
+        env->CallVoidMethod(g_callback, updateWaveformPointsMethod, waveformPointsList);
+
+        // 메모리 해제
+        env->DeleteLocalRef(callbackClass);
+    }
+
+    // 메모리 해제
+    env->ReleaseStringUTFChars(wavFilePath, filePath);
+    env->DeleteLocalRef(listClass);
 }

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -80,6 +82,7 @@ fun HomeScreen(
     logoutManager: LogoutManager
 ) {
     val coroutineScope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
 
     // 최근 올라온 트랙
     var newList by remember { mutableStateOf<List<TrackEssential>>(emptyList()) }
@@ -98,8 +101,12 @@ fun HomeScreen(
     // 타겟 트랙
     var targetTrack by remember { mutableStateOf<TrackEssential?>(null) }
 
+    LaunchedEffect(newList) {
+        listState.animateScrollToItem(0)
+    }
+
     LaunchedEffect(Unit) {
-        newList = trackPlayViewModel.getFollowRecentTracks() // 최근 올라온 트랙(임시) 가져오기
+        newList = trackPlayViewModel.getFollowRecentTracks() // 최근 올라온 트랙 가져오기
         recentList = trackPlayViewModel.getRecentTrackList() // 최근 들은 느낌의 트랙 가져오기
         notListenedList = trackPlayViewModel.getNeverTrackList() // 한 번도 안 들어본 음악 가져오기
         selectedFollowing = trackPlayViewModel.getFollowingMember() // 팔로워 중 한 명 선택
@@ -131,7 +138,8 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(innerPadding),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+            state = listState
         ) {
             // 최근 올라온 트랙
             item {
@@ -198,28 +206,20 @@ fun HomeScreen(
                                 .horizontalScroll(scrollState, enabled = false),
                             horizontalArrangement = Arrangement.spacedBy(spacingDp)
                         ) {
-                            var targetlist by remember { mutableStateOf(newList) }
-                            if (newList.isEmpty()) {
-                                targetlist = officialList
-                            }
+                            val targetlist = if (newList.isEmpty()) officialList else newList
                             targetlist.forEach { track ->
-                                var getTrackData by remember {
-                                    mutableStateOf<TrackResponse.GetTrackDetailResponse?>(
-                                        null
-                                    )
+                                val trackData by produceState<TrackResponse.GetTrackDetailResponse?>(null) {
+                                    value = trackPlayViewModel.getTrackbyTrackId(track.trackId)
                                 }
-                                LaunchedEffect(Unit) {
-                                    getTrackData = trackPlayViewModel.getTrackbyTrackId(track.trackId)
-                                }
-                                getTrackData?.let { trackData ->
-                                    // 트랙 카드
+
+                                trackData?.let { data ->
                                     Box(
                                         modifier = Modifier
                                             .width(with(density) { cardPx.toDp() })
                                             .padding(5.dp)
                                     ) {
                                         NewTrackCard(
-                                            track = trackData,
+                                            track = data,
                                             trackPlayViewModel = trackPlayViewModel,
                                             navController = navController,
                                             workStationViewModel = workStationViewModel
