@@ -15,9 +15,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
@@ -33,6 +35,7 @@ import com.whistlehub.common.data.remote.dto.response.TrackResponse
 import com.whistlehub.common.data.remote.dto.response.WorkstationResponse
 import com.whistlehub.common.data.repository.TrackService
 import com.whistlehub.common.data.repository.WorkstationService
+import com.whistlehub.common.util.AudioEngineBridge.generateWaveformPoints
 import com.whistlehub.common.util.AudioEngineBridge.getWavDurationSeconds
 import com.whistlehub.common.util.AudioEngineBridge.renderMixToWav
 import com.whistlehub.common.util.AudioEngineBridge.setCallback
@@ -93,6 +96,8 @@ class WorkStationViewModel @Inject constructor(
     val isPlaying: State<Boolean> get() = _isPlaying
     private val _showAddLayerDialog = mutableStateOf(false)
     val showAddLayerDialog: State<Boolean> get() = _showAddLayerDialog
+    private val _showUploadDialog = mutableStateOf(false)
+    val showUploadDialog: State<Boolean> get() = _showUploadDialog
     private val _showUploadSheet = mutableStateOf(false)
     val showUploadSheet: State<Boolean> get() = _showUploadSheet
     private val _isUploading = mutableStateOf(false)
@@ -113,6 +118,12 @@ class WorkStationViewModel @Inject constructor(
     var countdown by mutableStateOf(3)
     private var mediaPlayer: MediaPlayer? = null
     private var recorder: AudioRecord? = null
+
+    //Progress 오디오 진행률 상태를 관리
+    private val _progress = mutableStateOf(0f)
+    val progress: State<Float> get() = _progress
+    private val _waveformPoints = mutableStateListOf<Float>()
+    val waveformPoints: State<List<Float>> get() = derivedStateOf { _waveformPoints.toList() }
 
 
     init {
@@ -239,7 +250,6 @@ class WorkStationViewModel @Inject constructor(
                             bpm = projectBpm.value.toInt()
                         )
                         val layerName = if (layerRes.name == "layer") track.title else layerRes.name
-
                         val bpm = layerRes.bpm ?: projectBpm
                         val bars = layerRes.bars
                         val (category, colorHex) = getCategoryAndColorHex(layerRes.instrumentType)
@@ -369,23 +379,39 @@ class WorkStationViewModel @Inject constructor(
         }
     }
 
-    fun onPlayClicked(onResult: (Boolean) -> Unit = {}) {
-        val infos = getAudioLayerInfos();
-        // 마디 정보 없는 레이어 체크
-        val invalidLayer = tracks.value.find { it.patternBlocks.isEmpty() }
-        if (invalidLayer != null) {
-            onResult(false)
-            return
-        }
-        val maxUsedBars = getMaxUsedBars(tracks.value)
+    fun onPlayClicked(context: Context, onResult: (Boolean) -> Unit = {}) {
         if (_isPlaying.value) {
             stopAudioEngine()
         } else {
             stopAudioEngine()
+
+            if (tracks.value.isEmpty()) {
+                onResult(false)
+                return
+            }
+            // 마디 정보 없는 레이어 체크
+            val invalidLayer = tracks.value.find { it.patternBlocks.isEmpty() }
+            if (invalidLayer != null) {
+                onResult(false)
+                return
+            }
+            val infos = getAudioLayerInfos();
+            val maxUsedBars = getMaxUsedBars(tracks.value)
+            val fileName = "mixTmp"
+            val safeFileName = if (fileName.endsWith(".wav")) fileName else "$fileName.wav"
+            val mix = File(context.filesDir, safeFileName)
+            val totalFrames = calculateTotalFrames(
+                maxUsedBars = maxUsedBars,
+                bpm = 120.0f,
+                sampleRate = 44100,
+            )
+            renderMixToWav(mix.absolutePath, totalFrames)
+            generateWaveformPoints(mix.absolutePath)
             setLayers(infos, maxUsedBars)
             startAudioEngine()
         }
         _isPlaying.value = !_isPlaying.value
+        _progress.value = 0f
         onResult(true)
     }
 
@@ -486,8 +512,10 @@ class WorkStationViewModel @Inject constructor(
 
     suspend fun getTagList() {
         val response = trackService.getTagRecommendation().payload!!
-        _tagList.value = response
-        _tagPairs.value = response.map { it.id to it.name }
+        if (response.isNotEmpty()) {
+            _tagList.value = response
+            _tagPairs.value = response.map { it.id to it.name }
+        }
     }
 
     private fun getWavDurationMs(file: File): Long {
@@ -525,6 +553,10 @@ class WorkStationViewModel @Inject constructor(
         _showUploadSheet.value = show
     }
 
+    fun toggleUploadDialog(show: Boolean) {
+        _showUploadDialog.value = show
+    }
+
     fun toggleAddLayerDialog(show: Boolean) {
         _showAddLayerDialog.value = show
     }
@@ -544,7 +576,8 @@ class WorkStationViewModel @Inject constructor(
         onTrackUploadClicked = { },
         onAddInstrument = {},
         onUploadButtonClick = {
-            toggleUploadSheet(true)
+//            toggleUploadSheet(true)
+            toggleUploadDialog(true)
         }
     )
 
@@ -553,8 +586,21 @@ class WorkStationViewModel @Inject constructor(
         Handler(Looper.getMainLooper()).post {
             stopAudioEngine()
             _isPlaying.value = false
+            _progress.value = 0f
         }
     }
+
+    // 진행률을 업데이트 받는 콜백
+    override fun updateProgress(mProgress: Float) {
+        _progress.value = mProgress
+    }
+
+    //waveformPoints를 받아서 업데이트하는 함수
+    override fun updateWaveformPoints(waveformPoints: List<Float>) {
+        _waveformPoints.clear()  // 기존 데이터를 지우고
+        _waveformPoints.addAll(waveformPoints)  // 새 데이터 추가
+    }
+
 
     fun startCountdownAndRecord(context: Context, file: File, onComplete: (File) -> Unit) {
         isRecordingPending = true
@@ -584,13 +630,13 @@ class WorkStationViewModel @Inject constructor(
         val sampleRate = 44100
         val bufferSize = AudioRecord.getMinBufferSize(
             sampleRate,
-            AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.CHANNEL_IN_STEREO,
             AudioFormat.ENCODING_PCM_16BIT
         )
         recorder = AudioRecord(
             MediaRecorder.AudioSource.MIC,
             sampleRate,
-            AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.CHANNEL_IN_STEREO,
             AudioFormat.ENCODING_PCM_16BIT,
             bufferSize
         )
@@ -611,12 +657,10 @@ class WorkStationViewModel @Inject constructor(
                     pcmStream.write(buffer, 0, read)
                 }
             }
-
             val remaining = recorder?.read(buffer, 0, buffer.size) ?: 0
             if (remaining > 0) {
                 pcmStream.write(buffer, 0, remaining)
             }
-
             // ensure remaining buffer read
             recorder?.let { safeRecorder ->
                 val remaining = safeRecorder.read(buffer, 0, buffer.size)
@@ -645,13 +689,13 @@ class WorkStationViewModel @Inject constructor(
             }
             recorder = null
             isRecording = false
-            val channels = 1
+            val channels = 2
             val bitsPerSample = 16
             val byteRate = sampleRate * channels * (bitsPerSample / 8)
             val wavStream = FileOutputStream(file)
             val pcmData = pcmStream.toByteArray()
 
-            writeWavHeader(wavStream, pcmData.size.toLong(), sampleRate, 1, byteRate)
+            writeWavHeader(wavStream, pcmData.size.toLong(), sampleRate, channels, byteRate)
             wavStream.write(pcmData)
             wavStream.close()
 
@@ -727,7 +771,7 @@ class WorkStationViewModel @Inject constructor(
             val (category, colorHex) = getCategoryAndColorHex(0)
             val layer = Layer(
                 id = 0,
-                typeId = 1,
+                typeId = -1,
                 name = name,
                 description = "녹음",
                 category = category,
