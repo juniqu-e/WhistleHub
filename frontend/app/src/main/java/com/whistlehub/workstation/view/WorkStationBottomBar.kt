@@ -21,8 +21,6 @@ import androidx.compose.ui.unit.dp
 import com.whistlehub.workstation.data.BottomBarActions
 import com.whistlehub.workstation.di.WorkStationBottomBarProvider
 import com.whistlehub.workstation.view.component.GradientIconButton
-import com.whistlehub.workstation.view.component.UploadMixDialog
-import com.whistlehub.workstation.view.component.UploadSheet
 import javax.inject.Inject
 
 class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
@@ -31,7 +29,7 @@ class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
         actions: BottomBarActions,
         context: Context,
         isPlaying: Boolean,
-        showBottomSheet: Boolean
+        showUpload: Boolean
     ) {
         var menuExpanded by remember { mutableStateOf(false) }
         var showUploadDialog by remember { mutableStateOf(false) }

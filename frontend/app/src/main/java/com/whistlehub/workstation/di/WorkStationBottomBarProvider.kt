@@ -10,6 +10,6 @@ interface WorkStationBottomBarProvider {
         actions: BottomBarActions,
         context: Context,
         isPlaying: Boolean,
-        showBottomSheet: Boolean
+        showUpload: Boolean
     )
 }

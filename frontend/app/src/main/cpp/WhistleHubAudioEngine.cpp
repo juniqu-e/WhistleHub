@@ -79,12 +79,40 @@ oboe::DataCallbackResult WhistleHubAudioEngine::onAudioReady(oboe::AudioStream *
     auto *outputBuffer = static_cast<float *>(audioData);
     renderAudio(outputBuffer, numFrames);
 
+    // 전체 프레임 수 계산 (BPM, 샘플레이트, 사용된 마디 수 기반)
+    float barsPerSecond = (mBpm / 60.0f) / 4.0f;  // 초당 마디 수
+    float totalSeconds = mMaxUsedBars / barsPerSecond;  // 전체 트랙 길이 (초)
+    int totalFrames = static_cast<int>(totalSeconds * mSampleRate);  // 전체 프레임 수
+
+    // 진행률 계산 (현재 렌더링된 프레임 / 총 프레임)
+    int currentFramePosition = mTotalFrameRendered;
+    float progress = static_cast<float>(currentFramePosition) / totalFrames;
+
+    // Kotlin 콜백 호출 (진행률 전달)
+    if (g_callback && g_vm) {
+        JNIEnv *env = nullptr;
+        if (g_vm->AttachCurrentThread(&env, nullptr) == JNI_OK) {
+            jclass cls = env->GetObjectClass(g_callback);
+            jmethodID updateProgress = env->GetMethodID(cls, "updateProgress", "(F)V");
+            if (updateProgress) {
+                env->CallVoidMethod(g_callback, updateProgress, progress);
+            }
+        }
+    }
+
+    // 스트림을 멈추고 종료 콜백 호출
     if (mShouldStopStream) {
-        // Kotlin 콜백 호출
         if (g_callback && g_vm) {
             JNIEnv *env = nullptr;
             if (g_vm->AttachCurrentThread(&env, nullptr) == JNI_OK) {
                 jclass cls = env->GetObjectClass(g_callback);
+
+                jmethodID updateProgress = env->GetMethodID(cls, "updateProgress", "(F)V");
+                if (updateProgress) {
+                    // 진행률을 0f로 초기화
+                    env->CallVoidMethod(g_callback, updateProgress, 0.0f);
+                }
+
                 jmethodID onFinish = env->GetMethodID(cls, "onPlaybackFinished", "()V");
                 if (onFinish) {
                     env->CallVoidMethod(g_callback, onFinish);
@@ -255,4 +283,24 @@ void WhistleHubAudioEngine::renderAudio(float *outputBuffer, int32_t numFrames) 
     }
 
     mTotalFrameRendered += numFrames;
+}
+
+std::vector<float> WhistleHubAudioEngine::generateWaveformData(const std::string &wavFilePath) {
+    std::vector<float> waveformPoints;
+
+    // WAV 파일을 로드
+    Layer layer;
+    if (WavLoader::load(wavFilePath, layer)) {
+        size_t totalSamples = layer.sampleBuffer.size();
+        size_t step = totalSamples / 100;  // 100개 포인트로 분할 (numPoints가 100이라 가정)
+
+        // 샘플을 나누어 파형 점을 생성
+        for (size_t i = 0; i < 100; ++i) {  // numPoints = 100
+            size_t sampleIndex = i * step;
+            float amplitude = layer.sampleBuffer[sampleIndex] / 32768.0f;  // 16비트 PCM 정규화
+            waveformPoints.push_back(amplitude);
+        }
+    }
+
+    return waveformPoints;  // 생성된 파형 데이터를 반환
 }
