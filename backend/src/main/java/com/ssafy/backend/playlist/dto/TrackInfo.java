@@ -15,4 +15,6 @@ public class TrackInfo {
     private String nickname;
     private int duration;
     private String imageUrl;
+    private String key;
+    private int bpm;
 }

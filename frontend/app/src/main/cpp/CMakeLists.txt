@@ -28,7 +28,10 @@ project("whistlehub")
 add_library(${CMAKE_PROJECT_NAME} SHARED
         # List C/C++ source files with relative paths to this CMakeLists.txt.
         whistlehub.cpp
-        WhistleHubAudioEngine.cpp)
+        WhistleHubAudioEngine.cpp
+        WavLoader.cpp
+        WavMixer.cpp
+        DrumSynth.cpp)
 
 # Find the Oboe package
 find_package(oboe REQUIRED CONFIG)

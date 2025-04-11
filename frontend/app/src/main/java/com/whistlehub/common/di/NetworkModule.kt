@@ -10,6 +10,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+import javax.inject.Named
 import javax.inject.Singleton
 
 /**
@@ -35,33 +36,56 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-
-    /**
-     * 일반 API용 OkHttpClient는 AuthInterceptor를 포함하여,
-     * 액세스 토큰이 필요한 API 호출에 사용됩니다.
-     */
+    // 일반 API용 OkHttpClient (AuthInterceptor 포함)
     @Provides
     @Singleton
+    @Named("normalOkHttpClient")
     fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = HttpLoggingInterceptor.Level.BASIC
         }
-
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
-            .addInterceptor(authInterceptor) // 토큰에 헤더 추가
+            .addInterceptor(authInterceptor) // 액세스 토큰 헤더 추가
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()
     }
 
-    /**
-     * 인증 전용 Retrofit 인스턴스: AuthApi 호출 시 사용되는 Retrofit 인스턴스
-     */
+    // 인증 API용 OkHttpClient (AuthInterceptor 미포함)
     @Provides
     @Singleton
-    fun provideAuthRetrofit(authOkHttpClient: OkHttpClient): Retrofit {
+    @Named("authOkHttpClient")
+    fun provideAuthOkHttpClient(): OkHttpClient {
+        val loggingInterceptor = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        }
+        return OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .build()
+    }
+
+    // 일반 API Retrofit
+    @Provides
+    @Singleton
+    @Named("normalRetrofit")
+    fun provideRetrofit(@Named("normalOkHttpClient") okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("https://j12c104.p.ssafy.io/api/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    // 인증 API Retrofit (AuthInterceptor 없는 클라이언트 사용)
+    @Provides
+    @Singleton
+    @Named("authRetrofit")
+    fun provideAuthRetrofit(@Named("authOkHttpClient") authOkHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
             .baseUrl("https://j12c104.p.ssafy.io/api/")
             .client(authOkHttpClient)
@@ -74,41 +98,40 @@ object NetworkModule {
      */
     @Provides
     @Singleton
-    fun provideAuthApi(authRetrofit: Retrofit): AuthApi {
-        return authRetrofit.create(AuthApi::class.java)
+    fun provideAuthApi(@Named("authRetrofit") retrofit: Retrofit): AuthApi {
+        return retrofit.create(AuthApi::class.java)
     }
-
     /**
      * ProfileApi, PlaylistApi, TrackApi, WorkstationApi, RankingApi 등 토큰이 필요한 API들은
      * 기본 Retrofit 인스턴스를 사용합니다.
      */
     @Provides
     @Singleton
-    fun provideProfileApi(retrofit: Retrofit): ProfileApi {
+    fun provideProfileApi(@Named("normalRetrofit") retrofit: Retrofit): ProfileApi {
         return retrofit.create(ProfileApi::class.java)
     }
 
     @Provides
     @Singleton
-    fun providePlaylistApi(retrofit: Retrofit): PlaylistApi {
+    fun providePlaylistApi(@Named("normalRetrofit") retrofit: Retrofit): PlaylistApi {
         return retrofit.create(PlaylistApi::class.java)
     }
 
     @Provides
     @Singleton
-    fun provideTrackApi(retrofit: Retrofit): TrackApi {
+    fun provideTrackApi(@Named("normalRetrofit") retrofit: Retrofit): TrackApi {
         return retrofit.create(TrackApi::class.java)
     }
 
     @Provides
     @Singleton
-    fun provideWorkstationApi(retrofit: Retrofit): WorkstationApi {
+    fun provideWorkstationApi(@Named("normalRetrofit") retrofit: Retrofit): WorkstationApi {
         return retrofit.create(WorkstationApi::class.java)
     }
 
     @Provides
     @Singleton
-    fun provideRankingApi(retrofit: Retrofit): RankingApi {
+    fun provideRankingApi(@Named("normalRetrofit") retrofit: Retrofit): RankingApi {
         return retrofit.create(RankingApi::class.java)
     }
 }

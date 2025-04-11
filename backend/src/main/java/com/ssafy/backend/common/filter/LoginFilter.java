@@ -11,6 +11,7 @@ import com.ssafy.backend.mysql.entity.Member;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -19,6 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -53,12 +55,12 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
     // 로그인 시도 로직
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
-        //클라이언트 요청에서 username, password 추출
-        String loginId = request.getParameter("loginId");
-        String password = request.getParameter("password");
+        try {
+            Map<String, String> jsonRequest = objectMapper.readValue(request.getInputStream(), Map.class);
 
-        //스프링 시큐리티에서 username과 password를 검증하기 위해서는 token에 담아야 함
-        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(loginId, password, null);
+            //클라이언트 요청에서 username, password 추출
+            String loginId = jsonRequest.get("loginId");
+            String password = jsonRequest.get("password");
 
             //스프링 시큐리티에서 username과 password를 검증하기 위해서는 token에 담아야 함
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(loginId, password, null);
@@ -91,6 +93,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         LoginResponseDto loginResponseDto = LoginResponseDto.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .memberId(member.getId())
                 .profileImage(userDetails.getMember().getProfileImage())
                 .nickname(userDetails.getMember().getNickname())
                 .build();

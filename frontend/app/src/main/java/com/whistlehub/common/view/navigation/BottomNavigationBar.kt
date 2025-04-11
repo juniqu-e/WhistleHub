@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -17,16 +18,21 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.whistlehub.common.view.theme.CustomColors
+import com.whistlehub.common.view.theme.Typography
 import com.whistlehub.playlist.view.MiniPlayerBar
 import com.whistlehub.playlist.viewmodel.PlayerViewState
 import com.whistlehub.playlist.viewmodel.TrackPlayViewModel
+import com.whistlehub.profile.viewmodel.ProfileViewModel
 
 /**
  * 앱의 하단 네비게이션 바 레이아웃
  * 네비게이션 항목 표시 및 미니 플레이어를 관리
  */
 @Composable
-fun BottomNavigationBar(navController: NavHostController) {
+fun BottomNavigationBar(
+    navController: NavHostController,
+    viewModel: ProfileViewModel = hiltViewModel()
+) {
     val navigationList = listOf(
         Screen.Home,
         Screen.Search,
@@ -41,6 +47,7 @@ fun BottomNavigationBar(navController: NavHostController) {
     val currentRoute = navBackStackEntry.value?.destination?.route
     val trackPlayViewModel = hiltViewModel<TrackPlayViewModel>()
     val currentTrack by trackPlayViewModel.currentTrack.collectAsState(initial = null)
+    val currentUserId by viewModel.memberId.collectAsState()
 
     Column(Modifier.background(Color.Transparent)) {
         // 미니 플레이어 표시 (필요한 경우만)
@@ -52,12 +59,19 @@ fun BottomNavigationBar(navController: NavHostController) {
             containerColor = CustomColors().Grey950.copy(alpha = 0.95f),
         ) {
             navigationList.forEachIndexed { index, screen ->
+                val isSelected = isRouteMatching(currentRoute, screen)
                 NavigationBarItem(
-                    selected = selectedNavigationIndex.intValue == index,
+                    selected = isSelected,
+//                    selected = selectedNavigationIndex.intValue == index,
                     onClick = {
                         trackPlayViewModel.setPlayerViewState(PlayerViewState.PLAYING)
                         selectedNavigationIndex.intValue = index
-                        navController.navigate(screen.route)
+                        // Profile 탭일 경우 현재 사용자 ID로 이동
+                        if (screen == Screen.Profile) {
+                            navController.navigate("${screen.route}/$currentUserId")
+                        } else {
+                            navController.navigate(screen.route)
+                        }
                     },
                     icon = {
                         Icon(imageVector = screen.icon, contentDescription = screen.title)
@@ -65,13 +79,29 @@ fun BottomNavigationBar(navController: NavHostController) {
                     label = {
                         Text(
                             screen.title,
-                            color = if (index == selectedNavigationIndex.intValue)
-                                Color.White
-                            else Color.Gray
+                            color = if (isSelected) Color.White else Color.Gray,
+                            style = Typography.labelLarge
                         )
-                    }
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color.White,
+                        unselectedIconColor = Color.Gray,
+                        selectedTextColor = Color.White,
+                        unselectedTextColor = Color.Gray,
+                        indicatorColor = Color.White.copy(alpha = 0.7f)
+                    )
                 )
             }
         }
+    }
+}
+
+fun isRouteMatching(currentRoute: String?, screen: Screen): Boolean {
+    return when (screen) {
+        Screen.Profile -> currentRoute?.startsWith("profile/") == true
+        Screen.Search -> currentRoute?.startsWith("search") == true
+                || currentRoute?.startsWith("tag_ranking/") == true
+
+        else -> currentRoute == screen.route
     }
 }

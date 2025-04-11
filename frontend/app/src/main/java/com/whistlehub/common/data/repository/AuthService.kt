@@ -5,6 +5,7 @@ import com.whistlehub.common.data.remote.api.AuthApi
 import com.whistlehub.common.data.remote.dto.request.AuthRequest
 import com.whistlehub.common.data.remote.dto.response.ApiResponse
 import com.whistlehub.common.data.remote.dto.response.AuthResponse
+import com.whistlehub.common.util.TokenRefresh
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -21,7 +22,7 @@ class AuthService @Inject constructor(
     // 회원 가입
     suspend fun register(
         request: AuthRequest.RegisterRequest
-    ): ApiResponse<AuthResponse.RegisterResponse> {
+    ): ApiResponse<Int> {
         return executeApiCall { authApi.register(request) }
     }
     // 태그 목록

@@ -1,152 +1,132 @@
 package com.whistlehub.workstation.view
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
+import android.content.Context
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Logout
-import androidx.compose.material.icons.filled.Circle
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.outlined.Download
-import androidx.compose.material.icons.outlined.Save
-import androidx.compose.material.icons.outlined.Upload
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.whistlehub.common.view.theme.CustomColors
 import com.whistlehub.workstation.data.BottomBarActions
 import com.whistlehub.workstation.di.WorkStationBottomBarProvider
+import com.whistlehub.workstation.view.component.GradientIconButton
 import javax.inject.Inject
 
 class WorkStationBottom @Inject constructor() : WorkStationBottomBarProvider {
     @Composable
-    override fun WorkStationBottomBar(actions: BottomBarActions) {
+    override fun WorkStationBottomBar(
+        actions: BottomBarActions,
+        context: Context,
+        isPlaying: Boolean,
+        showUpload: Boolean
+    ) {
         var menuExpanded by remember { mutableStateOf(false) }
+        var showUploadDialog by remember { mutableStateOf(false) }
 
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(0.dp)
-                .background(CustomColors().Grey700)
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+//                .background(Color.Transparent),
+            horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            Row(modifier = Modifier.align(Alignment.CenterStart)) {
-                IconButton(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .padding(horizontal = 4.dp),
-                    onClick = actions.onPlayedClicked
-                ) {
-                    Icon(
-                        modifier = Modifier.fillMaxSize(),
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "Play Track",
-                    )
-                }
+            val buttonSize = 64.dp
+            val iconSize = 32.dp
+            val backgroundColor = Color(0xFF1E1E1E)
+            val iconColor = Color(0xFFF0F0F0)  // 약간 따뜻한 흰색
+            val borderColor = Color(0xFF9575CD)  // 보라 강조
 
-                Spacer(modifier = Modifier.width(8.dp))
-
-                IconButton(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .padding(horizontal = 4.dp),
-                    onClick = { }
-                ) {
-                    Icon(
-                        modifier = Modifier.fillMaxSize(),
-                        imageVector = Icons.Default.Circle,
-                        contentDescription = "Record",
-                        tint = Color.Red
-                    )
-                }
-            }
-
-            IconButton(
-                onClick = { menuExpanded = true },
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(horizontal = 16.dp)
-                    .size(40.dp)
-            ) {
-                Icon(
-                    modifier = Modifier.fillMaxSize(),
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = "Bottom Menu"
-                )
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false },
-                    modifier = Modifier.align(Alignment.BottomEnd)
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Save") },
-                        onClick = {
-                            menuExpanded = false
-                        },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Outlined.Save,
-                                contentDescription = "Save Track"
-                            )
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Upload") },
-                        onClick = {
-                            menuExpanded = false
-                        },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Outlined.Upload,
-                                contentDescription = "Save Track"
-                            )
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Download") },
-                        onClick = {
-                            menuExpanded = false
-                        },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Outlined.Download,
-                                contentDescription = "Save Track"
-                            )
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Exit") },
-                        onClick = {
-                            actions.onExitClicked()
-                            menuExpanded = false
-                        },
-                        leadingIcon = {
-                            Icon(
-                                Icons.AutoMirrored.Outlined.Logout,
-                                contentDescription = "Save Track"
-                            )
-                        }
-                    )
-                }
-            }
+            GradientIconButton(
+                icon = if (isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
+                onClick = actions.onPlayedClicked,
+                gradientColors = listOf(Color(0xFF8E2DE2), Color(0xFF4A00E0)) // 보라 그라디언트
+            )
+            GradientIconButton(
+                icon = Icons.Default.Add,
+                onClick = actions.onAddInstrument,
+                gradientColors = listOf(Color(0xFF00F260), Color(0xFF0575E6)) // 그린-블루
+            )
+            GradientIconButton(
+                icon = Icons.Default.CloudUpload,
+                onClick = actions.onUploadButtonClick,
+                gradientColors = listOf(Color(0xFFFF758C), Color(0xFFFF7EB3)) // 핑크 계열
+            )
+//            IconButton(
+//                modifier = Modifier
+//                    .size(buttonSize)
+//                    .shadow(6.dp, shape = CircleShape)
+//                    .background(backgroundColor, shape = CircleShape)
+//                    .border(width = 1.dp, color = borderColor, shape = CircleShape),
+//                onClick = actions.onPlayedClicked,
+//                colors = IconButtonDefaults.iconButtonColors(
+//                    containerColor = Color.Transparent
+//                )
+//            ) {
+//                Icon(
+//                    Icons.Default.PlayArrow,
+//                    contentDescription = null,
+//                    modifier = Modifier.size(iconSize),
+//                    tint = iconColor
+//                )
+//            }
+//
+//            Spacer(modifier = Modifier.width(8.dp))
+//
+//            IconButton(
+//                modifier = Modifier
+//                    .size(buttonSize)
+//                    .shadow(6.dp, shape = CircleShape)
+//                    .background(backgroundColor, shape = CircleShape)
+//                    .border(width = 1.dp, color = borderColor, shape = CircleShape),
+//                onClick = actions.onPlayedClicked,
+//                colors = IconButtonDefaults.iconButtonColors(
+//                    containerColor = Color.Transparent
+//                )
+//            ) {
+//                Icon(
+//                    Icons.Default.Add,
+//                    contentDescription = null,
+//                    modifier = Modifier.size(iconSize),
+//                    tint = iconColor
+//                )
+//            }
+//
+//            Spacer(modifier = Modifier.width(8.dp))
+//
+//            IconButton(
+//                modifier = Modifier
+//                    .size(buttonSize)
+//                    .shadow(6.dp, shape = CircleShape)
+//                    .background(backgroundColor, shape = CircleShape)
+//                    .border(width = 1.dp, color = borderColor, shape = CircleShape),
+//                onClick = actions.onPlayedClicked,
+//                colors = IconButtonDefaults.iconButtonColors(
+//                    containerColor = Color.Transparent
+//                )
+//            ) {
+//                Icon(
+//                    Icons.Default.CloudUpload,
+//                    contentDescription = null,
+//                    modifier = Modifier.size(iconSize),
+//                    tint = iconColor
+//                )
+//            }
         }
+
+
     }
 }
+
+
 

@@ -17,6 +17,5 @@ public class S3FileKeyExtractor {
      */
     static public String extractS3FileKey(String filePath) {
         return filePath.replaceAll(cutter, "");
-
     }
 }

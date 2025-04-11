@@ -15,7 +15,7 @@ sealed class AuthRequest {
         val nickname: String,
         val gender: Char,
         val birth: String,
-        val tags: List<Int>
+        val tagList: List<Int>
     )
     // 이메일 인증 코드 확인
     data class ValidateEmailRequest(
@@ -25,7 +25,7 @@ sealed class AuthRequest {
     // 비밀번호 초기화
     data class ResetPasswordRequest(
         val email: String,
-        val newPassword: String
+        val loginId: String
     )
     // 로그인
     data class LoginRequest(

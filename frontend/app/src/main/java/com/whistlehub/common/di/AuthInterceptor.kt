@@ -1,6 +1,6 @@
 package com.whistlehub.common.di
 
-import android.content.SharedPreferences
+import com.whistlehub.common.util.TokenManager
 import okhttp3.Interceptor
 import okhttp3.Response
 import javax.inject.Inject

@@ -9,13 +9,11 @@ import com.ssafy.backend.auth.model.request.ValidateEmailRequestDto;
 import com.ssafy.backend.auth.model.response.RefreshResponseDto;
 import com.ssafy.backend.auth.service.AuthService;
 import com.ssafy.backend.common.ApiResponse;
+import com.ssafy.backend.graph.util.DataReconstructor;
 import jakarta.websocket.server.PathParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * <pre>
@@ -43,8 +41,23 @@ public class AuthController {
      * @return 회원가입 성공시 회원id 반환
      */
     @PostMapping("/register")
-    public ApiResponse<?> register(RegisterRequestDto registerRequestDto) {
+    public ApiResponse<?> register(@RequestBody RegisterRequestDto registerRequestDto) {
         Integer result = authService.register(registerRequestDto);
+
+        return new ApiResponse.builder<Integer>()
+                .payload(result)
+                .build();
+    }
+
+    /**
+     * (테스트용) 인증이 없는 회원가입을 수행합니다.
+     *
+     * @param registerRequestDto 회원가입 요청 dto
+     * @return 회원가입 성공시 회원id 반환
+     */
+    @PostMapping("/sudo/register")
+    public ApiResponse<?> sudoRegister(@RequestBody RegisterRequestDto registerRequestDto) {
+        Integer result = authService.sudoRegister(registerRequestDto);
 
         return new ApiResponse.builder<Integer>()
                 .payload(result)
@@ -163,6 +176,14 @@ public class AuthController {
 
         return new ApiResponse.builder<>()
                 .payload(result)
+                .build();
+    }
+
+    private final DataReconstructor dataReconstructor;
+    @GetMapping("/reconstruct")
+    public ApiResponse<?> getReconstruct() {
+        dataReconstructor.reconstruct();
+        return new ApiResponse.builder<>()
                 .build();
     }
 }

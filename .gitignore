@@ -6,3 +6,8 @@ __pycache__
 files
 tempCodeRunnerFile.py
 envs/*.env
+db/**/data/*
+db/neo4j/plugins/*.jar
+db/neo4j/logs/*.log
+!.gitkeep
+volumes

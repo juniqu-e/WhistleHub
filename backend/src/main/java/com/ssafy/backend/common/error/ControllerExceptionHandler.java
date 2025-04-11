@@ -3,8 +3,15 @@ package com.ssafy.backend.common.error;
 import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.common.error.exception.*;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.ValidationException;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.BadRequestException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.oxm.ValidationFailureException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 /**
  * <pre>예외 전역처리</pre>
@@ -16,9 +23,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  */
 
 @RestControllerAdvice
+@Slf4j
 public class ControllerExceptionHandler {
-
-
     @ExceptionHandler(NotFoundPageException.class)
     public ApiResponse<?> notFoundPageHandler(NotFoundPageException e) {
         return new ApiResponse.builder<Object>()
@@ -96,6 +102,20 @@ public class ControllerExceptionHandler {
                 .build();
     }
 
+    @ExceptionHandler(InvalidNewPasswordException.class)
+    public ApiResponse<?> invalidNewPasswordHandler(InvalidNewPasswordException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.INVALID_NEW_PASSWORD)
+                .build();
+    }
+
+    @ExceptionHandler(InvalidOldPasswordException.class)
+    public ApiResponse<?> invalidOldPasswordHandler(InvalidOldPasswordException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.INVALID_OLD_PASSWORD)
+                .build();
+    }
+
     @ExceptionHandler(ExpiredAccessTokenException.class)
     public ApiResponse<?> expiredAccessTokenHandler(ExpiredAccessTokenException e) {
         return new ApiResponse.builder<Object>()
@@ -165,10 +185,72 @@ public class ControllerExceptionHandler {
                 .build();
     }
 
+    @ExceptionHandler(NotPermittedException.class)
+    public ApiResponse<?> notPermittedHandler(NotPermittedException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.NOT_PERMITTED)
+                .build();
+    }
+
+    @ExceptionHandler(FileUploadFailedException.class)
+    public ApiResponse<?> fileUploadFailedHandler(FileUploadFailedException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.FILE_UPLOAD_FAILED)
+                .build();
+    }
+
+    @ExceptionHandler(UnreadableFileException.class)
+    public ApiResponse<?> unreadableFileHandler(UnreadableFileException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.UNREADABLE_FILE)
+                .build();
+    }
+
+    @ExceptionHandler(DuplicateFollowRequestException.class)
+    public ApiResponse<?> duplicateFollowRequestHandler(DuplicateFollowRequestException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.DUPLICATE_FOLLOW_REQUEST)
+                .build();
+    }
+
+    @ExceptionHandler(InvalidFormattedRequest.class)
+    public ApiResponse<?> invalidFormattedRequestHandler(InvalidFormattedRequest e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.INVALID_FORMATTED_REQUEST)
+                .build();
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ApiResponse<?> httpMessageNotReadableHandler(HttpMessageNotReadableException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.INVALID_FORMATTED_REQUEST)
+                .build();
+    }
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ApiResponse<?> badRequestHandler(HandlerMethodValidationException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.INVALID_FORMATTED_REQUEST)
+                .build();
+    }
+
+    @ExceptionHandler(S3FileException.class)
+    public ApiResponse<?> s3FileExceptionHandler(S3FileException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.S3_ERROR)
+                .build();
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ApiResponse<?> missingServletRequestParameterHandler(MissingServletRequestParameterException e) {
+        return new ApiResponse.builder<Object>()
+                .errorStatus(ResponseType.PARAMETER_REQUIRED)
+                .build();
+    }
+
     // 이외의 정의되지 않은 서버 에러처리
     @ExceptionHandler(Exception.class)
     public ApiResponse<?> serverErrorHandler(Exception e) {
-        e.printStackTrace();
+        log.error(e.getMessage(), e);
         return new ApiResponse.builder<Object>()
                 .errorStatus(ResponseType.SERVER_ERROR)
                 .build();

@@ -25,11 +25,11 @@ public class Layer extends Common{
     @JoinColumn(name = "track_id", nullable = false)
     private com.ssafy.backend.mysql.entity.Track track;
 
-    @Column(name = "name", nullable = false, length = 30)
+    @Column(name = "name", nullable = false, length = 255)
     private String name;
 
     @Column(name = "instrument_type", length = 100)
-    private String instrumentType;
+    private int instrumentType;
 
     @Column(name = "modification")
     @JdbcTypeCode(SqlTypes.JSON)
@@ -42,5 +42,7 @@ public class Layer extends Common{
     @Column(name = "blocked", nullable = false)
     private Boolean blocked = false;
 
+    @Column(name = "bars")
+    private String bars;
 
 }

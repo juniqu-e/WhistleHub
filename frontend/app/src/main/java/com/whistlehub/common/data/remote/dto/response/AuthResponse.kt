@@ -7,11 +7,6 @@ package com.whistlehub.common.data.remote.dto.response
  **/
 
 sealed class AuthResponse {
-    // 회원가입
-    data class RegisterResponse(
-        val refreshToken: String,
-        val accessToken: String
-    )
     // 태그 목록
     data class TagResponse(
         val id: Int,
@@ -19,6 +14,7 @@ sealed class AuthResponse {
     )
     // 로그인
     data class LoginResponse(
+        val memberId: Int,
         val refreshToken: String,
         val accessToken: String,
         val profileImage: String,

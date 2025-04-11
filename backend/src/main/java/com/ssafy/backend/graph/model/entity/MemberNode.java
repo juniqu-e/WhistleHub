@@ -27,4 +27,6 @@ import java.util.List;
 public class MemberNode {
     @Id
     private Integer id;
+
+    private Boolean enabled;
 }

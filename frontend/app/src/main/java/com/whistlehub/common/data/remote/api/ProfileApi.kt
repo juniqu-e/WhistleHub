@@ -15,10 +15,10 @@ import retrofit2.http.*
  **/
 
 interface ProfileApi {
-    // 프로필 조회 (memberId가 생략 된 경우 AccessToken의 memberId 조회)
+    // 프로필 조회
     @GET("member")
     suspend fun getProfile(
-        @Query("memberId") memberId: Int?
+        @Query("memberId") memberId: Int
     ): Response<ApiResponse<ProfileResponse.GetProfileResponse>>
     // 프로필 정보 수정
     @PUT("member")
@@ -36,6 +36,11 @@ interface ProfileApi {
         @Part("memberId") memberId: RequestBody,
         @Part image: MultipartBody.Part
     ): Response<ApiResponse<String>>
+    // 프로필 사진 삭제 요청
+    @DELETE("member/image")
+    suspend fun deleteProfileImage(
+        @Query("memberId") memberId: Int
+    ): Response<ApiResponse<Unit>>
     // 비밀번호 변경
     @PUT("member/password")
     suspend fun changePassword(
@@ -48,33 +53,35 @@ interface ProfileApi {
         @Query("page") page: Int, // 페이지
         @Query("size") size: Int, // 페이지 크기
     ): Response<ApiResponse<List<ProfileResponse.SearchProfileResponse>>>
-    // 멤버의 플레이리스트 조회 (memberId가 생략 된 경우 AccessToken의 memberId 조회)
+    // 멤버의 플레이리스트 조회
     @GET("member/playlist")
     suspend fun getMemberPlaylists(
-        @Query("memberId") memberId: Int? = null
+        @Query("memberId") memberId: Int
     ): Response<ApiResponse<List<ProfileResponse.GetMemberPlaylistsResponse>>>
-    // 멤버의 트랙 조회 (memberId가 생략 된 경우 AccessToken의 memberId 조회)
+    // 멤버의 트랙 조회
     @GET("member/track")
     suspend fun getMemberTracks(
-        @Query("memberId") memberId: Int? = null,
+        @Query("memberId") memberId: Int,
         @Query("page") page: Int,
-        @Query("orderby") orderby: String
+        @Query("size") size: Int
     ): Response<ApiResponse<List<ProfileResponse.GetMemberTracksResponse>>>
     // 팔로우
     @POST("member/follow")
     suspend fun follow(
         @Body request: ProfileRequest.FollowRequest
     ): Response<ApiResponse<Unit>>
-    // 멤버의 팔로워 목록 조회 (memberId가 생략 된 경우 AccessToken의 memberId 조회)
+    // 멤버의 팔로워 목록 조회
     @GET("member/follower")
     suspend fun getFollowers(
-        @Query("memberId") memberId: Int? = null,
-        @Query("page") page: Int
+        @Query("memberId") memberId: Int,
+        @Query("page") page: Int,
+        @Query("size") size: Int,
     ): Response<ApiResponse<List<ProfileResponse.GetFollowersResponse>>>
-    // 멤버의 팔로잉 목록 조회 (memberId가 생략 된 경우 AccessToken의 memberId 조회)
+    // 멤버의 팔로잉 목록 조회
     @GET("member/following")
     suspend fun getFollowings(
-        @Query("memberId") memberId: Int? = null,
-        @Query("page") page: Int
+        @Query("memberId") memberId: Int,
+        @Query("page") page: Int,
+        @Query("size") size: Int,
     ): Response<ApiResponse<List<ProfileResponse.GetFollowingsResponse>>>
 }

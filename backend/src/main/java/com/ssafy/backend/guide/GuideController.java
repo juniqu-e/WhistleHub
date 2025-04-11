@@ -29,6 +29,12 @@ public class GuideController {
     private final DataGenerator generator;
     private final FFmpegTestService ffmpegTestService;
 
+
+    @GetMapping("/one")
+    public String one() {
+        ffmpegTestService.processAllAudioFiles();
+        return "one";
+    }
     /**
      * MP3 파일을 업로드하고 2배속으로 변환하여 반환
      */
@@ -46,7 +52,7 @@ public class GuideController {
 
             // 응답 헤더 설정
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.parseMediaType("audio/mpeg"));
+            headers.setContentType(MediaType.parseMediaType("audio/wav"));
             headers.setContentDispositionFormData("attachment",
                     originalFilename.replace(".mp3", "_2x.mp3"));
 
@@ -115,8 +121,8 @@ public class GuideController {
     }
 
     @GetMapping("/sim/{track1}/{track2}")
-    public String createDummy(@PathVariable int track1, @PathVariable int track2) throws Exception {
-        dataCollectingService.createTrackSimilarity(track1, track2);
+    public String createDummy(@PathVariable int track1, @PathVariable int track2, @PathVariable double similarity) throws Exception {
+        dataCollectingService.createTrackSimilarity(track1, track2,similarity);
         return "";
     }
 

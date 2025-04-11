@@ -7,11 +7,11 @@ sealed class TrackResponse {
     data class GetTrackDetailResponse(
         val trackId: Int,
         val title: String,
-        val description: String,
+        val description: String?,
         val duration: Int,
-        val imageUrl: String,
-        val artistInfo: ArtistInfo?,
-        val isLike: Boolean,
+        val imageUrl: String?,
+        val artist: ArtistInfo,
+        val isLiked: Boolean,
         val importCount: Int,
         val likeCount: Int,
         val viewCount: Int,
@@ -20,11 +20,12 @@ sealed class TrackResponse {
         val importTrack: List<TrackSummary>,
         val tags: List<TagInfo>?
     )
+
     // 작곡가 정보
     data class ArtistInfo(
         val memberId: Int,
         val nickname: String,
-        val profileImage: String
+        val profileImage: String?
     )
 
     // 태그 정보
@@ -32,6 +33,7 @@ sealed class TrackResponse {
         val tagId: Int,
         val name: String
     )
+
     // 소스 트랙 요약 정보
     data class TrackSummary(
         val trackId: Int,
@@ -39,29 +41,34 @@ sealed class TrackResponse {
         val duration: Int,
         val imageUrl: String?
     )
+
     // 트랙 레이어 조회
     data class GetTrackLayer(
         val layerId: Int,
         val name: String,
         val instrumentType: String
     )
+
     // 트랙 레이어 재생
     data class TrackLayerPlay(
         val soundUrl: String,
         val modification: JsonObject
     )
+
     // 트랙 댓글 조회
     data class GetTrackComment(
         val commentId: Int,
         val memberInfo: MemberInfo,
         val comment: String
     )
+
     // 트랙에 댓글 단 멤버
     data class MemberInfo(
         val memberId: Int,
         val nickname: String,
         val profileImage: String
     )
+
     // 트랙 검색
     data class SearchTrack(
         val trackId: Int,

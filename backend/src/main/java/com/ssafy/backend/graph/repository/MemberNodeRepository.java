@@ -1,10 +1,14 @@
 package com.ssafy.backend.graph.repository;
 
 import com.ssafy.backend.graph.model.entity.MemberNode;
+import org.neo4j.driver.internal.value.PathValue;
+import org.neo4j.driver.types.Path;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.Set;
 
 @Repository
 public interface MemberNodeRepository extends Neo4jRepository<MemberNode, Integer> {
@@ -92,4 +96,19 @@ public interface MemberNodeRepository extends Neo4jRepository<MemberNode, Intege
             "MERGE (m1)-[:FOLLOW]->(m2)")
     void createFollowRelationship(@Param("followerId") Integer followerId,
                                   @Param("followingId") Integer followingId);
+
+    @Query("MATCH(m1:Member)-[r:FOLLOW]->(m2:Member) "  +
+            "WHERE m1.id = $followerId AND m2.id = $followingId " +
+            "DELETE r")
+    void deleteFollowRelationship(@Param("followerId") Integer followerId,
+                                  @Param("followingId") Integer followingId);
+
+    @Query("MATCH (:Member {id: $memberId})-[:FOLLOW]->(f:Member) " +
+            "WITH f " +
+            "MATCH (m:Member)-[:FOLLOW]->(f) " +
+            "WHERE size([(m)-[:LIKE]->(:Track) | 1]) >= $size " +
+            "ORDER BY rand() " +
+            "RETURN DISTINCT f.id "+
+            "LIMIT 1")
+    Integer getFanmixMember(@Param("memberId") Integer memberId, @Param("size") Integer size);
 }

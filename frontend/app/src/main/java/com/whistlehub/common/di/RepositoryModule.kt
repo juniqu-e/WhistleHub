@@ -1,11 +1,26 @@
 package com.whistlehub.common.di
 
-import com.whistlehub.common.data.remote.api.*
-import com.whistlehub.common.data.repository.*
+import android.content.Context
+import com.whistlehub.common.data.local.room.AppDatabase
+import com.whistlehub.common.data.local.room.UserRepository
+import com.whistlehub.common.data.remote.api.AuthApi
+import com.whistlehub.common.data.remote.api.PlaylistApi
+import com.whistlehub.common.data.remote.api.ProfileApi
+import com.whistlehub.common.data.remote.api.RankingApi
+import com.whistlehub.common.data.remote.api.TrackApi
+import com.whistlehub.common.data.remote.api.WorkstationApi
+import com.whistlehub.common.data.repository.AuthService
+import com.whistlehub.common.data.repository.PlaylistService
+import com.whistlehub.common.data.repository.ProfileService
+import com.whistlehub.common.data.repository.RankingService
+import com.whistlehub.common.data.repository.TrackService
+import com.whistlehub.common.data.repository.WorkstationService
+import com.whistlehub.common.util.LogoutManager
 import com.whistlehub.common.util.TokenRefresh
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -30,9 +45,21 @@ object RepositoryModule {
     @Singleton
     fun provideTokenRefresh(
         authApi: AuthApi,
-        tokenManager: com.whistlehub.common.util.TokenManager
+        tokenManager: com.whistlehub.common.util.TokenManager,
+        logoutManager: LogoutManager,
+        userRepository: UserRepository
     ): TokenRefresh {
-        return TokenRefresh(tokenManager, AuthService(authApi))
+        return TokenRefresh(tokenManager, AuthService(authApi), logoutManager, userRepository)
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideUserRepository(
+        @ApplicationContext context: Context
+    ): UserRepository {
+        val database = AppDatabase.getInstance(context)
+        return UserRepository(database.userDao())
     }
 
     @Provides
@@ -49,7 +76,7 @@ object RepositoryModule {
         profileApi: ProfileApi,
         tokenRefresh: TokenRefresh
     ): ProfileService {
-        return ProfileService(profileApi)
+        return ProfileService(profileApi, tokenRefresh)
     }
 
     @Provides
@@ -58,7 +85,7 @@ object RepositoryModule {
         playlistApi: PlaylistApi,
         tokenRefresh: TokenRefresh
     ): PlaylistService {
-        return PlaylistService(playlistApi)
+        return PlaylistService(playlistApi, tokenRefresh)
     }
 
     @Provides
@@ -67,7 +94,7 @@ object RepositoryModule {
         trackApi: TrackApi,
         tokenRefresh: TokenRefresh
     ): TrackService {
-        return TrackService(trackApi)
+        return TrackService(trackApi, tokenRefresh)
     }
 
     @Provides
@@ -76,7 +103,7 @@ object RepositoryModule {
         workstationApi: WorkstationApi,
         tokenRefresh: TokenRefresh
     ): WorkstationService {
-        return WorkstationService(workstationApi)
+        return WorkstationService(workstationApi, tokenRefresh)
     }
 
     @Provides
@@ -85,6 +112,6 @@ object RepositoryModule {
         rankingApi: RankingApi,
         tokenRefresh: TokenRefresh
     ): RankingService {
-        return RankingService(rankingApi)
+        return RankingService(rankingApi, tokenRefresh)
     }
 }

@@ -1,21 +1,27 @@
 package com.ssafy.backend.playlist.controller;
 
 import com.ssafy.backend.common.ApiResponse;
+import com.ssafy.backend.common.error.exception.MissingParameterException;
+import com.ssafy.backend.mysql.entity.Playlist;
 import com.ssafy.backend.playlist.dto.*;
 import com.ssafy.backend.playlist.service.PlaylistService;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.awt.print.Book;
+import java.awt.print.Pageable;
 import java.util.List;
 
 @Slf4j
-@RequestMapping("/playlist")
+@RequestMapping("/api/playlist")
 @RestController
 @RequiredArgsConstructor
 public class PlaylistController {
@@ -24,21 +30,25 @@ public class PlaylistController {
 
     // 플레이리스트 설명 조회
     @GetMapping()
-    public ApiResponse<?> getPlaylist(@RequestParam int playlistid) {
+    public ApiResponse<?> getPlaylist(@RequestParam int playlistId) {
          return new ApiResponse.builder<Object>()
-                 .payload(playlistService.getPlaylist(playlistid))
+                 .payload(playlistService.getPlaylist(playlistId))
                  .build();
     }
 
     // 플레이리스트 만들기
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<?> createPlaylist(
-            @RequestParam("name") String name,
+            @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "description", required = false) String description,
             @RequestParam(value = "image", required = false) MultipartFile image,
-            @RequestParam(value = "track_ids", required = false) List<Integer> trackIds) {
+            @RequestParam(value = "trackIds", required = false) int[] trackIds) {
 
-        log.warn("name: {}, description: {}, image: {}, trackIds: {}", name, description, image, trackIds);
+        log.debug("name: {}, description: {}, image: {}, trackIds: {}", name, description, image, trackIds);
+
+        if(name == null || name.isEmpty()) {
+            throw new MissingParameterException();
+        }
 
         int payload = playlistService.createPlaylist(name, description, image, trackIds);
 
@@ -50,6 +60,11 @@ public class PlaylistController {
     // 플레이리스트 수정
     @PutMapping()
     public ApiResponse<?> updatePlaylist(@RequestBody ModifyPlaylistRequestDto requestDto) {
+        if(requestDto.getName() == null || requestDto.getName().isEmpty()
+                || requestDto.getDescription() == null) {
+            throw new MissingParameterException();
+        }
+
         int payload = playlistService.updatePlaylist(requestDto);
         return new ApiResponse.builder<Object>()
                 .payload(payload)

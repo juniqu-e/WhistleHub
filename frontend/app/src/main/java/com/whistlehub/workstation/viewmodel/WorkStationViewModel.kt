@@ -1,69 +1,146 @@
 package com.whistlehub.workstation.viewmodel
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.media.AudioFormat
+import android.media.AudioRecord
+import android.media.MediaMetadataRetriever
+import android.media.MediaPlayer
+import android.media.MediaRecorder
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.whistlehub.common.data.remote.dto.request.TrackRequest
+import com.whistlehub.common.data.remote.dto.request.WorkstationRequest
+import com.whistlehub.common.data.remote.dto.response.ApiResponse
+import com.whistlehub.common.data.remote.dto.response.AuthResponse
+import com.whistlehub.common.data.remote.dto.response.TrackResponse
+import com.whistlehub.common.data.remote.dto.response.WorkstationResponse
+import com.whistlehub.common.data.repository.TrackService
+import com.whistlehub.common.data.repository.WorkstationService
+import com.whistlehub.common.util.AudioEngineBridge.generateWaveformPoints
+import com.whistlehub.common.util.AudioEngineBridge.getWavDurationSeconds
+import com.whistlehub.common.util.AudioEngineBridge.renderMixToWav
+import com.whistlehub.common.util.AudioEngineBridge.setCallback
+import com.whistlehub.common.util.AudioEngineBridge.setLayers
+import com.whistlehub.common.util.AudioEngineBridge.startAudioEngine
+import com.whistlehub.common.util.AudioEngineBridge.stopAudioEngine
+import com.whistlehub.common.util.PlaybackListener
+import com.whistlehub.common.util.createMultipart
+import com.whistlehub.common.util.createRequestBody
+import com.whistlehub.common.util.downloadWavFromS3Url
 import com.whistlehub.workstation.data.BottomBarActions
 import com.whistlehub.workstation.data.Layer
+import com.whistlehub.workstation.data.LayerAudioInfo
 import com.whistlehub.workstation.data.PatternBlock
+import com.whistlehub.workstation.data.ToastData
+import com.whistlehub.workstation.data.UploadMetadata
+import com.whistlehub.workstation.data.getCategoryAndColorHex
+import com.whistlehub.workstation.data.roundUpToNearestPowerOfTwo
+import com.whistlehub.workstation.data.toAudioInfo
 import com.whistlehub.workstation.di.AudioLayerPlayer
 import com.whistlehub.workstation.di.WorkStationBottomBarProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import okhttp3.RequestBody
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.util.UUID
 import javax.inject.Inject
+
 
 @HiltViewModel
 class WorkStationViewModel @Inject constructor(
     val bottomBarProvider: WorkStationBottomBarProvider,
-    private val audioLayerPlayer: AudioLayerPlayer
-) : ViewModel() {
-    private val _tracks = MutableStateFlow(
-        listOf(
-            Layer(
-                id = 1,
-                name = "DRUM",
-                description = "ba 95 drum loop fever full",
-                category = "DRUM",
-                length = 1,
-            ),
-            Layer(
-                id = 2,
-                name = "OTHERS",
-                description = "css 90 full song water d#m 01",
-                category = "OTHERS",
-                length = 2,
-            ),
-            Layer(
-                id = 3,
-                name = "BASS",
-                description = "gbc bass 85 gorilla f#fm",
-                category = "BASS",
-                length = 3,
-            ),
-            Layer(
-                id = 4,
-                name = "BASS",
-                description = "bpm100 a bass20",
-                category = "BASS",
-                length = 4
-            )
-        )
-    )
+    private val audioLayerPlayer: AudioLayerPlayer,
+    private val trackService: TrackService,
+    private val workstationService: WorkstationService,
+) : ViewModel(), PlaybackListener {
+    private val _tracks = MutableStateFlow<List<Layer>>(emptyList())
     val tracks: StateFlow<List<Layer>> = _tracks.asStateFlow()
+    private val _nextId = mutableIntStateOf(1)
+    private val _wavPathMap = mutableStateOf<Map<Int, String>>(emptyMap())
+    val wavPathMap: State<Map<Int, String>> get() = _wavPathMap
+    private val _searchTrackResults =
+        MutableStateFlow<ApiResponse<List<TrackResponse.SearchTrack>>?>(null);
+    val searchTrackResults: StateFlow<ApiResponse<List<TrackResponse.SearchTrack>>?> get() = _searchTrackResults;
+    private val _layersOfSearchTrack =
+        mutableStateOf<ApiResponse<WorkstationResponse.ImportTrackResponse>?>(null);
+    val layersOfSearchTrack: State<ApiResponse<WorkstationResponse.ImportTrackResponse>?> get() = _layersOfSearchTrack;
+    private val _isPlaying = mutableStateOf(false)
+    val isPlaying: State<Boolean> get() = _isPlaying
+    private val _showAddLayerDialog = mutableStateOf(false)
+    val showAddLayerDialog: State<Boolean> get() = _showAddLayerDialog
+    private val _showUploadDialog = mutableStateOf(false)
+    val showUploadDialog: State<Boolean> get() = _showUploadDialog
+    private val _showUploadSheet = mutableStateOf(false)
+    val showUploadSheet: State<Boolean> get() = _showUploadSheet
+    private val _isUploading = mutableStateOf(false)
+    val isUploading: State<Boolean> get() = _isUploading
+    private val _tagList = MutableStateFlow<List<AuthResponse.TagResponse>>(emptyList())
+    val tagList: StateFlow<List<AuthResponse.TagResponse>> get() = _tagList
+    private val _tagPairs = MutableStateFlow<List<Pair<Int, String>>>(emptyList())
+    val tagPairs: StateFlow<List<Pair<Int, String>>> get() = _tagPairs
+    private val _projectBpm = mutableFloatStateOf(120f)
+    val projectBpm: State<Float> get() = _projectBpm
+    private val _toastMessage = MutableStateFlow<ToastData?>(null)
+    val toastMessage: StateFlow<ToastData?> get() = _toastMessage
 
-    fun addLayer() {
-        val newId = (_tracks.value.maxOfOrNull { it.id } ?: 0) + 1
-        _tracks.value += listOf(
-            Layer(
-                id = newId,
-                name = "Layer $newId",
-                description = "New Layer",
-                category = "NEW",
-                length = 4
-            )
-        )
-        Log.d("Play", _tracks.value.toString())
+    // ------------ Record ------------------
+    var recordedFile by mutableStateOf<File?>(null)
+    var isRecording by mutableStateOf(false)
+    var isRecordingPending by mutableStateOf(false)
+    var countdown by mutableStateOf(3)
+    private var mediaPlayer: MediaPlayer? = null
+    private var recorder: AudioRecord? = null
+
+    //Progress 오디오 진행률 상태를 관리
+    private val _progress = mutableStateOf(0f)
+    val progress: State<Float> get() = _progress
+    private val _waveformPoints = mutableStateListOf<Float>()
+    val waveformPoints: State<List<Float>> get() = derivedStateOf { _waveformPoints.toList() }
+
+
+    init {
+        setCallback(this)
+    }
+
+    fun setProjectBpm(newBpm: Float) {
+        _projectBpm.value = newBpm
+    }
+
+    fun addLayer(newLayer: Layer) {
+        val newId = _nextId.intValue  // 현재 ID 가져오기
+        _nextId.intValue += 1  // ID 증가
+        // ID가 증가된 새로운 Layer 객체 생성
+        val layerWithId = newLayer.copy(id = newId)
+        // 레이어를 _tracks에 추가
+        _tracks.value += layerWithId
     }
 
     fun deleteLayer(layer: Layer) {
@@ -71,8 +148,15 @@ class WorkStationViewModel @Inject constructor(
         Log.d("Play", _tracks.value.toString())
     }
 
-    private fun playAllLayers(layers: List<Layer>) {
-        audioLayerPlayer.playAllLayers(layers)
+    fun resetLayer(layer: Layer) {
+        _tracks.value = _tracks.value.map {
+            if (it.id == layer.id) {
+                it.copy(
+                    length = layer.length,
+                    patternBlocks = emptyList()
+                )
+            } else it
+        }
     }
 
     private fun isOverlapping(newBlock: PatternBlock, existing: PatternBlock): Boolean {
@@ -97,21 +181,10 @@ class WorkStationViewModel @Inject constructor(
                         blocks.add(newBlock)
                     }
                 }
-                Log.d("Layer", layer.patternBlocks.toString())
-                layer.copy(patternBlocks = blocks)
 
+                layer.copy(patternBlocks = blocks)
             } else layer
         }
-    }
-
-    fun generateBeatPatternFromBlocks(blocks: List<PatternBlock>): List<Boolean> {
-        val pattern = MutableList(60) { false }
-        blocks.forEach { block ->
-            for (i in block.start until (block.start + block.length).coerceAtMost(60)) {
-                pattern[i] = true
-            }
-        }
-        return pattern
     }
 
     fun applyPatternAutoRepeat(layerId: Int, startBeat: Int, interval: Int) {
@@ -122,7 +195,7 @@ class WorkStationViewModel @Inject constructor(
                 var i = startBeat
                 while (i < 60) {
                     val newBlock = PatternBlock(i, length)
-                    val alreadyExists = blocks.any { it.start == newBlock.start }
+//                    val alreadyExists = blocks.any { it.start == newBlock.start }
                     val overlaps = blocks.any { isOverlapping(newBlock, it) }
                     if (!overlaps) {
                         blocks.add(newBlock)
@@ -135,62 +208,590 @@ class WorkStationViewModel @Inject constructor(
         }
     }
 
-    //    fun toggleBeat(layerId: Int, index: Int) {
-//        _tracks.value = _tracks.value.map { layer ->
-//            if (layer.id == layerId) {
-//                Log.d("Toggle", "Layer ${layer.id} toggle at $index")
-//                val pattern = layer.beatPattern.toMutableList()
-//                val length = layer.length
-//                val isActive = pattern[index]
-//
-//                if (!isActive) {
-//                    //중복 점유 체크
-//                    val overlap = (index until (index + length)).any {
-//                        it >= 60 || pattern[it]
-//                    }
-//                    if (overlap) {
-//                        Log.d("Toggle", "Overlap - blocked")
-//                        return@map layer
-//                    }
-//
-//                    for (i in index until (index + length).coerceAtMost(60)) {
-//                        pattern[i] = true
-//                    }
-//                } else {
-//                    // 시작 지점 누르면 전체 해제
-//                    for (i in index until (index + length).coerceAtMost(60)) {
-//                        pattern[i] = false
-//                    }
-//                }
-//
-//                layer.copy(beatPattern = pattern)
-//            } else layer
-//        }
-//    }
-//    fun applyPatternAutoRepeat(layerId: Int, startBeat: Int, interval: Int) {
-//        _tracks.value = _tracks.value.map { layer ->
-//            if (layer.id == layerId) {
-//                val pattern = layer.beatPattern.toMutableList()
-//                val length = layer.length
-//                var i = startBeat
-//                while (i < 60) {
-//                    for (j in 0 until length) {
-//                        if (i + j < 60) {
-//                            pattern[i + j] = true
-//                        }
-//                    }
-//                    i += interval
-//                }
-//
-//                layer.copy(beatPattern = pattern)
-//            } else layer
-//        }
-//    }
+    fun searchTrack(request: TrackRequest.SearchTrackRequest) {
+        viewModelScope.launch {
+            try {
+                val results = trackService.searchTracks(request);
+                _searchTrackResults.value = results;
+                Log.d("Search", results.toString());
+            } catch (e: Exception) {
+                Log.d("Search", "검색 오류 ${e.message}");
+            }
+        }
+    }
+
+    fun addLayerFromSearchTrack(
+        request: WorkstationRequest.ImportTrackRequest,
+        context: Context,
+    ) {
+        viewModelScope.launch {
+            try {
+                val results = workstationService.importTrack(request)
+                _isUploading.value = true
+                val track = results.payload
+                if (track == null) {
+                    _isUploading.value = false
+                    showToast(
+                        "트랙 가져오기에 실패했습니다.",
+                        Icons.Default.Error,
+                        Color(0xFFF44336)
+                    )
+                    return@launch
+                } else {
+                    val layers = track.layers.map { layerRes ->
+                        val s3Url = layerRes.soundUrl
+                        Log.d("Search", "S3 Url : $s3Url")
+                        Log.d("Search", "layer : $layerRes")
+                        val fileName = "layer_${UUID.randomUUID()}.wav"
+                        val localFile = downloadWavFromS3Url(context, s3Url, fileName)
+                        val duration = getWavDurationMs(localFile)
+                        val length = getBarsFromDuration(
+                            durationMs = duration,
+                            bpm = projectBpm.value.toInt()
+                        )
+                        val layerName = if (layerRes.name == "layer") track.title else layerRes.name
+                        val bpm = layerRes.bpm ?: projectBpm
+                        val bars = layerRes.bars
+                        val (category, colorHex) = getCategoryAndColorHex(layerRes.instrumentType)
+                        val barsPattern: List<PatternBlock> = if (!bars.isNullOrEmpty()) {
+                            bars.map { start ->
+                                PatternBlock(start = start, length = length.toInt())
+                            }
+                        } else {
+                            listOf(
+                                PatternBlock(start = 0, length = length.toInt())
+                            )
+                        }
+
+                        Layer(
+                            typeId = layerRes.layerId,
+                            name = track.title,
+                            description = layerName,
+                            category = category,
+                            instrumentType = layerRes.instrumentType,
+                            colorHex = colorHex,
+                            length = length.toInt(),
+                            wavPath = localFile.absolutePath,
+                            patternBlocks = barsPattern,
+                            bpm = layerRes.bpm?.toFloat() ?: projectBpm.value
+                        )
+                    }
+
+                    layers.forEach { layer ->
+                        addLayer(layer)
+                    }
+
+                    _isUploading.value = false
+                    showToast(
+                        "트랙을 성공적으로 가져왔습니다.",
+                        Icons.Default.CheckCircle,
+                        Color(0xFF4CAF50)
+                    )
+
+                }
+            } catch (e: Exception) {
+                _isUploading.value = false
+                showToast(
+                    "트랙 가져오기에 실패했습니다.",
+                    Icons.Default.Error,
+                    Color(0xFFF44336)
+                )
+            }
+        }
+    }
+
+    fun addLayerFromRecommendTrack(
+        request: WorkstationRequest.ImportRecommendTrackRequest,
+        context: Context,
+    ) {
+        viewModelScope.launch {
+            try {
+                val results = workstationService.importRecommendTrack(request)
+                _isUploading.value = true
+                val track = results.payload
+                if (track == null) {
+                    _isUploading.value = false
+                    showToast(
+                        "추천 트랙 가져오기에 실패했습니다.",
+                        Icons.Default.Error,
+                        Color(0xFFF44336)
+                    )
+
+                    return@launch
+                } else {
+                    val layers = track.layers.map { layerRes ->
+                        val s3Url = layerRes.soundUrl
+                        Log.d("Search", "S3 Url : $s3Url")
+                        Log.d("Search", "layer : $layerRes")
+                        val fileName = "layer_${UUID.randomUUID()}.wav"
+                        val localFile = downloadWavFromS3Url(context, s3Url, fileName)
+                        val duration = getWavDurationMs(localFile)
+                        val length = getBarsFromDuration(
+                            durationMs = duration,
+                            bpm = projectBpm.value.toInt()
+                        )
+                        val bpm = layerRes.bpm ?: projectBpm
+                        val bars = layerRes.bars
+                        val (category, colorHex) = getCategoryAndColorHex(layerRes.instrumentType)
+                        val barsPattern: List<PatternBlock> = if (!bars.isNullOrEmpty()) {
+                            bars.map { start ->
+                                PatternBlock(start = start, length = length.toInt())
+                            }
+                        } else {
+                            listOf(
+                                PatternBlock(start = 0, length = length.toInt())
+                            )
+                        }
+
+                        Layer(
+                            typeId = layerRes.layerId,
+                            name = track.title,
+                            description = track.title,
+                            category = category,
+                            instrumentType = layerRes.instrumentType,
+                            colorHex = colorHex,
+                            length = length.toInt(),
+                            wavPath = localFile.absolutePath,
+                            patternBlocks = barsPattern,
+                            bpm = layerRes.bpm?.toFloat() ?: projectBpm.value
+                        )
+                    }
+
+                    layers.forEach { layer ->
+                        addLayer(layer)
+                    }
+
+                    _isUploading.value = false
+                    showToast(
+                        "추천 트랙을 성공적으로 가져왔습니다.",
+                        Icons.Default.CheckCircle,
+                        Color(0xFF4CAF50)
+                    )
+                }
+            } catch (e: Exception) {
+                _isUploading.value = false
+                showToast(
+                    "추천 트랙 가져오기에 실패했습니다.",
+                    Icons.Default.Error,
+                    Color(0xFFF44336)
+                )
+            }
+        }
+    }
+
+    fun onPlayClicked(context: Context, onResult: (Boolean) -> Unit = {}) {
+        if (_isPlaying.value) {
+            stopAudioEngine()
+        } else {
+            stopAudioEngine()
+
+            if (tracks.value.isEmpty()) {
+                onResult(false)
+                return
+            }
+            // 마디 정보 없는 레이어 체크
+            val invalidLayer = tracks.value.find { it.patternBlocks.isEmpty() }
+            if (invalidLayer != null) {
+                onResult(false)
+                return
+            }
+            val infos = getAudioLayerInfos();
+            val maxUsedBars = getMaxUsedBars(tracks.value)
+            val fileName = "mixTmp"
+            val safeFileName = if (fileName.endsWith(".wav")) fileName else "$fileName.wav"
+            val mix = File(context.filesDir, safeFileName)
+            val totalFrames = calculateTotalFrames(
+                maxUsedBars = maxUsedBars,
+                bpm = 120.0f,
+                sampleRate = 44100,
+            )
+            renderMixToWav(mix.absolutePath, totalFrames)
+            generateWaveformPoints(mix.absolutePath)
+            setLayers(infos, maxUsedBars)
+            startAudioEngine()
+        }
+        _isPlaying.value = !_isPlaying.value
+        _progress.value = 0f
+        onResult(true)
+    }
+
+    fun onUpload(context: Context, metadata: UploadMetadata) {
+        if (metadata.title.isBlank() || metadata.description.isBlank() || metadata.tags.isEmpty()) {
+            showToast("제목, 설명, 태그를 모두 입력해주세요.", Icons.Default.Error, Color(0xFFF44336))
+            return
+        }
+        val fileName = metadata.title
+        val safeFileName = if (fileName.endsWith(".wav")) fileName else "$fileName.wav"
+        val mix = File(context.filesDir, safeFileName)
+        var response: ApiResponse<Int>
+
+        viewModelScope.launch {
+            _isUploading.value = true
+            val infos = getAudioLayerInfos();
+            val maxUsedBars = getMaxUsedBars(tracks.value)
+            setLayers(infos, maxUsedBars)
+            val totalFrames = calculateTotalFrames(
+                maxUsedBars = maxUsedBars,
+                bpm = 120.0f,
+                sampleRate = 44100,
+            )
+            val success = renderMixToWav(mix.absolutePath, totalFrames)
+
+            if (!success) {
+                _isUploading.value = false
+                showToast("음원 합성에 실패하였습니다.", Icons.Default.Error, Color(0xFFF44336))
+                return@launch
+            } else {
+                //MultiPart
+                val ids = tracks.value.joinToString(",") { it.typeId.toString() }
+                val names = tracks.value.joinToString(",") { it.name }
+                val instrumentTypes =
+                    tracks.value.joinToString(",") { it.instrumentType.toString() }
+                val duration = getWavDurationSeconds(mix.absolutePath).toInt().toString()
+                val bars: List<List<Int>> = tracks.value.map { layer ->
+                    layer.patternBlocks.map { it.start }
+                }
+                val barsJsonString = bars.joinToString(prefix = "[", postfix = "]") { block ->
+                    block.joinToString(prefix = "[", postfix = "]", separator = ",")
+                }
+                val requestBodyMap = hashMapOf(
+                    "title" to createRequestBody(fileName), //
+                    "description" to createRequestBody(metadata.description),
+                    "duration" to createRequestBody(duration),
+                    "visibility" to createRequestBody(metadata.visibility.toString()), //
+                    "tags" to createRequestBody(metadata.tags.joinToString(",")), //
+                    "sourceTracks" to createRequestBody(ids),
+                    "layerName" to createRequestBody(names),
+                    "instrumentType" to createRequestBody(instrumentTypes),
+                    "barsJson" to createRequestBody(barsJsonString),
+                    "bpm" to createRequestBody(projectBpm.value.toInt().toString()),
+                    "key" to createRequestBody("G")
+                )
+
+                Log.d("Request", requestBodyMap.toString())
+                val trackImg = null
+                val trackSoundFile = createMultipart(mix, "trackSoundFile")
+                val layerSoundFiles = tracks.value.map { layer ->
+                    Log.d("Upload", File(layer.wavPath).toString())
+                    createMultipart(File(layer.wavPath), "layerSoundFiles")
+                }
+
+                requestBodyMap.forEach { (key, value) ->
+                    Log.d("Upload", "$key => ${value.peekContent()}")
+                }
+
+                Log.d(
+                    "Upload",
+                    "TrackSoundFile -> name: ${trackSoundFile.headers}, body type: ${trackSoundFile.body.contentType()}"
+                )
+
+                layerSoundFiles.forEachIndexed { index, part ->
+                    Log.d(
+                        "Upload",
+                        "Layer[$index] -> name: ${part.headers}, body type: ${part.body.contentType()}"
+                    )
+                }
+                response = workstationService.uploadTrack(
+                    WorkstationRequest.UploadTrackRequest(
+                        partMap = requestBodyMap,
+                        trackImg = trackImg,
+                        layerSoundFiles = layerSoundFiles,
+                        trackSoundFile = trackSoundFile,
+                    )
+                )
+                _isUploading.value = false
+                if (response.code != "SU") {
+                    showToast("믹스를 서버 저장에 실패하였습니다.", Icons.Default.Error, Color(0xFFF44336))
+                    return@launch
+                }
+            }
+
+            showToast("믹스를 서버 저장에 성공하였습니다.", Icons.Default.CheckCircle, Color(0xFF4CAF50))
+        }
+    }
+
+    suspend fun getTagList() {
+        val response = trackService.getTagRecommendation().payload!!
+        if (response.isNotEmpty()) {
+            _tagList.value = response
+            _tagPairs.value = response.map { it.id to it.name }
+        }
+    }
+
+    private fun getWavDurationMs(file: File): Long {
+        val retriever = MediaMetadataRetriever()
+        retriever.setDataSource(file.absolutePath)
+        val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+        retriever.release()
+        return durationStr?.toLongOrNull() ?: 0L
+    }
+
+    private fun getBarsFromDuration(durationMs: Long, bpm: Int): Float {
+        val beatDurationMs = 60000f / bpm
+        val barDurationMs = beatDurationMs * 4
+        val calculatedLength = durationMs / barDurationMs
+        return roundUpToNearestPowerOfTwo(calculatedLength).toFloat()
+    }
+
+    private fun getAudioLayerInfos(): List<LayerAudioInfo> {
+        return tracks.value.map { it.toAudioInfo(projectBpm.value) }
+    }
+
+    private fun getMaxUsedBars(layers: List<Layer>): Int {
+        return layers.flatMap { layer ->
+            layer.patternBlocks.map { it.start + it.length }
+        }.maxOrNull() ?: 0
+    }
+
+    private fun calculateTotalFrames(maxUsedBars: Int, bpm: Float, sampleRate: Int): Int {
+        val secondsPerBar = (60f / bpm) * 4f
+        val totalSeconds = maxUsedBars * secondsPerBar
+        return (totalSeconds * sampleRate).toInt()
+    }
+
+    fun toggleUploadSheet(show: Boolean) {
+        _showUploadSheet.value = show
+    }
+
+    fun toggleUploadDialog(show: Boolean) {
+        _showUploadDialog.value = show
+    }
+
+    fun toggleAddLayerDialog(show: Boolean) {
+        _showAddLayerDialog.value = show
+    }
+
+    fun recordFileReset() {
+        recordedFile = null
+    }
+
+    fun RequestBody.peekContent(): String {
+        val buffer = okio.Buffer()
+        this.writeTo(buffer)
+        return buffer.readUtf8()
+    }
+
     val bottomBarActions = BottomBarActions(
-        onPlayedClicked = { playAllLayers(_tracks.value) },
-        onTrackSavedClicked = {},
-        onTrackUploadClicked = {},
-        onTrackDownloadClicked = {},
-        onExitClicked = {}
+        onPlayedClicked = {},
+        onTrackUploadClicked = { },
+        onAddInstrument = {},
+        onUploadButtonClick = {
+//            toggleUploadSheet(true)
+            toggleUploadDialog(true)
+        }
     )
+
+    //재생 끝나고 Oboe에서 상태 콜백 받는 함수
+    override fun onPlaybackFinished() {
+        Handler(Looper.getMainLooper()).post {
+            stopAudioEngine()
+            _isPlaying.value = false
+            _progress.value = 0f
+        }
+    }
+
+    // 진행률을 업데이트 받는 콜백
+    override fun updateProgress(mProgress: Float) {
+        _progress.value = mProgress
+    }
+
+    //waveformPoints를 받아서 업데이트하는 함수
+    override fun updateWaveformPoints(waveformPoints: List<Float>) {
+        _waveformPoints.clear()  // 기존 데이터를 지우고
+        _waveformPoints.addAll(waveformPoints)  // 새 데이터 추가
+    }
+
+
+    fun startCountdownAndRecord(context: Context, file: File, onComplete: (File) -> Unit) {
+        isRecordingPending = true
+        viewModelScope.launch {
+            for (i in 3 downTo 1) {
+                countdown = i
+                delay(1000)
+            }
+            countdown = 0
+            startRecording(context, file, onComplete)
+        }
+    }
+
+    private fun startRecording(context: Context, file: File, onComplete: (File) -> Unit) {
+        val hasPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (!hasPermission) {
+            Log.d("Record", hasPermission.toString())
+            return
+        }
+
+        isRecording = true
+        isRecordingPending = false
+        val sampleRate = 44100
+        val bufferSize = AudioRecord.getMinBufferSize(
+            sampleRate,
+            AudioFormat.CHANNEL_IN_STEREO,
+            AudioFormat.ENCODING_PCM_16BIT
+        )
+        recorder = AudioRecord(
+            MediaRecorder.AudioSource.MIC,
+            sampleRate,
+            AudioFormat.CHANNEL_IN_STEREO,
+            AudioFormat.ENCODING_PCM_16BIT,
+            bufferSize
+        )
+
+        if (recorder!!.state != AudioRecord.STATE_INITIALIZED) {
+            Log.e("Record", "AudioRecord 초기화 실패")
+            isRecording = false
+            return
+        }
+        val pcmStream = ByteArrayOutputStream()
+        val buffer = ByteArray(bufferSize)
+
+        viewModelScope.launch(Dispatchers.IO) {
+            recorder?.startRecording()
+            while (isRecording && recorder?.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
+                val read = recorder?.read(buffer, 0, buffer.size) ?: break
+                if (read > 0) {
+                    pcmStream.write(buffer, 0, read)
+                }
+            }
+            val remaining = recorder?.read(buffer, 0, buffer.size) ?: 0
+            if (remaining > 0) {
+                pcmStream.write(buffer, 0, remaining)
+            }
+            // ensure remaining buffer read
+            recorder?.let { safeRecorder ->
+                val remaining = safeRecorder.read(buffer, 0, buffer.size)
+                if (remaining > 0) {
+                    try {
+                        pcmStream.write(buffer, 0, remaining)
+                    } catch (e: Exception) {
+                        Log.e("Record", "Remaining buffer write 실패: ${e.message}")
+                        return@launch
+                    }
+                }
+            }
+
+            try {
+                recorder?.stop()
+            } catch (e: Exception) {
+                Log.e("Record", "recorder stop 실패: ${e.message}")
+                return@launch
+            }
+
+            try {
+                recorder?.release()
+            } catch (e: Exception) {
+                Log.e("Record", "recorder release 실패: ${e.message}")
+                return@launch
+            }
+            recorder = null
+            isRecording = false
+            val channels = 2
+            val bitsPerSample = 16
+            val byteRate = sampleRate * channels * (bitsPerSample / 8)
+            val wavStream = FileOutputStream(file)
+            val pcmData = pcmStream.toByteArray()
+
+            writeWavHeader(wavStream, pcmData.size.toLong(), sampleRate, channels, byteRate)
+            wavStream.write(pcmData)
+            wavStream.close()
+
+            recordedFile = file
+            onComplete(file)
+        }
+    }
+
+    fun stopRecording() {
+        isRecording = false
+        viewModelScope.launch {
+            delay(200)
+        }
+    }
+
+    fun playRecording(file: File) {
+        mediaPlayer?.release()
+        mediaPlayer = MediaPlayer().apply {
+            setDataSource(file.absolutePath)
+            prepare()
+            start()
+        }
+    }
+
+    fun stopPlayback() {
+        mediaPlayer?.stop()
+        mediaPlayer?.release()
+        mediaPlayer = null
+    }
+
+    private fun writeWavHeader(
+        out: FileOutputStream,
+        audioLen: Long,
+        sampleRate: Int,
+        channels: Int,
+        byteRate: Int
+    ) {
+        val totalLen = audioLen + 36
+        val header = ByteArray(44)
+
+        fun writeInt(offset: Int, value: Int) {
+            ByteBuffer.wrap(header, offset, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(value)
+        }
+
+        fun writeShort(offset: Int, value: Short) {
+            ByteBuffer.wrap(header, offset, 2).order(ByteOrder.LITTLE_ENDIAN).putShort(value)
+        }
+
+        "RIFF".toByteArray().copyInto(header, 0)
+        writeInt(4, totalLen.toInt())
+        "WAVE".toByteArray().copyInto(header, 8)
+        "fmt ".toByteArray().copyInto(header, 12)
+        writeInt(16, 16)
+        writeShort(20, 1)
+        writeShort(22, channels.toShort())
+        writeInt(24, sampleRate)
+        writeInt(28, byteRate)
+        writeShort(32, (channels * 2).toShort())
+        writeShort(34, 16)
+        "data".toByteArray().copyInto(header, 36)
+        writeInt(40, audioLen.toInt())
+
+        out.write(header)
+    }
+
+    fun addRecordedLayer(name: String) {
+        recordedFile?.let { file ->
+            val duration = getWavDurationMs(file)
+            val length = getBarsFromDuration(
+                durationMs = duration,
+                bpm = 120
+            )
+            val (category, colorHex) = getCategoryAndColorHex(0)
+            val layer = Layer(
+                id = 0,
+                typeId = -1,
+                name = name,
+                description = "녹음",
+                category = category,
+                colorHex = colorHex,
+                instrumentType = 0,
+                length = length.toInt(),
+                patternBlocks = listOf(
+                    PatternBlock(start = 0, length = length.toInt())
+                ),
+                wavPath = file.absolutePath
+            )
+            addLayer(layer)
+        }
+    }
+
+    fun showToast(message: String, icon: ImageVector, color: Color) {
+        _toastMessage.value = ToastData(message, icon, color)
+    }
+
+    fun clearToast() {
+        _toastMessage.value = null
+    }
 }
